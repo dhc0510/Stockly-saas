@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ImagePlus, Package, Pencil, Plus, Search, Tag, Tags, Trash2, X } from "lucide-react";
 import { request } from "../../lib/http";
 import type { SessionUser } from "../auth/api";
+import { inventoryApi } from "../inventory/api";
 import "./catalog.css";
 
 type Item = {
@@ -63,6 +65,8 @@ function ProductImage({ product, source }: { product?: Product; source?: string 
 }
 
 export function CatalogPage({ access }: { access: Access }) {
+  const [searchParams] = useSearchParams();
+  const branchId = searchParams.get("branchId") ?? "";
   const [page, setPage] = useState<Page>({ products: [], categories: [], hasMore: false });
   const [index, setIndex] = useState(0);
   const [search, setSearch] = useState("");
@@ -117,7 +121,7 @@ export function CatalogPage({ access }: { access: Access }) {
     return [{ product, item: undefined }];
   });
 
-  if (selection) return <CatalogEditor selection={selection} access={access} categories={page.categories}
+  if (selection) return <CatalogEditor selection={selection} access={access} categories={page.categories} branchId={branchId}
     cancel={() => setSelection(undefined)} done={done} open={setSelection} />;
 
   return <section className="catalog-page">
@@ -130,6 +134,7 @@ export function CatalogPage({ access }: { access: Access }) {
         <button className="catalog-primary" onClick={() => { setNotice(""); setSelection({ category }); }}><Plus size={18} /> Nuevo producto</button>
       </div>}
     </div>
+    {branchId&&<p className="notice info" role="status">El producto nuevo se asignará a la sucursal desde la que comenzaste.</p>}
     {notice && !manageCategories && <p className="notice" role="status">{notice}</p>}
     {manageCategories && <CategoryManager categories={page.categories} notice={notice} loading={loading}
       close={() => setManageCategories(false)} saved={categorySaved} />}
@@ -261,16 +266,16 @@ function CategoryManager({ categories, close, saved, notice, loading }: {
 }
 
 
-function CatalogEditor({ selection, access, categories, cancel, done, open }: {
-  selection: Selection; access: Access; categories: string[];
+function CatalogEditor({ selection, access, categories, branchId, cancel, done, open }: {
+  selection: Selection; access: Access; categories: string[]; branchId:string;
   cancel: () => void; done: (message: string) => void; open: (value: Selection) => void;
 }) {
   const key = selection.item?.id ?? selection.product?.id ?? "new";
-  return <ProductForm key={key} {...{ selection, access, categories, cancel, done, open }} />;
+  return <ProductForm key={key} {...{ selection, access, categories, branchId, cancel, done, open }} />;
 }
 
-function ProductForm({ selection: { product, item, category }, access, categories, cancel, done, open }: {
-  selection: Selection; access: Access; categories: string[];
+function ProductForm({ selection: { product, item, category }, access, categories, branchId, cancel, done, open }: {
+  selection: Selection; access: Access; categories: string[]; branchId:string;
   cancel: () => void; done: (message: string) => void; open: (value: Selection) => void;
 }) {
   const simple = product?.items.find(value => value.variantName === null);
@@ -351,20 +356,26 @@ function ProductForm({ selection: { product, item, category }, access, categorie
       price, setPrice: access.price && !converting };
     setBusy(true);
     setError("");
+    let productCreated=false;
     try {
       if (!access.edit && current && access.price) {
         await write("/items/" + current.id + "/price", "PUT", { price });
       } else if (item) {
         await write("/items/" + item.id, "PUT", body);
       } else {
-        await write("/products" + (product ? "/" + product.id : ""), product ? "PUT" : "POST", {
+        const saved=await write<Product>("/products" + (product ? "/" + product.id : ""), product ? "PUT" : "POST", {
           name: value("name"), category: value("category"), description: value("description"),
           item: isGroup ? null : body, variants: configure ? selected : [], keepVariant: keep,
           image: image ? image.split(",")[1] : null, removeImage: image === "",
         });
+        productCreated=!product;
+        if(branchId&&!product){
+          try { for(const savedItem of saved.items.filter(value=>value.active)) await inventoryApi.assignItem(branchId,{itemId:savedItem.id,minimumQuantity:null,lowThreshold:2,recoveryMargin:1,exhaustedBasis:"AVAILABLE"}); }
+          catch { done("Producto creado; la asignación a sucursal quedó pendiente. Asígnalo desde Sucursales."); return; }
+        }
       }
-      done("Cambios guardados.");
-    } catch (failure) { setError(errorMessage(failure)); }
+      done(branchId&&!product?"Producto creado y asignado a la sucursal.":"Cambios guardados.");
+    } catch (failure) { if(productCreated)done("Producto creado; revisa su asignación a sucursal.");else setError(errorMessage(failure)); }
     finally { setBusy(false); }
   }
 

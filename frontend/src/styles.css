@@ -183,6 +183,7 @@ svg {
   cursor: pointer;
 }
 .session-logout:hover { background: #fff0e4; }
+.company-top-actions { display:flex; align-items:center; gap:12px; }
 .mobile-menu-toggle,
 .mobile-drawer-scrim { display: none; }
 main {

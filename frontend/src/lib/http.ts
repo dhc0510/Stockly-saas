@@ -52,5 +52,6 @@ export async function request<T>(
     );
   }
   if (response.status === 204) return undefined as T;
-  return response.json();
+  const body = await response.text();
+  return body.trim() ? JSON.parse(body) as T : undefined as T;
 }

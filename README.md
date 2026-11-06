@@ -61,6 +61,16 @@ Abrir http://127.0.0.1:5175/. Cuenta ficticia: `admin-demo` / `Stockly-Demo-2026
 
 La vista previa no sustituye las pruebas de STK-005 contra MySQL 8.4 y un servicio de correo configurado.
 
+## Vista previa local de STK-007 (simulada)
+
+Para probar existencias, alertas, sucursales y permisos de módulo sin MySQL:
+
+```powershell
+npm --prefix frontend run dev:stk007-demo
+```
+
+Abrir http://127.0.0.1:5176/. Inicia sesión con `admin-demo` / `Stockly-Demo-2026!`. La cuenta y los saldos son ficticios. Esta modalidad muestra existencias de ejemplo para explorar los estados y la campanita; los cambios quedan en memoria y se reinician al detener el servidor. No usa el backend real ni modifica datos de negocio.
+
 ## Demostración local para revisión
 
 Autorizada por el propietario después de la entrega parcial de STK-004. Ejecutar `npm --prefix frontend run dev:demo` y abrir http://127.0.0.1:5174/companies. No necesita backend, MySQL ni login. El aviso «Demostración local» distingue esta modalidad.

@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, Menu, Package, X } from "lucide-react";
+import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, Menu, Package, X, Boxes, MapPin } from "lucide-react";
 import { CatalogPage, catalogAccess } from "../catalog/CatalogPage";
+import { InventoryPage, BranchesPage, InventoryBell } from "../inventory/InventoryPages";
 import { useAuth } from "../auth/AuthContext";
 import { identityApi, type AuditPage, type CreatedWorker, type Permission, type Role, type SessionPolicy, type Worker } from "./api";
 
@@ -17,7 +18,10 @@ export function CompanyWorkspace() {
   const canPolicy=user.role==="COMPANY_ADMIN";
   const catalog=catalogAccess(user);
   const canCatalog=catalog.read && import.meta.env.MODE !== "stk005-demo";
-  const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":"/account";
+  const inventoryLevel=user.modules.find(module=>module.moduleKey==="INVENTORY")?.accessLevel;
+  const canInventory=import.meta.env.MODE!=="stk005-demo"&&(user.role==="COMPANY_ADMIN"||!!inventoryLevel&&inventoryLevel!=="NONE"||catalog.edit);
+  const canBranches=user.role==="COMPANY_ADMIN";
+  const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":canInventory?"/inventory":"/account";
   const closeMenu=()=>setMenuOpen(false);
   return <div className={`app-shell${import.meta.env.MODE === "stk005-demo" ? " stk005-demo-shell" : ""}`}>
     <aside className={`sidebar company-sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación de empresa"><Link className="brand" to="/" onClick={closeMenu}>Stockly<span className="brand-dot">.</span></Link><nav className="company-sidebar-links" aria-label="Secciones de empresa"><div className="nav-caption">MI EMPRESA</div>
@@ -25,18 +29,23 @@ export function CompanyWorkspace() {
       {canRoles&&<NavLink className="identity-nav" to="/roles" onClick={closeMenu}><Shield size={18}/> Roles y permisos</NavLink>}
       {canPolicy&&<NavLink className="identity-nav" to="/security" onClick={closeMenu}><Settings2 size={18}/> Seguridad</NavLink>}
       {canPolicy&&<NavLink className="identity-nav" to="/audit" onClick={closeMenu}><Shield size={18}/> Actividad</NavLink>}
+      {(canCatalog||canInventory||canBranches)&&<div className="nav-caption inventory-caption">INVENTARIO</div>}
       {canCatalog&&<NavLink className="identity-nav" to="/catalog" onClick={closeMenu}><Package size={18}/> Catálogo</NavLink>}
+      {canInventory&&<NavLink className="identity-nav" to="/inventory" onClick={closeMenu}><Boxes size={18}/> Existencias</NavLink>}
+      {canBranches&&<NavLink className="identity-nav" to="/branches" onClick={closeMenu}><MapPin size={18}/> Sucursales</NavLink>}
       </nav>
       <div className="sidebar-footer"><span className="avatar"><UserRound size={18}/></span><span><strong>{user.fullName}</strong><br/><small>{user.role === "COMPANY_ADMIN" ? "Administración de empresa" : user.email}</small></span></div>
     </aside>
     {menuOpen&&<button className="mobile-drawer-scrim" type="button" aria-label="Cerrar menú" onClick={closeMenu}/>}
-    <div className="workspace">{import.meta.env.MODE === "stk005-demo"&&<div className="demo-notice" role="status"><strong>Simulación STK-005</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span>Mi empresa</span><button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></header>
+    <div className="workspace">{(import.meta.env.MODE === "stk005-demo"||import.meta.env.MODE === "stk007-demo")&&<div className="demo-notice" role="status"><strong>{import.meta.env.MODE==="stk007-demo"?"Simulación STK-007":"Simulación STK-005"}</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span>Mi empresa</span><div className="company-top-actions">{canInventory&&<InventoryBell/>}<button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></div></header>
       <main id="main" tabIndex={-1}><Routes>
         {canUsers&&<Route path="/users" element={<UsersPage/>}/>}
         {canRoles&&<Route path="/roles" element={<RolesPage/>}/>}
         {canPolicy&&<Route path="/security" element={<SessionPolicyPage/>}/>}
         {canPolicy&&<Route path="/audit" element={<AuditPageView/>}/>}
         {canCatalog&&<Route path="/catalog" element={<CatalogPage access={catalog}/>}/>}
+        {canInventory&&<Route path="/inventory" element={<InventoryPage canEditCatalog={catalog.edit} isAdmin={user.role==="COMPANY_ADMIN"}/>}/>}
+        {canBranches&&<Route path="/branches" element={<BranchesPage/>}/>}
         <Route path="/account" element={<AccountPage/>}/>
         <Route path="*" element={<Navigate to={defaultPath} replace/>}/>
       </Routes></main>
