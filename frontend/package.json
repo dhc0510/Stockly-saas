@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "dev:demo": "vite --mode demo --host 127.0.0.1 --port 5174 --strictPort",
+    "dev:stk005-demo": "vite --mode stk005-demo --host 127.0.0.1 --port 5175 --strictPort",
     "build": "tsc -b && vite build",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:stk005": "playwright test --config playwright.stk005-demo.config.ts"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",

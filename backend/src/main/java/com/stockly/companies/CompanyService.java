@@ -18,11 +18,12 @@ import static com.stockly.companies.CompanyContracts.*;
 public class CompanyService {
     private final CompanyRepository companies;
     private final AccountRepository accounts;
+    private final CompanyRoleRepository roles;
     private final CompanyValidation validation;
     private final PasswordEncoder encoder;
     private final DeletionJournal journal;
-    public CompanyService(CompanyRepository companies,AccountRepository accounts,CompanyValidation validation,PasswordEncoder encoder,DeletionJournal journal) {
-        this.companies=companies; this.accounts=accounts; this.validation=validation; this.encoder=encoder; this.journal=journal;
+    public CompanyService(CompanyRepository companies,AccountRepository accounts,CompanyRoleRepository roles,CompanyValidation validation,PasswordEncoder encoder,DeletionJournal journal) {
+        this.companies=companies; this.accounts=accounts; this.roles=roles; this.validation=validation; this.encoder=encoder; this.journal=journal;
     }
     @Transactional
     public CompanyView create(CreateCompany request) {
@@ -90,6 +91,8 @@ public class CompanyService {
         });
         accounts.deleteByCompanyId(company.id);
         accounts.flush();
+        roles.deleteByCompanyId(company.id);
+        roles.flush();
         companies.delete(company); companies.flush();
     }
     private Company locked(String id,long version) {

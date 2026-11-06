@@ -20,6 +20,7 @@ public class Company {
     @Column(nullable = false) Instant updatedAt;
     @Version long version;
     @Column(nullable = false) long accessVersion;
+    @Column(name="idle_timeout_minutes") Long idleTimeoutMinutes = 120L;
 
     protected Company() {}
     static Company create(CompanyContracts.CompanyInput input) {
@@ -39,4 +40,6 @@ public class Company {
     public String id() { return id; }
     public String status() { return status; }
     public long accessVersion() { return accessVersion; }
+    public Long idleTimeoutMinutes() { return idleTimeoutMinutes; }
+    public void idleTimeoutMinutes(Long value) { idleTimeoutMinutes = value; }
 }

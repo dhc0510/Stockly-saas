@@ -1,9 +1,10 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { demoMiddleware } from "./demo/server.ts";
+import { stk005DemoMiddleware } from "./demo/stk005-server.ts";
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), ...(mode === 'demo' ? [{ name: 'stockly-local-demo', configureServer(server: import('vite').ViteDevServer) { server.middlewares.use(demoMiddleware()) } }] : [])],
+  plugins: [react(), ...(mode === 'demo' ? [{ name: 'stockly-local-demo', configureServer(server: import('vite').ViteDevServer) { server.middlewares.use(demoMiddleware()) } }] : []), ...(mode === 'stk005-demo' ? [{ name: 'stockly-stk005-local-demo', configureServer(server: import('vite').ViteDevServer) { server.middlewares.use(stk005DemoMiddleware()) } }] : [])],
   server: { proxy: mode === 'demo' ? undefined : { "/api": "http://localhost:8080" } },
   test: {
     environment: "jsdom",
