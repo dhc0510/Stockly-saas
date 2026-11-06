@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: stockly
+  datasource:
+    url: ${STOCKLY_DB_URL:jdbc:mysql://localhost:3306/stockly?connectionTimeZone=UTC}
+    username: ${STOCKLY_DB_USER:stockly}
+    password: ${STOCKLY_DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+stockly:
+  deletion-journal-directory: ${STOCKLY_DELETION_JOURNAL_DIRECTORY:}
+
+logging:
+  level:
+    org.hibernate.orm.jdbc.error: "OFF"
