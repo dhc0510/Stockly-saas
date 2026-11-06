@@ -19,9 +19,13 @@ declare global {
   }
 }
 
-export async function ensureCsrf() {
-  const value = await request<{ csrfToken: string; csrfHeaderName: string }>("/api/auth/csrf");
-  window.stocklySession = value;
+let csrfRequest: Promise<void> | undefined;
+
+export function ensureCsrf() {
+  csrfRequest ??= request<{ csrfToken: string; csrfHeaderName: string }>("/api/auth/csrf")
+    .then(value => { window.stocklySession = value; })
+    .finally(() => { csrfRequest = undefined; });
+  return csrfRequest;
 }
 
 export const authApi = {

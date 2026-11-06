@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stockly · Mockup STK-006</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f4f5;color:#18181b;font:15px/1.5 Inter,system-ui,sans-serif}header{background:#18181b;color:white;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}header strong{font-size:20px}header small{color:#f4f4f5}main{max-width:1216px;margin:auto;padding:32px 24px}h1,h2,p{margin:0}h1{font-size:32px}h2{font-size:21px}.muted,small{color:#52525b}.top,.tools,.actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.top{justify-content:space-between;margin-bottom:24px}.tools{padding:16px}.panel,dialog{background:white;border:1px solid #e4e4e7;border-radius:12px}.tools input{flex:1;min-width:230px}input,select,textarea,button{font:inherit;color:inherit;border:1px solid #d4d4d8;background:white;border-radius:8px;padding:10px 12px;min-height:44px}button{cursor:pointer;font-weight:650}button.primary{background:#f97316;border-color:#f97316}button:disabled{opacity:.55;cursor:default}:focus-visible{outline:2px solid #9a3412;outline-offset:2px}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:12px 16px;border-top:1px solid #e4e4e7}th{background:#fafafa;color:#52525b;font-size:13px}td button{border:0;padding:4px 0;text-align:left}code{font-size:13px}.tag{border-radius:6px;background:#f4f4f5;padding:3px 8px;font-size:13px}.active{background:#dcfce7;color:#166534}.count{padding:12px 16px;border-top:1px solid #e4e4e7}dialog{width:min(620px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:24px;color:inherit}dialog::backdrop{background:#18181b80}form{display:grid;gap:14px;margin-top:16px}label{display:grid;gap:4px;font-weight:600}label small{font-weight:400}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.actions{justify-content:flex-end;margin-top:8px}fieldset{border:1px solid #e4e4e7;border-radius:8px;padding:12px;margin:0}legend{font-weight:650}.check{display:flex;align-items:center;gap:8px;font-weight:400;min-height:44px}.check input{min-height:0}.note{background:#fff7ed;padding:12px;border-radius:8px;color:#7c2d12}.error{color:#b91c1c}.notice{background:#dcfce7;color:#166534;padding:10px 16px;border-radius:8px;margin-bottom:12px}.mobile-meta{display:none}
+@media(max-width:600px){header{padding:10px 16px}main{padding:20px 16px}h1{font-size:27px}.top{align-items:stretch;flex-direction:column;gap:14px}.tools{display:grid;grid-template-columns:1fr 1fr;padding:12px;gap:8px}.tools input{grid-column:1/-1;min-width:0}.tools select{width:100%;min-width:0}thead,.wide{display:none}table,tbody,tr{display:block}tr{border-top:1px solid #e4e4e7;display:flex;align-items:center;justify-content:space-between}td{border:0;padding:10px 12px}.mobile-meta{display:block}.grid{grid-template-columns:1fr}dialog{padding:16px}input,select,textarea{font-size:16px}}
+body{background:white}.shell{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:100dvh}.sidebar{background:#fafafa;border-right:1px solid #e4e4e7;padding:20px 12px}.sidebar strong,.sidebar small{display:block;padding:0 12px 14px}.sidebar strong{font-size:22px}.sidebar small{text-transform:uppercase}.sidebar a{display:block;padding:12px;border-radius:8px;background:#fff2e5;color:#9a3412;text-decoration:none;font-weight:650}header{min-height:64px;background:white;color:#18181b;border-bottom:1px solid #e4e4e7}header small{color:#52525b}.mobile-brand{display:none}.panel{box-shadow:0 2px 6px #18181b08}.product-cell{display:flex;align-items:center;gap:12px}.thumb{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:8px;overflow:hidden;background:#fff2e5;color:#9a3412}.thumb img{width:100%;height:100%;object-fit:cover}.image-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.image-row .thumb{width:76px;height:76px}.image-row label{min-width:0;flex:1}.image-row input{width:100%;min-width:0}.image-row button{flex:none}
+@media(max-width:760px){.shell{display:block}.sidebar,.company{display:none}.mobile-brand{display:inline}}
+@media(max-width:600px){.panel{border:0;box-shadow:none}.tools{padding:0 0 12px}tr{border:1px solid #e4e4e7;border-radius:12px;margin-bottom:8px}.product-cell{gap:8px}.product-cell button{line-height:1.25}.count{padding-left:0}}
+</style>
+<div class="shell"><aside class="sidebar"><strong>Stockly</strong><small>Inventario</small><a href="#catalogo" aria-current="page">Catálogo de productos</a></aside>
+<div><header><strong class="mobile-brand">Stockly</strong><span class="company">Empresa La Esquina</span><small>STK-006 · Propuesta visual</small></header>
+<main id="catalogo">
+<div class="top"><div><p class="muted">Inventario / Catálogo</p><h1>Catálogo de productos</h1><p class="muted">Consulta y organiza tus productos y variantes.</p></div><button class="primary" id="new">+ Nuevo producto</button></div>
+<p class="notice" id="notice" role="status" hidden></p>
+<section class="panel" aria-label="Productos">
+<div class="tools"><input id="search" type="search" aria-label="Buscar" placeholder="Buscar por nombre, SKU o código de barras"><select id="category" aria-label="Categoría"><option value="">Todas las categorías</option><option>Bebidas</option><option>Textiles</option><option>Repuestos</option></select><select id="status" aria-label="Estado"><option value="true">Activos</option><option value="false">Archivados</option></select></div>
+<table><thead><tr><th>Producto</th><th>SKU</th><th>Categoría</th><th>Precio de venta</th><th>Estado</th></tr></thead><tbody id="rows"></tbody></table>
+<p class="count muted" id="count" aria-live="polite"></p></section>
+</main></div></div>
+<dialog id="dialog" aria-labelledby="title"><h2 id="title"></h2><form id="form"></form></dialog>
+<script>
+const byId = id => document.getElementById(id);
+const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const data = [
+ {id:1,name:'Café molido 250 g',sku:'CAF-250',category:'Bebidas',unit:'unidad',price:'3800',barcode:'744000100001',active:true},
+ {id:2,name:'Camiseta básica',category:'Textiles',unit:'unidad',active:true,variants:[
+  {id:3,name:'S / Rojo',sku:'CAM-S-R',price:'6500',active:true},
+  {id:4,name:'M / Azul',sku:'CAM-M-A',price:'6800',active:true}]},
+ {id:5,name:'Filtro de aceite',sku:'FIL-008',category:'Repuestos',unit:'unidad',active:true},
+ {id:6,name:'Vaso térmico',sku:'VAS-012',active:false}
+];
+let nextId=7;
+function thumbnail(image){
+ return '<span class="thumb">'+(image?'<img src="'+esc(image)+'" alt="">':'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 9 5v8l-9 5-9-5V8l9-5Zm0 9 9-4M12 12 3 8m9 4v9"/></svg>')+'</span>';
+}
+const allItems = () => data.flatMap(item => item.variants || [item]);
+const price = value => value ? new Intl.NumberFormat('es-CR',{style:'currency',currency:'CRC',maximumFractionDigits:2}).format(value) : '—';
+function render(){
+ const term=byId('search').value.trim().toLowerCase();
+ const category=byId('category').value;
+ const active=byId('status').value==='true';
+ const rows=[];
+ for(const item of data){
+  if(category && item.category!==category) continue;
+  const matches=record=>[record.sku,record.barcode].some(value=>value?.toLowerCase().includes(term));
+  if(item.active===active && (!term || item.name.toLowerCase().includes(term) || (!item.variants && matches(item)))) rows.push([item,item]);
+  if(item.variants) for(const variant of item.variants){
+   if((item.active && variant.active)===active && ((term && matches(variant)) || (!active && item.active))) rows.push([item,variant]);
+  }
+ }
+ byId('rows').innerHTML=rows.map(([item,record])=>{
+  const label=item===record?item.name:item.name+' · '+record.name;
+  const ref=record.sku || record.variants.length+' variantes';
+  return '<tr><td><div class="product-cell">'+thumbnail(item.image)+'<div><button type="button" data-id="'+record.id+'">'+esc(label)+'</button><small class="mobile-meta">'+esc(ref)+' · '+price(record.price)+'</small></div></div></td><td class="wide"><code>'+esc(ref)+'</code></td><td class="wide">'+esc(item.category || '—')+'</td><td class="wide">'+price(record.price)+'</td><td><span class="tag '+(active?'active':'')+'">'+(active?'Activo':'Archivado')+'</span></td></tr>';
+ }).join('');
+ byId('count').textContent=rows.length ? rows.length+' resultados' : 'No hay resultados. Prueba otro nombre, código o filtro.';
+}
+function notify(message){byId('notice').textContent=message;byId('notice').hidden=false;}
+function show(title,body){
+ byId('title').textContent=title;
+ byId('form').innerHTML=body;
+ if(!byId('dialog').open) byId('dialog').showModal();
+ byId('form').onsubmit=null;
+}
+const close = () => byId('dialog').close();
+const btns = label => '<div class="actions"><button type="button" data-close>Cancelar</button><button class="primary">'+label+'</button></div>';
+function edit(item,record=item){
+ const creating=!item;
+ const variant=!!item && item!==record;
+ const label=variant?item.name+' · '+record.name:record?.name;
+ let image=item?.image || '';
+ show(creating?'Nuevo producto':variant?'Editar variante':'Editar producto',
+  '<label>Nombre<input name="name" required value="'+esc(label)+'" '+(variant?'readonly':'')+'></label>'+
+  (!variant?'<div class="grid"><label>Categoría<input name="category" list="categories" value="'+esc(item?.category)+'"><datalist id="categories">'+Array.from(byId('category').options).slice(1).map(option=>'<option>'+esc(option.value)+'</option>').join('')+'</datalist></label><label>Unidad base<select name="unit">'+['unidad','kg','litro','metro'].map(unit=>'<option '+(unit===item?.unit?'selected':'')+'>'+unit+'</option>').join('')+'</select></label></div><label>Descripción<textarea name="description" rows="2">'+esc(item?.description)+'</textarea></label>':'')+
+  (!record?.variants?'<div class="grid"><label>SKU<input name="sku" value="'+esc(record?.sku)+'"><small>Se genera si lo dejas vacío.</small></label><label>Código de barras<input name="barcode" value="'+esc(record?.barcode)+'"></label></div><label>Precio de venta (₡)<input name="price" type="number" min="0" step=".01" value="'+esc(record?.price)+'"></label>':'')+
+  (!variant?'<fieldset><legend>Imagen del producto · Opcional</legend><div class="image-row"><span id="image-preview">'+thumbnail(image)+'</span><label>Seleccionar imagen<input type="file" id="product-image" accept="image/png,image/jpeg,image/webp"></label><button type="button" id="remove-image" '+(image?'':'hidden')+'>Quitar imagen</button></div><small>JPG, PNG o WebP · Hasta 2 MB. Visible en la ficha y en el listado.</small><p id="image-error" class="error" role="alert"></p></fieldset>':'')+
+  (!variant?'<button type="button" id="variants">'+(item?.variants?'Ver variantes':creating?'Configurar variantes':'Convertir a producto con variantes')+'</button>':'')+
+  (record?'<button type="button" id="archive">'+(record.active?'Archivar':'Reactivar')+'</button>':'')+
+  '<p class="error" id="error" role="alert"></p>'+btns('Guardar'));
+ const values=()=>({
+  ...Object.fromEntries(new FormData(byId('form'))),
+  ...(!variant?{image}:{})
+ });
+ if(!variant){
+  const picker=byId('product-image');
+  const remove=byId('remove-image');
+  const updateImage=()=>{
+   byId('image-preview').innerHTML=thumbnail(image);
+   remove.hidden=!image;
+   byId('image-error').textContent='';
+  };
+  picker.onchange=()=>{
+   const file=picker.files[0];
+   if(!file)return;
+   if(!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024){
+    byId('image-error').textContent='Selecciona una imagen JPG, PNG o WebP de hasta 2 MB.';
+    picker.value='';
+    return;
+   }
+   image=URL.createObjectURL(file);
+   updateImage();
+  };
+  remove.onclick=()=>{image='';picker.value='';updateImage();};
+ }
+ if(byId('archive')) byId('archive').onclick=()=>archive(item,record);
+ if(byId('variants')) byId('variants').onclick=()=>{
+  if(item?.variants){listVariants(item);return;}
+  if(byId('form').reportValidity()) configureVariants(item,values());
+ };
+ byId('form').onsubmit=event=>{
+  event.preventDefault();
+  const fields=values();
+  const error=validate(fields,record);
+  if(error){byId('error').textContent=error;return;}
+  if(creating){
+   const id=nextId++;
+   data.unshift({...fields,id,sku:fields.sku.trim() || generateSku(id),active:true});
+  }else{
+   if(variant) delete fields.name;
+   if('sku' in fields){
+    fields.sku=fields.sku.trim() || record.sku;
+    if(fields.sku!==record.sku) (record.oldSkus ??= []).push(record.sku);
+   }
+   Object.assign(record,fields);
+  }
+  syncCategories(); close(); render(); notify('Producto guardado en la vista de ejemplo.');
+ };
+}
+function validate(fields,record){
+ if(!fields.name.trim()) return 'Escribe el nombre del producto.';
+ const sku=fields.sku?.trim().toLowerCase();
+ if(sku && allItems().some(item=>item!==record && [item.sku,...(item.oldSkus || [])].some(code=>code?.toLowerCase()===sku))) return 'Ese SKU ya está asignado o reservado.';
+ const barcode=fields.barcode?.trim();
+ if(barcode && allItems().some(item=>item!==record && item.barcode===barcode)) return 'Ese código de barras ya está asignado.';
+ return '';
+}
+function generateSku(id){
+ let sku='STK-'+String(id).padStart(4,'0');
+ while(allItems().some(item=>[item.sku,...(item.oldSkus || [])].some(code=>code?.toUpperCase()===sku))) sku='STK-'+String(nextId++).padStart(4,'0');
+ return sku;
+}
+function syncCategories(){
+ const select=byId('category');
+ for(const value of new Set(data.map(item=>item.category).filter(Boolean))){
+  if(!Array.from(select.options).some(option=>option.value===value)) select.add(new Option(value,value));
+ }
+}
+function listVariants(item){
+ show('Variantes · '+item.name,item.variants.map(variant=>'<button type="button" data-variant="'+variant.id+'">'+esc(variant.name)+' · '+esc(variant.sku)+(variant.active?'':' · Archivada')+'</button>').join('')+'<button type="button" id="back">Volver a la ficha</button>');
+ byId('form').querySelectorAll('[data-variant]').forEach(button=>button.onclick=()=>edit(item,item.variants.find(variant=>variant.id===Number(button.dataset.variant))));
+ byId('back').onclick=()=>edit(item);
+}
+function configureVariants(item,fields){
+ const error=validate(fields,item);
+ if(error){byId('error').textContent=error;return;}
+ show('Configurar variantes','<p class="muted">Define los atributos y elige las combinaciones que vendes.</p><div class="grid"><label>Atributo 1<input id="attr1" placeholder="Ej. Talla" value="Talla"></label><label>Valores separados por coma<input id="values1" value="S, M"></label><label>Atributo 2<input id="attr2" placeholder="Ej. Color" value="Color"></label><label>Valores separados por coma<input id="values2" value="Rojo, Azul"></label></div><button type="button" id="preview">Ver combinaciones</button><fieldset><legend>Combinaciones</legend><div id="choices"></div></fieldset>'+
+ (item?'<label>Variante que conserva el SKU y el historial<select id="keep" required></select></label><p class="note">Las demás variantes empiezan sin existencias y reciben su propio SKU.</p>':'')+
+ '<p class="error" id="error" role="alert"></p>'+btns(item?'Convertir producto':'Guardar producto'));
+ let combinations=[];
+ function updateKeep(){
+  if(!item)return;
+  const select=byId('keep'), previous=select.value;
+  select.replaceChildren(new Option('Elige una variante',''),...selected().map(index=>new Option(combinations[index],index)));
+  if(Array.from(select.options).some(option=>option.value===previous)) select.value=previous;
+ }
+ const selected=()=>Array.from(byId('choices').querySelectorAll('input:checked'),input=>Number(input.value));
+ function preview(){
+  const values=id=>[...new Set(byId(id).value.split(',').map(value=>value.trim()).filter(Boolean))];
+  const first=values('values1'), second=values('values2');
+  if(!byId('attr1').value.trim() || !first.length || (second.length && !byId('attr2').value.trim())){
+   combinations=[];byId('choices').replaceChildren();updateKeep();byId('error').textContent='Completa el nombre y los valores de cada atributo.';return;
+  }
+  combinations=first.flatMap(value=>second.length?second.map(other=>value+' / '+other):[value]);
+  byId('choices').innerHTML=combinations.map((name,index)=>'<label class="check"><input type="checkbox" value="'+index+'"> '+esc(name)+'</label>').join('');
+  byId('error').textContent='';updateKeep();
+ }
+ byId('preview').onclick=preview;
+ byId('choices').onchange=updateKeep;
+ preview();
+ byId('form').onsubmit=event=>{
+  event.preventDefault();
+  const indexes=selected();
+  if(!indexes.length){byId('error').textContent='Selecciona al menos una combinación.';return;}
+  const primary=item?Number(byId('keep').value):indexes[0];
+  const variants=indexes.map(index=>{
+   const original=index===primary;
+   const id=original&&item?item.id:nextId++;
+   return {id,name:combinations[index],sku:original?(fields.sku.trim() || item?.sku || generateSku(id)):generateSku(id),price:original?fields.price:'',barcode:original?fields.barcode:'',oldSkus:original?item?.oldSkus:undefined,active:true};
+  });
+  const group={id:nextId++,name:fields.name,category:fields.category,unit:fields.unit,description:fields.description,image:fields.image,active:item?.active ?? true,variants};
+  if(item) data.splice(data.indexOf(item),1,group); else data.unshift(group);
+  syncCategories();close();render();notify('Variantes guardadas en la vista de ejemplo.');
+ };
+}
+function archive(item,record){
+ const action=record.active?'Archivar':'Reactivar';
+ show(action+' '+(record===item?'producto':'variante'),'<p><strong>'+esc(record.name)+'</strong></p><p class="note">'+(record.active?'Se ocultará de la búsqueda habitual y dejará de estar disponible para nuevas ventas. Su historial se conserva.':'Volverá a aparecer en el catálogo activo.')+'</p>'+btns(action));
+ byId('form').onsubmit=event=>{event.preventDefault();record.active=!record.active;close();render();notify(record.active?'Artículo reactivado.':'Artículo archivado.');};
+}
+byId('form').addEventListener('click',event=>{if(event.target.closest('[data-close]')) close();});
+byId('rows').onclick=event=>{
+ const button=event.target.closest('[data-id]');
+ if(!button)return;
+ const id=Number(button.dataset.id);
+ const item=data.find(item=>item.id===id || item.variants?.some(variant=>variant.id===id));
+ if(item) edit(item,item.id===id?item:item.variants.find(variant=>variant.id===id));
+};
+byId('new').onclick=()=>edit();
+byId('search').oninput=render;
+byId('category').onchange=render;
+byId('status').onchange=render;
+render();
+</script></html>
