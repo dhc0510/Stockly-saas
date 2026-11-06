@@ -14,7 +14,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(()=>{
     let alive=true;
     (async()=>{
-      try { await ensureCsrf(); const next=await authApi.me(); if(alive) setUser(next); }
+      try { await ensureCsrf(); if(!alive) return; const next=await authApi.me(); if(alive) setUser(next); }
       catch { if(alive) setUser(null); }
       finally { if(alive) setLoading(false); }
     })();

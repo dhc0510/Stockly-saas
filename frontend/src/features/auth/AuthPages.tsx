@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { authApi } from "./api";
 import { useAuth } from "./AuthContext";
@@ -16,12 +16,14 @@ function FormError({value}:{value:unknown}) {
 export function LoginPage() {
   const [identifier,setIdentifier]=useState(""); const [password,setPassword]=useState(""); const [error,setError]=useState<unknown>(); const [busy,setBusy]=useState(false);
   const {refresh}=useAuth(); const navigate=useNavigate();
+  const {pathname,search}=useLocation();
+  const returnTo=pathname==="/login"?"/":pathname+search;
   async function submit(event:FormEvent) {
     event.preventDefault(); setBusy(true); setError(undefined);
     try {
       const result=await authApi.login(identifier,password);
-      if(result.status==="DEVICE_CODE_REQUIRED" && result.challengeId) { sessionStorage.setItem("stockly.challenge",result.challengeId); navigate("/verify-device"); }
-      else { await refresh(); navigate("/"); }
+      if(result.status==="DEVICE_CODE_REQUIRED" && result.challengeId) { sessionStorage.setItem("stockly.challenge",result.challengeId); navigate("/verify-device",{state:{returnTo}}); }
+      else { navigate(returnTo,{replace:true}); await refresh(); }
     } catch(e) { setError(e); } finally { setBusy(false); }
   }
   return <AuthFrame title="Iniciar sesión" description="Ingresa con tu usuario o correo y contraseña.">
@@ -36,9 +38,11 @@ export function LoginPage() {
 export function VerifyDevicePage() {
   const [code,setCode]=useState(""); const [remember,setRemember]=useState(false); const [error,setError]=useState<unknown>(); const [busy,setBusy]=useState(false);
   const challenge=sessionStorage.getItem("stockly.challenge"); const {refresh}=useAuth(); const navigate=useNavigate();
+  const returnTo=useLocation().state?.returnTo;
   async function submit(event:FormEvent) {
     event.preventDefault(); if(!challenge)return; setBusy(true);setError(undefined);
-    try { await authApi.verify(challenge,code,remember);sessionStorage.removeItem("stockly.challenge");await refresh();navigate("/"); }
+    try { await authApi.verify(challenge,code,remember);sessionStorage.removeItem("stockly.challenge");
+      navigate(typeof returnTo==="string" && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/",{replace:true}); await refresh(); }
     catch(e){setError(e);}finally{setBusy(false);}
   }
   return <AuthFrame title="Verifica este dispositivo" description="Te enviamos un código de 6 dígitos al correo de tu cuenta. Vence en 10 minutos.">

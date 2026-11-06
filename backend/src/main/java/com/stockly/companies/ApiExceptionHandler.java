@@ -1,6 +1,7 @@
 package com.stockly.companies;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.*;
 import org.springframework.security.access.AccessDeniedException;
@@ -27,7 +28,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler({OptimisticLockingFailureException.class,PessimisticLockingFailureException.class}) ResponseEntity<ApiError> concurrent() {
         return error(409,"STALE_VERSION","La empresa cambió. Actualiza e intenta de nuevo.",Map.of());
     }
-    @ExceptionHandler({HttpMessageNotReadableException.class,MethodArgumentTypeMismatchException.class}) ResponseEntity<ApiError> invalid() {
+    @ExceptionHandler({HttpMessageNotReadableException.class,MethodArgumentTypeMismatchException.class,MethodArgumentNotValidException.class}) ResponseEntity<ApiError> invalid() {
         return error(400,"VALIDATION","La solicitud contiene datos inválidos.",Map.of());
     }
     @ExceptionHandler(AccessDeniedException.class) ResponseEntity<ApiError> denied() { return error(403,"FORBIDDEN","No tienes permiso para esta operación.",Map.of()); }

@@ -29,10 +29,13 @@ public class SecurityConfiguration {
                 .requestMatchers("/api/roles", "/api/roles/**", "/api/permissions/**").hasAnyAuthority("ROLE_COMPANY_ADMIN", "PERM_MANAGE_PERMISSIONS")
                 .requestMatchers("/api/company/security/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/api/audit").hasRole("COMPANY_ADMIN")
+                .requestMatchers("/api/catalog", "/api/catalog/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
+                    "MODULE_CATALOG_READ", "MODULE_CATALOG_OPERATE", "MODULE_CATALOG_ADMIN")
                 .anyRequest().denyAll())
             .exceptionHandling(e -> e
                 .authenticationEntryPoint((req,res,ex) -> error(res,401,"UNAUTHENTICATED","Inicia sesión para continuar."))
                 .accessDeniedHandler((req,res,ex) -> error(res,403,"FORBIDDEN","No tienes permiso para esta operación.")))
+            .requestCache(cache -> cache.disable())
             .securityContext(c -> c.securityContextRepository(stocklySecurityContextRepository()))
             .addFilterBefore(new CompanyAccessFilter(companies, accounts), AuthorizationFilter.class)
             .build();
