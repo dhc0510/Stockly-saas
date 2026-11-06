@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="1010" viewBox="0 0 1880 1010">
+  <defs>
+    <style>
+      .bg{fill:#101112}.shell{fill:#17191a;stroke:#323536;stroke-width:1}.side{fill:#181a1b;stroke:#343637}.line{stroke:#343637}.text{fill:#f3f4f4;font-family:Inter,Arial,sans-serif}.muted{fill:#a1a4a5;font-family:Inter,Arial,sans-serif}.small{font-size:13px}.body{font-size:16px}.label{font-size:12px;letter-spacing:1.7px}.title{font-size:31px;font-weight:700}.brand{font-size:28px;font-weight:700;letter-spacing:-1px}.accent{fill:#f97316}.nav{fill:#242627}.navactive{fill:#4c2100}.button{fill:#1c1e1f;stroke:#4a4c4d}.card{fill:#191b1c;stroke:#383a3b}
+    </style>
+  </defs>
+  <rect class="bg" width="1880" height="1010"/>
+  <text x="36" y="34" class="text small" font-weight="700">PROPUESTA · NAVEGACIÓN STK-005 · ESCRITORIO + MÓVIL</text>
+
+  <!-- Desktop -->
+  <rect x="30" y="60" width="1400" height="910" rx="18" class="shell"/>
+  <rect x="31" y="61" width="228" height="908" rx="17" class="side"/>
+  <path d="M259 61v908" class="line"/>
+  <text x="61" y="111" class="text brand">Stockly<tspan class="accent">.</tspan></text>
+  <text x="61" y="164" class="muted label">MI EMPRESA</text>
+  <rect x="48" y="188" width="190" height="48" rx="9" class="navactive"/>
+  <text x="68" y="218" class="text body">♙  Usuarios</text>
+  <text x="68" y="273" class="muted body">♢  Roles y permisos</text>
+  <text x="68" y="323" class="muted body">⚙  Seguridad</text>
+  <text x="68" y="373" class="muted body">◷  Actividad</text>
+  <path d="M49 848h190" class="line"/>
+  <circle cx="76" cy="895" r="19" fill="#3c250e"/>
+  <text x="76" y="900" text-anchor="middle" class="accent small" font-weight="700">AD</text>
+  <text x="108" y="891" class="text small" font-weight="600">Ana Administradora</text>
+  <text x="108" y="912" class="muted small">admin@stockly.local</text>
+  <rect x="260" y="61" width="1169" height="72" fill="#181a1b"/>
+  <path d="M260 133h1169" class="line"/>
+  <text x="296" y="105" class="text body" font-weight="600">Administración de usuarios</text>
+  <rect x="1260" y="79" width="140" height="38" rx="8" class="button"/>
+  <text x="1330" y="103" text-anchor="middle" class="text small">↪  Cerrar sesión</text>
+  <text x="295" y="190" class="accent label">SEGURIDAD DE LA EMPRESA</text>
+  <text x="295" y="235" class="text title">Actividad</text>
+  <text x="295" y="264" class="muted body">Registro de cambios de usuarios, roles y sesiones.</text>
+  <rect x="295" y="305" width="1095" height="570" rx="12" class="card"/>
+  <rect x="320" y="335" width="1045" height="40" rx="7" fill="#202223"/>
+  <text x="337" y="360" class="muted small">Fecha y hora</text><text x="575" y="360" class="muted small">Persona</text><text x="850" y="360" class="muted small">Acción</text><text x="1130" y="360" class="muted small">Objetivo</text>
+  <path d="M320 418h1045M320 474h1045M320 530h1045" class="line"/>
+  <text x="337" y="402" class="text small">05 nov 2026, 09:06 p. m.</text><text x="575" y="402" class="text small">Ana Administradora</text><text x="850" y="402" class="text small">Rol de trabajador actualizado</text><text x="1130" y="402" class="text small">Luis</text>
+  <text x="337" y="458" class="text small">05 nov 2026, 08:42 p. m.</text><text x="575" y="458" class="text small">Ana Administradora</text><text x="850" y="458" class="text small">Trabajador creado</text><text x="1130" y="458" class="text small">Marta</text>
+
+  <!-- Mobile -->
+  <text x="1485" y="55" class="text small" font-weight="700">MÓVIL · PANEL ABIERTO</text>
+  <rect x="1480" y="70" width="375" height="820" rx="22" class="shell"/>
+  <rect x="1481" y="71" width="373" height="60" rx="20" fill="#181a1b"/>
+  <path d="M1481 131h373" class="line"/>
+  <rect x="1495" y="82" width="42" height="38" rx="8" class="button"/>
+  <text x="1516" y="107" text-anchor="middle" class="text body">×</text>
+  <text x="1548" y="107" class="text body" font-weight="600">Menú</text>
+  <text x="1828" y="105" text-anchor="end" class="accent small">Cerrar sesión</text>
+  <rect x="1481" y="132" width="374" height="758" fill="#000" opacity=".52"/>
+  <rect x="1481" y="132" width="295" height="758" class="side"/>
+  <text x="1505" y="174" class="text brand">Stockly<tspan class="accent">.</tspan></text>
+  <text x="1505" y="218" class="muted label">MI EMPRESA</text>
+  <rect x="1495" y="237" width="267" height="46" rx="9" class="navactive"/>
+  <text x="1512" y="266" class="text body">♙  Usuarios</text>
+  <text x="1512" y="320" class="muted body">♢  Roles y permisos</text>
+  <text x="1512" y="370" class="muted body">⚙  Seguridad</text>
+  <text x="1512" y="420" class="muted body">◷  Actividad</text>
+  <path d="M1500 812h255" class="line"/>
+  <circle cx="1522" cy="850" r="18" fill="#3c250e"/>
+  <text x="1522" y="855" text-anchor="middle" class="accent small" font-weight="700">AD</text>
+  <text x="1552" y="847" class="text small" font-weight="600">Ana Administradora</text>
+  <text x="1552" y="868" class="muted small">admin@stockly.local</text>
+</svg>

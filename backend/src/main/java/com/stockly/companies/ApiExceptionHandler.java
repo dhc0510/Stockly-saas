@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.*;
 import org.springframework.security.access.AccessDeniedException;
+import com.stockly.identity.IdentityFailure;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import java.util.*;
@@ -15,6 +16,7 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(status).body(new ApiError(code,message,fields,UUID.randomUUID().toString()));
     }
     @ExceptionHandler(CompanyFailure.class) ResponseEntity<ApiError> failure(CompanyFailure ex) { return error(ex.status,ex.code,ex.getMessage(),ex.fields); }
+    @ExceptionHandler(IdentityFailure.class) ResponseEntity<ApiError> identityFailure(IdentityFailure ex) { return error(ex.status,ex.code,ex.getMessage(),ex.fields); }
     @ExceptionHandler(DataIntegrityViolationException.class) ResponseEntity<ApiError> duplicate(DataIntegrityViolationException ex) {
         for(Throwable cause=ex;cause!=null;cause=cause.getCause()) {
             if(cause instanceof java.sql.SQLException sql && sql.getErrorCode()==1062)

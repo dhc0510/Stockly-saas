@@ -13,6 +13,16 @@ spring:
       hibernate.jdbc.time_zone: UTC
   flyway:
     enabled: true
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always
+    timeout: 120m
+  mail:
+    properties:
+      "[mail.smtp.connectiontimeout]": 5000
+      "[mail.smtp.timeout]": 3000
+      "[mail.smtp.writetimeout]": 5000
 server:
   servlet:
     session:
@@ -26,6 +36,15 @@ server:
     include-stacktrace: never
 stockly:
   deletion-journal-directory: ${STOCKLY_DELETION_JOURNAL_DIRECTORY:}
+  public-base-url: ${STOCKLY_PUBLIC_BASE_URL:http://localhost:5173}
+  mail-from: ${STOCKLY_MAIL_FROM:no-reply@stockly.local}
+  bootstrap:
+    saas-admin:
+      enabled: ${STOCKLY_BOOTSTRAP_SAAS_ADMIN:false}
+      full-name: ${STOCKLY_SAAS_ADMIN_FULL_NAME:}
+      username: ${STOCKLY_SAAS_ADMIN_USERNAME:}
+      email: ${STOCKLY_SAAS_ADMIN_EMAIL:}
+      password: ${STOCKLY_SAAS_ADMIN_PASSWORD:}
 
 logging:
   level:

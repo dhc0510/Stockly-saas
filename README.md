@@ -47,6 +47,20 @@ Vite atiende en http://127.0.0.1:5173 y reenvía /api al backend en localhost:80
 La eliminación requiere STOCKLY_DELETION_JOURNAL_DIRECTORY, ruta absoluta restringida fuera de los respaldos de la BD. Sin registro independiente durable, el servidor rechaza el borrado. No se ha configurado infraestructura de backups ni producción.
 
 [Resultados, alcance de las pruebas y recuperación](docs/04-Testing/STK-004/TEST-STK-004.md). La funcionalidad sigue pendiente de integración STK-005, verificación operativa y aprobación final.
+
+## Vista previa local de STK-005 (simulada)
+
+Para recorrer el acceso y las pantallas de administración de usuarios, roles, sesión y actividad sin MySQL ni correo:
+
+```powershell
+npm --prefix frontend run dev:stk005-demo
+npm --prefix frontend run test:e2e:stk005
+```
+
+Abrir http://127.0.0.1:5175/. Cuenta ficticia: `admin-demo` / `Stockly-Demo-2026!`. El modo muestra un aviso permanente de simulación; sus datos viven en memoria y se reinician al detener el servidor. No autentica contra el backend ni persiste datos. El catálogo de módulos permanece vacío hasta que funcionalidades aprobadas registren módulos y acciones.
+
+La vista previa no sustituye las pruebas de STK-005 contra MySQL 8.4 y un servicio de correo configurado.
+
 ## Demostración local para revisión
 
 Autorizada por el propietario después de la entrega parcial de STK-004. Ejecutar `npm --prefix frontend run dev:demo` y abrir http://127.0.0.1:5174/companies. No necesita backend, MySQL ni login. El aviso «Demostración local» distingue esta modalidad.
