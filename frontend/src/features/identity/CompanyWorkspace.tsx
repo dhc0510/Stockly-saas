@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, Menu, Package, PackagePlus, X } from "lucide-react";
+import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, Menu, Package, PackageMinus, PackagePlus, X } from "lucide-react";
 import { CatalogPage, catalogAccess } from "../catalog/CatalogPage";
 import { ReceiptsPage, receiptAccess } from "../receipts/ReceiptsPage";
+import { MovementsPage, movementAccess } from "../movements/MovementsPage";
 import { useAuth } from "../auth/AuthContext";
 import { identityApi, type AuditPage, type CreatedWorker, type Permission, type Role, type SessionPolicy, type Worker } from "./api";
 
@@ -20,7 +21,9 @@ export function CompanyWorkspace() {
   const canCatalog=catalog.read && import.meta.env.MODE !== "stk005-demo";
   const receipts=receiptAccess(user);
   const canReceipts=receipts.read && import.meta.env.MODE !== "stk005-demo";
-  const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":canReceipts?"/inventory/receipts":"/account";
+  const movements=movementAccess(user);
+  const canMovements=movements.read && import.meta.env.MODE !== "stk005-demo";
+  const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":canReceipts?"/inventory/receipts":canMovements?"/inventory/movements":"/account";
   const closeMenu=()=>setMenuOpen(false);
   return <div className={`app-shell${import.meta.env.MODE === "stk005-demo" ? " stk005-demo-shell" : ""}`}>
     <aside className={`sidebar company-sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación de empresa"><Link className="brand" to="/" onClick={closeMenu}>Stockly<span className="brand-dot">.</span></Link><nav className="company-sidebar-links" aria-label="Secciones de empresa"><div className="nav-caption">MI EMPRESA</div>
@@ -30,6 +33,7 @@ export function CompanyWorkspace() {
       {canPolicy&&<NavLink className="identity-nav" to="/audit" onClick={closeMenu}><Shield size={18}/> Actividad</NavLink>}
       {canCatalog&&<NavLink className="identity-nav" to="/catalog" onClick={closeMenu}><Package size={18}/> Catálogo</NavLink>}
       {canReceipts&&<NavLink className="identity-nav" to="/inventory/receipts" onClick={closeMenu}><PackagePlus size={18}/> Entradas de inventario</NavLink>}
+      {canMovements&&<NavLink className="identity-nav" to="/inventory/movements" onClick={closeMenu}><PackageMinus size={18}/> Salidas y ajustes</NavLink>}
       </nav>
       <div className="sidebar-footer"><span className="avatar"><UserRound size={18}/></span><span><strong>{user.fullName}</strong><br/><small>{user.role === "COMPANY_ADMIN" ? "Administración de empresa" : user.email}</small></span></div>
     </aside>
@@ -42,6 +46,7 @@ export function CompanyWorkspace() {
         {canPolicy&&<Route path="/audit" element={<AuditPageView/>}/>}
         {canCatalog&&<Route path="/catalog" element={<CatalogPage access={catalog}/>}/>}
         {canReceipts&&<Route path="/inventory/receipts/*" element={<ReceiptsPage user={user} access={receipts}/>}/>}
+        {canMovements&&<Route path="/inventory/movements/*" element={<MovementsPage user={user} access={movements}/>}/>}
         <Route path="/account" element={<AccountPage/>}/>
         <Route path="*" element={<Navigate to={defaultPath} replace/>}/>
       </Routes></main>

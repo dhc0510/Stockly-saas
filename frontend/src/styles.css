@@ -1454,3 +1454,14 @@ h1 {
 @media (min-width: 641px) and (max-width: 900px) {
   .company-sidebar { top: 16px; height: calc(100dvh - 34px); }
 }
+/* Menú de empresa: cada opción en una sola línea. */
+.company-sidebar { width: 236px; }
+.company-sidebar .identity-nav { gap: 10px; padding: 12px; white-space: nowrap; }
+.company-sidebar .identity-nav svg { flex: none; }
+@media (min-width: 641px) and (max-width: 900px) {
+  .company-sidebar { width: 220px; }
+  .company-sidebar .identity-nav { padding: 12px 10px; }
+}
+@media (max-width: 640px) {
+  .company-sidebar { width: min(295px, 86vw); }
+}
