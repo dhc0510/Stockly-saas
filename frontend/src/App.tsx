@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink, Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Route, Routes, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Building2, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { CompanyList } from "./features/companies/CompanyList";
 import { CompanyDetail } from "./features/companies/CompanyDetail";
@@ -8,7 +8,20 @@ import { AuthProvider, useAuth } from "./features/auth/AuthContext";
 import { CompleteRecoveryPage, FirstPasswordChangePage, LoginPage, RecoveryPage, VerifyDevicePage } from "./features/auth/AuthPages";
 import { CompanyWorkspace } from "./features/identity/CompanyWorkspace";
 
+const pageTitles: Record<string, string> = {
+  "/users": "Usuarios", "/roles": "Roles y permisos", "/security": "Seguridad", "/audit": "Actividad",
+};
+
 export function App() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const page = pathname.startsWith("/inventory/receipts") ? "Entradas de inventario"
+      : pathname.startsWith("/inventory/movements") ? "Salidas y ajustes"
+      : pathname.startsWith("/catalog") ? "Catálogo de productos"
+      : pathname.startsWith("/companies") ? "Empresas"
+      : pageTitles[pathname];
+    document.title = page ? page + " · Stockly" : "Stockly";
+  }, [pathname]);
   if (import.meta.env.MODE === "demo") return <DemoApp/>;
   return <AuthProvider><AuthenticatedApp/></AuthProvider>;
 }

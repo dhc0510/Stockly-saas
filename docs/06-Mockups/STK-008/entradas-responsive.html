@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stockly · Entradas de inventario · STK-008</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f5f3;color:#18181b;font:15px/1.5 Inter,system-ui,sans-serif}.shell{display:grid;grid-template-columns:220px minmax(0,1fr);max-width:1440px;min-height:100dvh;margin:auto;background:white}aside{padding:24px 16px;background:#faf9f8;border-right:1px solid #e4e4e7}aside strong{font-size:23px}aside p{font-size:12px;color:#52525b;margin-top:32px}aside span{display:block;padding:10px 12px;background:#fff1e5;color:#9a3412;border-radius:8px;font-weight:650}header{display:flex;justify-content:space-between;gap:12px;padding:16px 28px;border-bottom:1px solid #e4e4e7}header small,.muted{color:#52525b}main{max-width:1120px;margin:auto;padding:28px}h1,h2,h3,p{margin:0}h1{font-size:30px;line-height:1.2}h2{font-size:20px}h3{font-size:16px}.heading,.actions,.line-add{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.heading{justify-content:space-between;margin-bottom:22px}.heading p{margin-top:6px}.eyebrow{color:#9a3412;font-size:12px;font-weight:700;letter-spacing:.04em}.panel{border:1px solid #e4e4e7;border-radius:12px;padding:18px;margin-bottom:16px}.panel h2{margin-bottom:12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.data{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px 0}.data dt{font-size:13px;color:#52525b}.data dd{margin:0;font-weight:650;overflow-wrap:anywhere}label{display:grid;gap:4px;font-weight:600;min-width:0}input,select,button{font:inherit;border:1px solid #a1a1aa;border-radius:8px;min-height:44px;padding:9px 12px;background:white;color:inherit}input,select{width:100%;min-width:0}button{cursor:pointer;font-weight:650}button:disabled{opacity:.5;cursor:default}.primary{background:#f97316;border-color:#f97316}.danger{background:#b91c1c;color:white;border-color:#b91c1c}.actions{justify-content:flex-end}.line-add{align-items:end;margin-bottom:14px}.line-add label:first-child{flex:1;min-width:190px}.line-add label:nth-child(2){width:130px}table{width:100%;border-collapse:collapse;text-align:left}th,td{border-bottom:1px solid #e4e4e7;padding:10px 8px;overflow-wrap:anywhere}th{background:#f4f4f5;color:#52525b;font-size:13px}td small{display:block;color:#52525b}td input{max-width:130px}.quantity{font-variant-numeric:tabular-nums;white-space:nowrap}.badge{display:inline-block;border-radius:7px;padding:3px 8px;background:#dcfce7;color:#166534;font-size:13px;white-space:nowrap}.badge.cancelled{background:#f4f4f5;color:#52525b}.note,.error,.success{padding:10px 12px;border-radius:8px;margin:10px 0}.note{background:#fff7ed;color:#7c2d12}.error{background:#fef2f2;color:#991b1b}.success{background:#dcfce7;color:#166534}.flash{animation:mark 1.8s ease-out}@keyframes mark{from{background:#fed7aa}to{background:transparent}}@media(prefers-reduced-motion:reduce){.flash{animation:none}}[hidden]{display:none!important}:focus-visible{outline:2px solid #9a3412;outline-offset:2px}dialog{width:min(530px,calc(100% - 24px));border:1px solid #e4e4e7;border-radius:14px;padding:18px}dialog::backdrop{background:#18181b75}dialog form{display:grid;gap:12px}.mobile-label{display:none}
+@media(max-width:760px){.shell{display:block}aside{display:none}header{padding:12px 16px}main{padding:16px}h1{font-size:23px}.heading{align-items:stretch;flex-direction:column}.panel{padding:12px}.grid,.data{grid-template-columns:1fr 1fr}.line-add label:first-child{flex-basis:100%}.line-add label:nth-child(2){flex:1}thead{display:none}table,tbody{display:block}tr{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;border:1px solid #e4e4e7;border-radius:9px;margin:8px 0}td{padding:0;border:0}td:first-child{grid-column:1/-1}.mobile-label{display:block;color:#52525b;font-size:12px}input,select{font-size:16px}}
+.item-search{position:relative;flex:1;min-width:190px}.item-results{position:absolute;z-index:6;left:0;right:0;top:calc(100% - 20px);max-height:var(--results-height,240px);overflow:auto;border:1px solid #d4d4d8;background:white;border-radius:8px;box-shadow:0 8px 20px #18181b1c;padding:4px}.item-results button{display:block;width:100%;text-align:left;border:0;font-weight:400}.item-results button:hover,.item-results button:focus-visible{background:#fff1e5}.item-results small{display:block;color:#52525b}.item-results p{padding:8px}.quantity-entry{display:grid;grid-template-columns:minmax(80px,115px) auto;gap:3px 8px;align-items:end}.quantity-entry label{min-width:0!important}.item-unit{padding-bottom:10px}.quantity-entry small{grid-column:1/-1;min-height:1.5em}.line-add{align-items:start}.line-add>button{margin-top:26px}.entry-date{white-space:nowrap}select[aria-invalid="true"]{border-color:#b91c1c}.item-search{scroll-margin-top:12px}.list-filters{margin-bottom:14px}.reason-detail{grid-column:1/-1}.badge{align-self:start;width:max-content;max-width:100%}@media(prefers-reduced-motion:reduce){.flash{background:#fff1e5}}
+@media(max-width:760px){.entry-details{grid-template-columns:1fr}.item-search{flex-basis:100%}.line-add>button{margin-left:auto}.entry-actions{position:fixed;left:0;right:0;bottom:0;z-index:4;display:grid;grid-template-columns:1fr 1.4fr;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -4px 16px #18181b0d}main:has(.entry-actions){padding-bottom:calc(88px + env(safe-area-inset-bottom))}.list-filters{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}.entry-date,.data>div:has(.entry-date){grid-column:1/-1}main:has(input:focus) .entry-actions{visibility:hidden}main:has(#item-search:focus,.item-results:focus-within){padding-bottom:100dvh}}
+
+</style>
+<div class="shell"><aside><strong>Stockly<span style="display:inline;padding:0;background:none;color:#c2410c">.</span></strong><p>INVENTARIO</p><span>Entradas de inventario</span></aside>
+<div><header><strong>Mi empresa</strong><small>STK-008 · Propuesta visual</small></header>
+<main id="main"></main></div></div>
+<dialog id="dialog" aria-labelledby="dialog-title"><form id="dialog-form"><h2 id="dialog-title"></h2><div id="dialog-content"></div><p id="dialog-error" class="error" role="alert" hidden></p><div class="actions"><button type="button" id="dialog-close">Volver</button><button id="dialog-submit" class="primary">Confirmar</button></div></form></dialog>
+<script>
+const main = document.querySelector('#main');
+const dialog = document.querySelector('#dialog');
+const draftKey = 'stockly-stk008-mockup-draft';
+const items = [
+ {id:'CAF-250',name:'Café molido 250 g',barcode:'7441000000250',unit:'unidad',base:18},
+ {id:'CAM-M-A',name:'Camiseta básica · M / Azul',barcode:'7441000000083',unit:'unidad',base:7},
+ {id:'HAR-001',name:'Harina a granel',barcode:'7441000000014',unit:'kg',base:12.5}
+];
+const sample = {id:'ENT-0001',date:'2026-11-06T15:15:00Z',reason:'Recepción de mercancía',reference:'GUÍA-083',lines:[{id:'CAF-250',quantity:6,after:18},{id:'HAR-001',quantity:2.5,after:12.5}]};
+const records = [sample];
+let voidSequence=0;
+const stock = Object.fromEntries(items.map(item=>[item.id,item.base]));
+const item = id => items.find(value=>value.id===id);
+const format = value => new Intl.NumberFormat('es-CR',{maximumFractionDigits:3}).format(value);
+const reasons=['Recepción de mercancía','Carga inicial','Otro'];
+const normalize=value=>String(value ?? '').trim().toLocaleLowerCase('es-CR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const amount=(value,unit)=>format(value)+' '+(unit==='unidad'&&value!==1?'unidades':unit);
+const dateFormat=new Intl.DateTimeFormat('es-CR',{timeZone:'America/Costa_Rica',day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+function dateText(value){
+ const fields=Object.fromEntries(dateFormat.formatToParts(new Date(value)).map(part=>[part.type,part.value]));
+ return fields.day+' '+fields.month.replace(/\.$/,'')+' '+fields.year+', '+fields.hour+':'+fields.minute+' '+(fields.dayPeriod.toLowerCase().startsWith('a')?'a. m.':'p. m.');
+}
+let listSearch='',listStatus='';
+
+const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const fresh = () => ({reason:'',otherReason:'',reference:'',lines:[],selected:'',search:'',pendingQuantity:''});
+function loadDraft(){
+ try { return {...fresh(),...JSON.parse(localStorage.getItem(draftKey))}; }
+ catch { return fresh(); }
+}
+let draft=loadDraft();
+function persist(){
+ try {localStorage.setItem(draftKey,JSON.stringify(draft));} catch {}
+}
+function clearDraft(){
+ draft=fresh();
+ try {localStorage.removeItem(draftKey);} catch {}
+}
+function title(name,description,action=''){
+ return '<div class="heading"><div><p class="eyebrow">Inventario / Entradas</p><h1>'+name+'</h1><p class="muted">'+description+'</p></div>'+action+'</div>';
+}
+const back = '<button type="button" id="back">Volver al listado</button>';
+const label = value => '<span class="mobile-label">'+value+'</span>';
+function list(){
+ main.innerHTML=title('Entradas de inventario','Registra mercancía recibida y consulta los movimientos confirmados.','<button class="primary" id="new">+ Nueva entrada</button>')+
+ '<section class="panel"><h2>Entradas registradas</h2><div class="grid list-filters"><label>Buscar entrada<input id="entry-search" type="search" placeholder="Folio o referencia" value="'+esc(listSearch)+'"></label>'+
+ '<label>Estado<select id="entry-status"><option value="">Todos</option><option value="confirmed">Confirmadas</option><option value="cancelled">Anuladas</option></select></label></div>'+
+ '<table><thead><tr><th>Folio</th><th>Fecha</th><th>Motivo</th><th>Estado</th></tr></thead><tbody id="entry-rows"></tbody></table><p class="muted" id="entry-empty" role="status" hidden>Sin entradas con estos filtros.</p></section>';
+ document.querySelector('#new').onclick=()=>edit();
+ const search=document.querySelector('#entry-search'), status=document.querySelector('#entry-status');
+ status.value=listStatus;
+ function filter(){
+  listSearch=search.value;listStatus=status.value;
+  const term=normalize(listSearch);
+  const matches=records.filter(record=>(!term || [record.id,record.reference].some(value=>normalize(value).includes(term))) &&
+    (!listStatus || (record.cancelled?'cancelled':'confirmed')===listStatus));
+  const body=document.querySelector('#entry-rows');
+  body.innerHTML=matches.map(record=>'<tr><td><button data-record="'+record.id+'">'+record.id+'</button></td><td class="entry-date">'+label('Fecha')+dateText(record.date)+'</td><td>'+label('Motivo')+esc(record.reason)+'</td><td>'+badge(record)+'</td></tr>').join('');
+  document.querySelector('#entry-empty').hidden=matches.length>0;
+  body.querySelectorAll('[data-record]').forEach(button=>button.onclick=()=>receipt(records.find(record=>record.id===button.dataset.record)));
+ }
+ search.oninput=filter;status.onchange=filter;filter();
+}
+
+function badge(record){
+ return '<span class="badge '+(record.cancelled?'cancelled':'')+'">'+(record.cancelled?'Anulada':'Confirmada')+'</span>';
+}
+function parseQuantity(value){
+ const raw=String(value).trim();
+ return /^\d+(?:[.,]\d+)?$/.test(raw)?Number(raw.replace(',','.')):NaN;
+}
+function quantityError(value,unit){
+ const number=parseQuantity(value);
+ if(!Number.isFinite(number)||number<=0) return 'Ingresa una cantidad mayor que cero. Puedes usar coma como separador decimal.';
+ if(unit==='unidad'&&!Number.isInteger(number)) return 'Para unidad solo se aceptan números enteros.';
+ if(number>1000000) return 'El máximo por línea es 1.000.000.';
+ if((String(value).trim().split(/[.,]/)[1]?.length ?? 0)>3) return 'Ingresa hasta tres decimales.';
+ return '';
+}
+function edit(message='',flash=''){
+ main.innerHTML=title('Nueva entrada','Revisa las cantidades antes de confirmar. El saldo cambia al registrar la entrada.',back)+
+ '<section class="panel"><h2>Datos de la entrada</h2><div class="grid entry-details"><label>Motivo obligatorio<select id="reason" aria-describedby="reason-error"><option value="">Selecciona un motivo</option>'+
+ reasons.map(reason=>'<option>'+reason+'</option>').join('')+'</select><small id="reason-error" class="error" role="alert" hidden>Selecciona el motivo de la entrada.</small></label><label>Referencia opcional<input id="reference" maxlength="100" value="'+esc(draft.reference)+'" placeholder="Ej. GUÍA-083"></label>'+
+ '<label class="reason-detail" id="reason-detail">Detalle obligatorio<input id="other-reason" maxlength="150" value="'+esc(draft.otherReason)+'" placeholder="Describe el motivo"></label></div><p class="note"><strong>Destino</strong> · Principal</p></section>'+
+ '<section class="panel"><h2>Artículos recibidos</h2><form class="line-add" id="add"><div class="item-search"><label>Buscar artículo<input id="item-search" type="search" autocomplete="off" aria-describedby="scan-hint" placeholder="Nombre, SKU o código de barras" value="'+esc(draft.search)+'"></label><small id="scan-hint" class="muted">Puedes escanear un código y pulsar Enter.</small><div id="item-results" class="item-results" hidden></div></div>'+
+ '<div class="quantity-entry"><label>Cantidad<input id="quantity" type="text" inputmode="decimal" autocomplete="off" value="'+esc(draft.pendingQuantity)+'"></label><span id="item-unit" class="item-unit"></span><small id="item-stock" class="muted"></small></div><button id="add-line">+ Agregar línea</button></form>'+
+ '<p id="line-error" class="error" role="alert" hidden></p><p id="line-message" class="success" role="status" '+(message?'':'hidden')+'>'+esc(message)+'</p>'+
+ (draft.lines.length?'<table><thead><tr><th>Artículo</th><th>Cantidad</th><th>Acción</th></tr></thead><tbody>'+draft.lines.map(line=>'<tr class="'+(line.id===flash?'flash':'')+'"><td><strong>'+item(line.id).name+'</strong><small>'+line.id+'</small></td><td>'+label('Cantidad')+'<input type="text" inputmode="decimal" autocomplete="off" aria-label="Cantidad de '+line.id+'" data-quantity="'+line.id+'" value="'+esc(String(line.quantity).replace('.',','))+'"> <small>'+item(line.id).unit+'</small></td><td><button data-remove="'+line.id+'" aria-label="Quitar '+line.id+'">Quitar</button></td></tr>').join('')+'</tbody></table>':'<p class="muted">Todavía no agregaste artículos.</p>')+
+ '</section><div class="actions entry-actions"><button id="discard">Descartar</button><button class="primary" id="review" '+(draft.lines.length||draft.selected||draft.pendingQuantity.trim()?'':'disabled')+'>Revisar entrada</button></div>';
+ const get=id=>document.getElementById(id);
+ const search=get('item-search'), results=get('item-results'), quantity=get('quantity'), reason=get('reason');
+ reason.value=reasons.includes(draft.reason)?draft.reason:'';
+ get('reason-detail').hidden=reason.value!=='Otro';
+ function clearFeedback(){
+  get('line-error').hidden=true;get('line-message').hidden=true;
+ }
+ function fail(text){
+  get('line-message').hidden=true;
+  const error=get('line-error');error.hidden=false;error.textContent=text;
+ }
+ function updateSelection(){
+  const chosen=item(draft.selected);
+  get('item-unit').textContent=chosen?.unit || '';
+  get('item-stock').textContent=chosen?'Existencia actual: '+amount(stock[chosen.id],chosen.unit):'';
+  get('add-line').disabled=!chosen;
+  get('review').disabled=!draft.lines.length&&!chosen&&!draft.pendingQuantity.trim();
+ }
+ function matching(){
+  const term=normalize(search.value);
+  return term?items.filter(value=>[value.name,value.id,value.barcode].some(field=>normalize(field).includes(term))):[];
+ }
+ function choose(chosen){
+  draft.selected=chosen.id;draft.search=chosen.name+' · '+chosen.id;draft.pendingQuantity='';
+  quantity.value='';search.value=draft.search;results.hidden=true;persist();updateSelection();quantity.focus();
+ }
+ function showResults(){
+  const matches=matching();
+  results.hidden=!normalize(search.value);
+  results.innerHTML=matches.length?matches.slice(0,8).map(value=>'<button type="button" data-choose="'+value.id+'"><strong>'+value.name+'</strong><small>'+value.id+' · '+value.barcode+'</small></button>').join(''):'<p class="muted">No encontramos artículos.</p>';
+  results.querySelectorAll('[data-choose]').forEach(button=>button.onclick=()=>choose(item(button.dataset.choose)));
+ }
+ function addLine(id,raw,fromScan=false){
+  const unit=item(id).unit, existing=draft.lines.find(line=>line.id===id);
+  const error=quantityError(raw,unit) || (existing && quantityError(existing.quantity,unit));
+  if(error){fail(error);return;}
+  const added=parseQuantity(raw);
+  const total=existing?Math.round((parseQuantity(existing.quantity)+added)*1000)/1000:added;
+  if(total>1000000){fail('El máximo por línea es 1.000.000.');return;}
+  if(!existing&&draft.lines.length>=200){fail('La entrada admite hasta 200 líneas.');return;}
+  if(existing) existing.quantity=total;
+  else draft.lines.push({id,quantity:total});
+  draft.selected='';draft.search='';draft.pendingQuantity='';
+  persist();
+  edit(existing?'Se sumaron '+amount(added,unit)+'. Total: '+amount(total,unit)+'.':fromScan?'Artículo agregado por código de barras.':'Artículo agregado.',id);
+  get('item-search').focus();
+ }
+ get('back').onclick=list;
+ reason.onchange=()=>{reason.removeAttribute("aria-invalid");get("reason-error").hidden=true;draft.reason=reason.value;get('reason-detail').hidden=reason.value!=='Otro';persist();clearFeedback();};
+ get('other-reason').oninput=event=>{draft.otherReason=event.target.value;persist();clearFeedback();};
+ get('reference').oninput=event=>{draft.reference=event.target.value;persist();};
+ quantity.oninput=()=>{draft.pendingQuantity=quantity.value;persist();clearFeedback();updateSelection();};
+ search.oninput=()=>{draft.selected='';draft.search=search.value;persist();clearFeedback();updateSelection();showResults();};
+ search.onfocus=()=>{if(!draft.selected)showResults();alignItemSearch();};
+ search.onkeydown=event=>{
+  if(event.key==='Escape'){results.hidden=true;return;}
+  if(event.key==='ArrowDown'&&!results.hidden){event.preventDefault();results.querySelector('button')?.focus();return;}
+  if(event.key!=='Enter')return;
+  event.preventDefault();
+  const term=normalize(search.value);
+  const barcode=items.find(value=>normalize(value.barcode)===term);
+  if(barcode){if(barcode.unit==='unidad')addLine(barcode.id,'1',true);else choose(barcode);return;}
+  if(/^\d+$/.test(term)){results.hidden=true;fail('No encontramos un artículo activo con ese código de barras.');return;}
+  const exact=items.find(value=>normalize(value.id)===term);
+  const matches=matching();
+  if(exact||matches.length===1) choose(exact||matches[0]);else showResults();
+ };
+ updateSelection();
+ main.querySelectorAll('[data-quantity]').forEach(input=>input.oninput=()=>{draft.lines.find(line=>line.id===input.dataset.quantity).quantity=input.value;persist();clearFeedback();});
+ main.querySelectorAll('[data-remove]').forEach(button=>button.onclick=()=>{draft.lines=draft.lines.filter(line=>line.id!==button.dataset.remove);persist();edit();});
+ get('add').onsubmit=event=>{
+  event.preventDefault();
+  if(draft.selected) addLine(draft.selected,quantity.value);
+ };
+ get('discard').onclick=()=>modal('Descartar entrada','<p>Se borrará lo escrito en este navegador.</p>','Descartar',()=>{clearDraft();list();},true);
+ get('review').onclick=()=>{
+  if(draft.selected||draft.pendingQuantity.trim()){
+   fail('Hay un artículo sin agregar. Agrégalo a la entrada o limpia el artículo y la cantidad antes de revisar.');
+   get('line-error').scrollIntoView({block:'nearest'});return;
+  }
+  if(!reasons.includes(draft.reason)){clearFeedback();get('reason-error').hidden=false;reason.setAttribute('aria-invalid','true');reason.focus({preventScroll:true});reason.scrollIntoView({block:'center'});return;}
+  if(draft.reason==='Otro'&&!draft.otherReason.trim()){fail('Escribe el detalle del motivo Otro.');get('other-reason').focus();return;}
+  for(const line of draft.lines){
+   const error=quantityError(line.quantity,item(line.id).unit);
+   if(error){fail(item(line.id).name+': '+error);return;}
+  }
+  modal('Confirmar entrada','<p>Se registrará una entrada en <strong>Principal</strong> con '+draft.lines.length+(draft.lines.length===1?' línea.':' líneas.')+'</p><ul>'+
+    draft.lines.map(line=>'<li>'+item(line.id).name+' · '+amount(parseQuantity(line.quantity),item(line.id).unit)+'</li>').join('')+'</ul>','Confirmar entrada',()=>{
+   const record={id:'ENT-'+String(records.length+1).padStart(4,'0'),date:new Date().toISOString(),reason:draft.reason==='Otro'?'Otro · '+draft.otherReason.trim():draft.reason,reference:draft.reference,lines:draft.lines.map(line=>{
+    const quantity=parseQuantity(line.quantity);
+    stock[line.id]=Math.round((stock[line.id]+quantity)*1000)/1000;
+    return {id:line.id,quantity,after:stock[line.id]};
+   })};
+   records.unshift(record);clearDraft();receipt(record,'Entrada confirmada.');
+  });
+ };
+}
+
+function receipt(record,message=''){
+ main.innerHTML=title('Comprobante '+record.id,'Registro interno de la entrada de inventario.',back)+
+ (message?'<p class="success" role="status">'+esc(message)+'</p>':'')+
+ '<section class="panel"><div class="heading"><h2>Detalle de la entrada</h2>'+badge(record)+'</div><dl class="data">'+
+ [['Destino','Principal'],['Fecha y hora',dateText(record.date)],['Responsable','Administrador de prueba'],['Motivo',record.reason],['Referencia',record.reference||'—']].map(([name,value])=>'<div><dt>'+name+'</dt><dd'+(name==='Fecha y hora'?' class="entry-date"':'')+'>'+esc(value)+'</dd></div>').join('')+
+ '</dl>'+(record.cancelled?'<p class="note"><strong>Movimiento inverso '+record.cancelled.id+'</strong> · '+esc(record.cancelled.reason)+'</p>':'')+'</section>'+
+ '<section class="panel"><h2>Existencias tras la entrada</h2><p class="muted">Saldo registrado al confirmar el movimiento.</p><table><thead><tr><th>Artículo</th><th>Cantidad recibida</th><th>Existencia después de la entrada</th></tr></thead><tbody>'+
+ record.lines.map(line=>'<tr><td><strong>'+item(line.id).name+'</strong><small>'+line.id+'</small></td><td class="quantity">'+label('Recibido')+'+'+amount(line.quantity,item(line.id).unit)+'</td><td class="quantity">'+label('Existencia después')+'<strong>'+amount(line.after,item(line.id).unit)+'</strong></td></tr>').join('')+'</tbody></table></section>'+
+ (record.cancelled?'<div class="actions"><button id="inverse">Ver movimiento inverso</button></div>':'<div class="actions"><button id="cancel">Anular entrada</button></div>');
+ document.querySelector('#back').onclick=list;
+ if(record.cancelled){
+  document.querySelector('#inverse').onclick=()=>modal('Movimiento inverso '+record.cancelled.id,
+   '<p>Entrada vinculada <strong>'+record.id+'</strong></p><p>'+esc(record.cancelled.reason)+'</p><ul>'+record.lines.map(line=>'<li>'+item(line.id).name+' · −'+amount(line.quantity,item(line.id).unit)+'</li>').join('')+'</ul>','Cerrar',()=>{});
+ } else {
+  document.querySelector('#cancel').onclick=()=>modal('Anular entrada '+record.id,
+   '<label>Motivo de anulación obligatorio<input id="cancel-reason" maxlength="150" required></label><p class="note">Stockly registrará un movimiento inverso vinculado a este comprobante.</p>',
+   'Confirmar anulación',()=>{
+    const reason=document.querySelector('#cancel-reason').value.trim();
+    if(!reason) throw Error('Escribe el motivo de la anulación.');
+    if(record.lines.some(line=>stock[line.id]<line.quantity)) throw Error('La anulación dejaría existencias negativas.');
+    record.lines.forEach(line=>{stock[line.id]=Math.round((stock[line.id]-line.quantity)*1000)/1000;});
+    record.cancelled={id:'ANU-'+String(++voidSequence).padStart(4,'0'),reason};
+    receipt(record,'Entrada anulada. Se registró el movimiento inverso.');
+   },true);
+ }
+}
+function modal(title,content,action,run,danger=false){
+ document.querySelector('#dialog-title').textContent=title;
+ document.querySelector('#dialog-content').innerHTML=content;
+ const error=document.querySelector('#dialog-error');error.hidden=true;
+ const submit=document.querySelector('#dialog-submit');submit.textContent=action;submit.className=danger?'danger':'primary';
+ document.querySelector('#dialog-form').onsubmit=event=>{
+  event.preventDefault();
+  try {run();dialog.close();}
+  catch(failure){error.hidden=false;error.textContent=failure.message;}
+ };
+ dialog.showModal();
+}
+function alignItemSearch(){
+ const search=document.querySelector('#item-search');
+ if(!matchMedia('(max-width:760px)').matches||document.activeElement!==search)return;
+ const field=search.closest('.item-search');
+ field.scrollIntoView({block:'start',behavior:'instant'});
+ requestAnimationFrame(()=>{
+  const viewport=window.visualViewport;
+  const bottom=(viewport?.offsetTop ?? 0)+(viewport?.height ?? innerHeight);
+  const available=bottom-search.getBoundingClientRect().bottom-12;
+  field.style.setProperty('--results-height',Math.max(72,Math.min(240,available))+'px');
+ });
+}
+window.visualViewport?.addEventListener('resize',alignItemSearch);
+document.querySelector('#dialog-close').onclick=()=>dialog.close();
+list();
+</script>
+</html>
