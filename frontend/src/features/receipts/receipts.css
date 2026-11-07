@@ -10,7 +10,9 @@
 .receipt-table input { width: min(100%, 125px); }
 .receipt-link { display: inline-block; font-weight: 700; color: #9a3412; }
 .receipt-link:hover { text-decoration: underline; }
-.receipt-draft-notice { margin: 0 0 16px; }
+.receipt-note.receipt-draft-notice { margin: 0 0 20px; display: grid; gap: 12px; padding: 16px; }
+.receipt-draft-notice .catalog-actions { gap: 12px; }
+.receipt-draft-notice .catalog-actions > button { min-height: 44px; }
 .receipt-draft-notice p { margin: 6px 0; }
 .receipt-invalid-line { background: #fef2f2; }
 .receipts-page :is(input, select)[aria-invalid="true"] { border-color: #b91c1c; }
@@ -62,6 +64,8 @@
   .receipt-metadata .receipt-date { grid-column: 1 / -1; }
 }
 @media (max-width: 760px) {
+  .receipt-draft-notice .catalog-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .receipt-draft-notice .catalog-actions > button { width: 100%; min-width: 0; white-space: normal; }
   .receipt-fields, .receipt-filters { grid-template-columns: 1fr; }
   .receipt-item-search { flex-basis: 100%; }
   .receipts-page input, .receipts-page select { font-size: 16px; }
