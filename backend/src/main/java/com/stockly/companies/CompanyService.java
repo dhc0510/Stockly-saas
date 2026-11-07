@@ -2,6 +2,7 @@ package com.stockly.companies;
 
 import com.stockly.identity.*;
 import org.springframework.stereotype.Service;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -22,8 +23,9 @@ public class CompanyService {
     private final CompanyValidation validation;
     private final PasswordEncoder encoder;
     private final DeletionJournal journal;
-    public CompanyService(CompanyRepository companies,AccountRepository accounts,CompanyRoleRepository roles,CompanyValidation validation,PasswordEncoder encoder,DeletionJournal journal) {
-        this.companies=companies; this.accounts=accounts; this.roles=roles; this.validation=validation; this.encoder=encoder; this.journal=journal;
+    private final JdbcTemplate jdbc;
+    public CompanyService(CompanyRepository companies,AccountRepository accounts,CompanyRoleRepository roles,CompanyValidation validation,PasswordEncoder encoder,DeletionJournal journal,JdbcTemplate jdbc) {
+        this.companies=companies; this.accounts=accounts; this.roles=roles; this.validation=validation; this.encoder=encoder; this.journal=journal; this.jdbc=jdbc;
     }
     @Transactional
     public CompanyView create(CreateCompany request) {
@@ -31,6 +33,7 @@ public class CompanyService {
         var input=validation.normalize(request.company());
         var admin=validation.normalize(request.administrator());
         var company=companies.saveAndFlush(Company.create(input));
+        jdbc.update("INSERT INTO inventory_locations(company_id,id,name) VALUES (?,'principal','Principal')", company.id);
         var account=accounts.saveAndFlush(Account.initial(company.id,admin.fullName(),admin.username(),admin.email(),encoder.encode(admin.temporaryPassword())));
         return CompanyView.of(company,account);
     }
