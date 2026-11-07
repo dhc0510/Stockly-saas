@@ -5,6 +5,11 @@ spring:
     url: ${STOCKLY_DB_URL:jdbc:mysql://localhost:3306/stockly?connectionTimeZone=UTC}
     username: ${STOCKLY_DB_USER:stockly}
     password: ${STOCKLY_DB_PASSWORD:}
+    hikari:
+      connection-init-sql: "SET time_zone = '+00:00'"
+      data-source-properties:
+        connectionTimeZone: UTC
+        preserveInstants: true
   jpa:
     open-in-view: false
     hibernate:

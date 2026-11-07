@@ -31,6 +31,8 @@ public class SecurityConfiguration {
                 .requestMatchers("/api/audit").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/api/catalog", "/api/catalog/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
                     "MODULE_CATALOG_READ", "MODULE_CATALOG_OPERATE", "MODULE_CATALOG_ADMIN")
+                .requestMatchers("/api/inventory/receipts", "/api/inventory/receipts/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
+                    "MODULE_INVENTORY_RECEIPTS_READ", "MODULE_INVENTORY_RECEIPTS_OPERATE", "MODULE_INVENTORY_RECEIPTS_ADMIN")
                 .anyRequest().denyAll())
             .exceptionHandling(e -> e
                 .authenticationEntryPoint((req,res,ex) -> error(res,401,"UNAUTHENTICATED","Inicia sesión para continuar."))
