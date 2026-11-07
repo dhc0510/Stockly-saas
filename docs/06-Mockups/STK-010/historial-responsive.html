@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stockly · Historial de movimientos · STK-010</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f5f3;color:#18181b;font:15px/1.5 Inter,system-ui,sans-serif}
+.shell{display:grid;grid-template-columns:236px minmax(0,1fr);max-width:1440px;min-height:100dvh;margin:auto;background:white}
+aside{padding:24px 16px;background:#faf9f8;border-right:1px solid #e4e4e7}aside strong{font-size:23px}aside p{font-size:12px;color:#52525b;margin:32px 0 6px}
+aside span{display:block;padding:10px 12px;border-radius:8px;color:#52525b;white-space:nowrap}aside span.active{background:#fff1e5;color:#9a3412;font-weight:650}
+header{display:flex;justify-content:space-between;gap:12px;padding:16px 28px;border-bottom:1px solid #e4e4e7}header small,.muted{color:#52525b}
+main{max-width:1120px;margin:auto;padding:28px;outline:0}h1,h2,p{margin:0}h1{font-size:30px;line-height:1.2}h2{font-size:20px}
+.demo{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:end;padding:10px 28px;background:#f4f4f5;border-bottom:1px dashed #a1a1aa;font-size:13px}.demo strong{width:100%}.demo label{font-weight:500}.demo select{min-height:36px;padding:4px 32px 4px 8px;font-size:13px;width:auto}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}.heading p{margin-top:6px}.eyebrow{color:#9a3412;font-size:12px;font-weight:700;letter-spacing:.04em}
+.panel{border:1px solid #e4e4e7;border-radius:12px;padding:18px;margin-bottom:16px}.panel>h2{margin-bottom:12px}
+.filters{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:12px}.filters .wide{grid-column:span 2}
+.period{display:grid;gap:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;align-items:end;margin-bottom:12px}
+label{display:grid;gap:4px;font-weight:600;min-width:0}input,select,button{font:inherit;border:1px solid #a1a1aa;border-radius:8px;min-height:44px;padding:9px 12px;background:white;color:inherit}input,select{width:100%;min-width:0}
+select{appearance:none;padding-right:36px;font-weight:500;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px}
+button{cursor:pointer;font-weight:650}button:disabled{opacity:.5;cursor:default}.link{border:0;background:none;padding:0;min-height:0;color:#9a3412;font-weight:700;text-align:left;text-decoration:none}.link:hover{text-decoration:underline}
+table{width:100%;border-collapse:collapse;text-align:left}th,td{border-bottom:1px solid #e4e4e7;padding:10px 8px;overflow-wrap:anywhere;vertical-align:top}th{background:#f4f4f5;color:#52525b;font-size:13px}td small{display:block;color:#52525b}
+.quantity{font-variant-numeric:tabular-nums;white-space:nowrap}.up{color:#166534;font-weight:650}.down{color:#991b1b;font-weight:650}.same{color:#52525b}
+.badge{display:inline-block;border-radius:7px;padding:2px 8px;background:#f4f4f5;color:#3f3f46;font-size:13px;white-space:nowrap}.badge.inactive{background:#fff7ed;color:#7c2d12}.badge.voided{background:#fef2f2;color:#991b1b}
+.note,.error{padding:10px 12px;border-radius:8px;margin:10px 0}.note{background:#fff7ed;color:#7c2d12}.error{background:#fef2f2;color:#991b1b}
+.summary{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 10px;color:#52525b}.pager{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:12px}
+.search{position:relative}.results{position:absolute;z-index:6;left:0;right:0;top:100%;margin-top:4px;max-height:240px;overflow:auto;border:1px solid #d4d4d8;background:white;border-radius:8px;box-shadow:0 8px 20px #18181b1c;padding:4px}.results button{display:block;width:100%;text-align:left;border:0;font-weight:400}.results button:hover,.results button:focus-visible{background:#fff1e5}.results small{display:block;color:#52525b}.results p{padding:8px}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0}.facts dt{font-size:13px;color:#52525b}.facts dd{margin:0;font-weight:650;overflow-wrap:anywhere}.balance{font-size:24px;font-variant-numeric:tabular-nums}
+.skeleton{height:44px;border-radius:8px;background:#f4f4f5;margin:8px 0}.empty{text-align:center;padding:24px 8px}.empty h2{font-size:16px;margin:0 0 4px}
+.mobile-label{display:none}.date{white-space:nowrap}[hidden]{display:none!important}:focus-visible{outline:2px solid #9a3412;outline-offset:2px}
+@media(max-width:900px){.filters{grid-template-columns:1fr 1fr}.period{grid-template-columns:1fr 1fr}.period .wide-mobile{grid-column:1/-1}.facts{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.shell{display:block}aside{display:none}header{padding:12px 16px}.demo{padding:10px 16px}main{padding:16px}h1{font-size:23px}.panel{padding:12px}input,select{font-size:16px}
+thead{display:none}table,tbody{display:block}tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;border:1px solid #e4e4e7;border-radius:9px;margin:8px 0}td{padding:0;border:0}td.full{grid-column:1/-1}.mobile-label{display:block;color:#52525b;font-size:12px}.quantity{white-space:normal}}
+@media(max-width:370px){.filters,.period{grid-template-columns:1fr}.filters .wide{grid-column:auto}}
+th{white-space:nowrap;overflow-wrap:normal}.link[data-folio]{white-space:nowrap}
+@media(min-width:761px) and (max-width:1200px){td.date{white-space:normal}th,td{padding-left:6px;padding-right:6px}.quantity{white-space:normal}}
+@media(max-width:900px){.period label:first-child{grid-column:1/-1}.period button{grid-column:1/-1}}
+</style>
+<div class="shell"><aside><strong>Stockly<span style="display:inline;padding:0;background:none;color:#c2410c">.</span></strong><p>INVENTARIO</p><span>Catálogo</span><span>Existencias</span><span>Entradas de inventario</span><span>Salidas y ajustes</span><span class="active">Historial</span></aside>
+<div><header><strong>Mi empresa</strong><small>STK-010 · Propuesta visual</small></header>
+<section class="demo" aria-label="Controles del mockup"><strong>Solo para revisar el mockup; no forma parte del producto</strong>
+<label>Ver como<select id="role"><option value="yes">Con acceso a Historial</option><option value="no">Sin acceso a Historial</option></select></label>
+<label>Estado<select id="state"><option value="data">Con datos</option><option value="loading">Cargando</option><option value="empty">Sin movimientos</option><option value="error">Error de carga</option></select></label></section>
+<main id="main" tabindex="-1"></main></div></div>
+<script>
+const main=document.querySelector('#main'),get=id=>document.getElementById(id);
+const DAY=86400000,ago=(d,h=15)=>new Date(Date.now()-d*DAY+0*h).toISOString();
+const items={
+ 'CAF-250':{name:'Café molido 250 g',unit:'unidad',barcode:'7441000000250',active:true},
+ 'CAM-M-A':{name:'Camiseta básica · M / Azul',unit:'unidad',barcode:'7441000000083',active:true},
+ 'HAR-001':{name:'Harina a granel',unit:'kg',barcode:'7441000000014',active:true},
+ 'TEV-100':{name:'Té verde 100 g',unit:'unidad',barcode:'7441000000100',active:false}
+};
+const kinds={RECEIPT:'Entrada',OUT:'Salida',ADJUST:'Ajuste',VOID:'Anulación'};
+const movements=[
+ {folio:'SAL-0003',kind:'OUT',date:ago(1),actor:'Luis Rojas',reason:'Robo o faltante',reference:'',lines:[['CAF-250',-2,20]]},
+ {folio:'ANU-0001',kind:'VOID',date:ago(2),actor:'Ana Mora',reason:'Factura duplicada',reference:'',original:'ENT-0003',lines:[['HAR-001',-5,12.5]]},
+ {folio:'ENT-0003',kind:'RECEIPT',date:ago(3),actor:'Ana Mora',reason:'Recepción de mercancía',reference:'GUÍA-091',voided:'ANU-0001',lines:[['HAR-001',5,17.5]]},
+ {folio:'SAL-0002',kind:'OUT',date:ago(6),actor:'Luis Rojas',reason:'Vencimiento',reference:'',lines:[['TEV-100',-10,0]]},
+ {folio:'AJU-0001',kind:'ADJUST',date:ago(9),actor:'Ana Mora',reason:'Conteo físico',reference:'Conteo de octubre',lines:[['CAF-250',1,22],['HAR-001',0,12.5]]},
+ {folio:'SAL-0001',kind:'OUT',date:ago(12),actor:'Luis Rojas',reason:'Daño o rotura',reference:'REP-1',lines:[['CAF-250',-3,21],['CAM-M-A',-1,7]]},
+ {folio:'ENT-0002',kind:'RECEIPT',date:ago(20),actor:'Ana Mora',reason:'Recepción de mercancía',reference:'GUÍA-083',lines:[['CAF-250',6,24]]},
+ {folio:'ENT-0001',kind:'RECEIPT',date:ago(45),actor:'Ana Mora',reason:'Carga inicial',reference:'',lines:[['CAF-250',18,18],['CAM-M-A',8,8],['HAR-001',12.5,12.5],['TEV-100',10,10]]}
+];
+const rows=movements.flatMap(m=>m.lines.map(([sku,change,after])=>({m,sku,change,after})));
+const balance=sku=>rows.find(r=>r.sku===sku)?.after??0;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normalize=v=>String(v??'').trim().toLocaleLowerCase('es-CR').normalize('NFD').replace(/[̀-ͯ]/g,'');
+const format=v=>new Intl.NumberFormat('es-CR',{maximumFractionDigits:3}).format(v);
+const amount=(v,u)=>format(v)+' '+(u==='unidad'&&Math.abs(v)!==1?'unidades':u);
+const change=(v,u)=>v===0?'<span class="same">Sin diferencia</span>':'<span class="'+(v>0?'up':'down')+'">'+(v>0?'+':'−')+amount(Math.abs(v),u)+'</span>';
+const label=v=>'<span class="mobile-label">'+v+'</span>';
+const dateFormat=new Intl.DateTimeFormat('es-CR',{timeZone:'America/Costa_Rica',day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+function dateText(v){const f=Object.fromEntries(dateFormat.formatToParts(new Date(v)).map(p=>[p.type,p.value]));return f.day+' '+f.month.replace(/\.$/,'')+' '+f.year+', '+f.hour+':'+f.minute+' '+(f.dayPeriod.toLowerCase().startsWith('a')?'a. m.':'p. m.');}
+const crDay=v=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Costa_Rica'}).format(new Date(v));
+const shortDay=v=>{const[y,m,d]=v.split('-');return d+'/'+m+'/'+y;};
+const today=crDay(Date.now()),defaultFrom=crDay(Date.now()-30*DAY);
+const fresh=()=>({search:'',article:'',articleText:'',type:'',actor:'',period:'30',day:today,from:defaultFrom,to:today});
+let filters=fresh();
+function show(view){view();scrollTo(0,0);main.focus({preventScroll:true});}
+function title(name,text,action=''){return '<div class="heading"><div><p class="eyebrow">Inventario / Historial</p><h1>'+name+'</h1><p class="muted">'+text+'</p></div>'+action+'</div>';}
+function kindBadge(m){return '<span class="badge">'+kinds[m.kind]+'</span>'+(m.voided?' <span class="badge voided">Anulado</span>':'');}
+function folioCell(m){return '<button class="link" data-folio="'+m.folio+'">'+m.folio+'</button>';}
+function wire(){
+ main.querySelectorAll('[data-folio]').forEach(b=>b.onclick=()=>show(()=>receipt(movements.find(m=>m.folio===b.dataset.folio))));
+ main.querySelectorAll('[data-sku]').forEach(b=>b.onclick=()=>show(()=>article(b.dataset.sku)));
+}
+function periodError(){return filters.period==='range'&&filters.from&&filters.to&&filters.from>filters.to?'La fecha inicial no puede ser posterior a la final.':'';}
+function periodText(){
+ if(filters.period==='30')return 'Últimos 30 días';
+ if(filters.period==='day')return filters.day?'El '+shortDay(filters.day):'Elige una fecha';
+ return 'Del '+(filters.from?shortDay(filters.from):'inicio')+' al '+(filters.to?shortDay(filters.to):'hoy');
+}
+function matches(r){
+ const term=normalize(filters.search),day=crDay(r.m.date);
+ if(term&&![r.m.folio,r.m.reference].some(v=>normalize(v).includes(term)))return false;
+ if(filters.article&&r.sku!==filters.article)return false;
+ if(filters.type&&r.m.kind!==filters.type)return false;
+ if(filters.actor&&r.m.actor!==filters.actor)return false;
+ if(filters.period==='30')return day>=defaultFrom;
+ if(filters.period==='day')return !!filters.day&&day===filters.day;
+ return (!filters.from||day>=filters.from)&&(!filters.to||day<=filters.to);
+}
+function list(){
+ if(get('role').value==='no'){main.innerHTML=title('Historial de movimientos','Consulta qué cambió cada existencia, cuándo y quién lo hizo.')+'<section class="panel empty"><h2>No tienes acceso al historial</h2><p class="muted">Pide a la persona administradora de tu empresa que te dé acceso al módulo Historial.</p></section>';return;}
+ const state=get('state').value;
+ main.innerHTML=title('Historial de movimientos','Consulta qué cambió cada existencia, cuándo y quién lo hizo. Es solo de lectura.')+
+ '<section class="panel"><div class="filters"><label class="wide">Buscar<input id="f-search" type="search" placeholder="Folio o referencia" value="'+esc(filters.search)+'"></label>'+
+ '<div class="search wide"><label>Artículo<input id="f-article" type="search" autocomplete="off" placeholder="Nombre, SKU o código de barras" value="'+esc(filters.articleText)+'"></label><div id="results" class="results" hidden></div></div>'+
+ '<label>Tipo<select id="f-type"><option value="">Todos</option>'+Object.entries(kinds).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select></label>'+
+ '<label>Responsable<select id="f-actor"><option value="">Todos</option>'+[...new Set(movements.map(m=>m.actor))].sort().map(a=>'<option>'+a+'</option>').join('')+'</select></label></div>'+
+ '<div class="period"><label>Periodo<select id="f-period"><option value="30">Últimos 30 días</option><option value="day">Fecha específica</option><option value="range">Desde y hasta</option></select></label>'+
+ '<label id="w-day" hidden>Fecha<input id="f-day" type="date" max="'+today+'" value="'+filters.day+'"></label>'+
+ '<label id="w-from" hidden>Desde<input id="f-from" type="date" max="'+today+'" value="'+filters.from+'"></label><label id="w-to" hidden>Hasta<input id="f-to" type="date" max="'+today+'" value="'+filters.to+'"></label>'+
+ '<button id="clear" class="wide-mobile">Limpiar filtros</button></div><p id="period-error" class="error" role="alert" hidden></p></section>'+
+ '<section class="panel"><h2>Movimientos</h2><div id="body"></div></section>';
+ get('f-type').value=filters.type;get('f-actor').value=filters.actor;get('f-period').value=filters.period;
+ const search=get('f-search'),art=get('f-article'),results=get('results');
+ function paint(){
+  get('w-day').hidden=filters.period!=='day';get('w-from').hidden=get('w-to').hidden=filters.period!=='range';
+  const body=get('body'),err=periodError();
+  get('period-error').hidden=!err;get('period-error').textContent=err;
+  if(state==='loading'){body.innerHTML='<div role="status" aria-label="Cargando movimientos"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';return;}
+  if(state==='error'){body.innerHTML='<p class="error" role="alert">No pudimos cargar el historial. Revisa tu conexión e inténtalo de nuevo.</p><button id="retry">Reintentar</button>';get('retry').onclick=()=>{get('state').value='data';list();};return;}
+  if(state==='empty'){body.innerHTML='<div class="empty"><h2>Todavía no hay movimientos</h2><p class="muted">Las entradas, salidas y ajustes aparecerán aquí al registrarse.</p></div>';return;}
+  if(err){body.innerHTML='<p class="muted">Corrige el periodo para ver resultados.</p>';return;}
+  const found=rows.filter(matches);
+  const summary='<div class="summary" role="status"><span>'+periodText()+'</span><span>'+found.length+(found.length===1?' fila':' filas')+'</span></div>';
+  if(!found.length){body.innerHTML=summary+'<div class="empty"><h2>Sin movimientos con estos filtros</h2><p class="muted">Prueba ampliar el periodo o quitar algún filtro.</p></div>';return;}
+  body.innerHTML=summary+'<table><thead><tr><th>Fecha</th><th>Folio</th><th>Artículo</th><th>Motivo</th><th>Responsable</th><th>Cambio</th><th>Saldo después</th></tr></thead><tbody>'+
+  found.map(r=>{const it=items[r.sku];return '<tr><td class="date full">'+dateText(r.m.date)+'</td><td>'+label('Folio')+folioCell(r.m)+'<small>'+kindBadge(r.m)+'</small></td><td>'+label('Artículo')+'<button class="link" data-sku="'+r.sku+'">'+esc(it.name)+'</button><small>'+r.sku+(it.active?'':' · <span class="badge inactive">Inactivo</span>')+'</small></td><td>'+label('Motivo')+esc(r.m.reason)+(r.m.reference?'<small>'+esc(r.m.reference)+'</small>':'')+(r.m.original?'<small>Anula '+r.m.original+'</small>':'')+'</td><td>'+label('Responsable')+esc(r.m.actor)+'</td><td class="quantity">'+label('Cambio')+change(r.change,it.unit)+'</td><td class="quantity">'+label('Saldo después')+'<strong>'+amount(r.after,it.unit)+'</strong></td></tr>';}).join('')+
+  '</tbody></table><div class="pager"><button disabled>Anterior</button><span>Página 1</span><button disabled>Siguiente</button></div>';
+  wire();
+ }
+ search.oninput=()=>{filters.search=search.value;paint();};
+ get('f-type').onchange=e=>{filters.type=e.target.value;paint();};
+ get('f-actor').onchange=e=>{filters.actor=e.target.value;paint();};
+ get('f-period').onchange=e=>{filters.period=e.target.value;paint();};
+ get('f-day').oninput=e=>{filters.day=e.target.value;paint();};
+ get('f-from').oninput=e=>{filters.from=e.target.value;paint();};
+ get('f-to').oninput=e=>{filters.to=e.target.value;paint();};
+ get('clear').onclick=()=>{filters=fresh();list();};
+ art.oninput=()=>{
+  filters.article='';filters.articleText=art.value;const term=normalize(art.value);results.hidden=!term;
+  const found=Object.entries(items).filter(([sku,i])=>[i.name,sku,i.barcode].some(v=>normalize(v).includes(term)));
+  results.innerHTML=found.length?found.map(([sku,i])=>'<button type="button" data-pick="'+sku+'"><strong>'+esc(i.name)+'</strong><small>'+sku+(i.active?'':' · Inactivo')+'</small></button>').join(''):'<p class="muted">No encontramos artículos.</p>';
+  results.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{filters.article=b.dataset.pick;filters.articleText=items[b.dataset.pick].name+' · '+b.dataset.pick;art.value=filters.articleText;results.hidden=true;paint();});
+  paint();
+ };
+ art.onkeydown=e=>{if(e.key==='Escape')results.hidden=true;};
+ paint();
+}
+function article(sku){
+ const it=items[sku],own=rows.filter(r=>r.sku===sku);let type='';
+ main.innerHTML=title(esc(it.name),'Toda la historia de este artículo, de lo más reciente a lo más antiguo.','<button id="back">Volver al historial</button>')+
+ '<section class="panel"><dl class="facts"><div><dt>Saldo actual en Principal</dt><dd class="balance">'+amount(balance(sku),it.unit)+'</dd></div><div><dt>SKU</dt><dd>'+sku+'</dd></div><div><dt>Unidad</dt><dd>'+it.unit+'</dd></div><div><dt>Estado en catálogo</dt><dd>'+(it.active?'Activo':'<span class="badge inactive">Inactivo</span>')+'</dd></div></dl></section>'+
+ '<section class="panel"><h2>Cómo cambió el saldo</h2><div class="filters"><label>Tipo<select id="a-type"><option value="">Todos</option>'+Object.entries(kinds).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select></label></div><div id="a-body"></div></section>';
+ get('back').onclick=()=>show(list);
+ function paint(){
+  const found=own.filter(r=>!type||r.m.kind===type);
+  get('a-body').innerHTML=found.length?'<table><thead><tr><th>Fecha</th><th>Folio</th><th>Motivo</th><th>Responsable</th><th>Cambio</th><th>Saldo después</th></tr></thead><tbody>'+found.map(r=>'<tr><td class="date full">'+dateText(r.m.date)+'</td><td>'+label('Folio')+folioCell(r.m)+'<small>'+kindBadge(r.m)+'</small></td><td>'+label('Motivo')+esc(r.m.reason)+(r.m.original?'<small>Anula '+r.m.original+'</small>':'')+'</td><td>'+label('Responsable')+esc(r.m.actor)+'</td><td class="quantity">'+label('Cambio')+change(r.change,it.unit)+'</td><td class="quantity">'+label('Saldo después')+'<strong>'+amount(r.after,it.unit)+'</strong></td></tr>').join('')+'</tbody></table>':'<p class="muted">Este artículo no tiene movimientos de este tipo.</p>';
+  wire();
+ }
+ get('a-type').onchange=e=>{type=e.target.value;paint();};paint();
+}
+function receipt(m){
+ const adjust=m.kind==='ADJUST';
+ main.innerHTML=title((m.kind==='VOID'?'Movimiento inverso ':'Comprobante ')+m.folio,'Consulta de solo lectura. Para registrar o anular, usa el módulo correspondiente.','<button id="back">Volver al historial</button>')+
+ '<section class="panel"><dl class="facts"><div><dt>Tipo</dt><dd>'+kinds[m.kind]+'</dd></div><div><dt>Estado</dt><dd>'+(m.voided?'<span class="badge voided">Anulado</span>':'Confirmado')+'</dd></div><div><dt>Ubicación</dt><dd>Principal</dd></div><div><dt>Fecha y hora</dt><dd class="date">'+dateText(m.date)+'</dd></div><div><dt>Responsable</dt><dd>'+esc(m.actor)+'</dd></div><div><dt>Motivo</dt><dd>'+esc(m.reason)+'</dd></div><div><dt>Referencia</dt><dd>'+esc(m.reference||'—')+'</dd></div></dl>'+
+ (m.voided?'<p class="note">Anulado por <button class="link" data-folio="'+m.voided+'">'+m.voided+'</button></p>':'')+(m.original?'<p class="note">Anula <button class="link" data-folio="'+m.original+'">'+m.original+'</button></p>':'')+'</section>'+
+ '<section class="panel"><h2>Artículos</h2><p class="muted">Saldo registrado al confirmar; no cambia con movimientos posteriores.</p><table><thead><tr><th>Artículo</th>'+(adjust?'<th>Saldo antes</th><th>Contado</th><th>Diferencia</th>':'<th>Cambio</th><th>Saldo después</th>')+'</tr></thead><tbody>'+
+ m.lines.map(([sku,c,after])=>{const it=items[sku],head='<td class="full"><button class="link" data-sku="'+sku+'">'+esc(it.name)+'</button><small>'+sku+'</small></td>';return '<tr>'+head+(adjust?'<td class="quantity">'+label('Saldo antes')+amount(after-c,it.unit)+'</td><td class="quantity">'+label('Contado')+'<strong>'+amount(after,it.unit)+'</strong></td><td class="quantity">'+label('Diferencia')+change(c,it.unit)+'</td>':'<td class="quantity">'+label('Cambio')+change(c,it.unit)+'</td><td class="quantity">'+label('Saldo después')+'<strong>'+amount(after,it.unit)+'</strong></td>')+'</tr>';}).join('')+'</tbody></table></section>';
+ get('back').onclick=()=>show(list);wire();
+}
+get('role').onchange=()=>show(list);get('state').onchange=()=>show(list);
+list();
+</script>
+</html>

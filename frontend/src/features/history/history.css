@@ -1,0 +1,79 @@
+.history-filters { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 12px; }
+.history-wide { grid-column: span 2; }
+.history-wide input { width: 100%; }
+.history-results { inset: 100% 0 auto; margin-top: 4px; }
+.history-period { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; }
+.history-period button { min-height: 44px; }
+.history-type { max-width: 200px; margin-bottom: 4px; }
+.history-summary { margin: 4px 0 0; color: #52525b; }
+.history-folio { white-space: nowrap; }
+.history-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.history-voided { background: #fef2f2; color: #991b1b; }
+.history-inactive { background: #fff7ed; color: #7c2d12; }
+.history-number { font-variant-numeric: tabular-nums; }
+.history-balance { font-size: 24px; font-variant-numeric: tabular-nums; }
+.history-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.history-table th { white-space: nowrap; overflow-wrap: normal; }
+@container catalog (max-width: 900px) {
+  .history-table td.receipt-date, .history-table .receipt-date time { white-space: normal; }
+  .history-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .history-period { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .history-period > label:first-child, .history-period > button { grid-column: 1 / -1; }
+  .history-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container catalog (max-width: 700px) {
+  .receipt-table.history-lines tr { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .history-table .receipt-link::after { content: none; }
+  .history-table tr:focus-within { outline: 0; }
+}
+@media (max-width: 370px) {
+  .history-filters, .history-period { grid-template-columns: minmax(0, 1fr); }
+  .history-wide { grid-column: auto; }
+}
+.history-table td { overflow-wrap: break-word; }
+.history-table .history-number { white-space: nowrap; }
+@container catalog (max-width: 900px) {
+  .history-table .history-number { white-space: normal; }
+}
+@media (max-width: 370px) {
+  .history-facts { grid-template-columns: minmax(0, 1fr); }
+  .history-balance { font-size: 20px; }
+}
+
+/* Móvil: cada fila se lee como una tarjeta: qué cambió, cuánto, y debajo los datos del registro. */
+@container catalog (max-width: 700px) {
+  .receipt-table.receipt-list.history-table tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "item change" "item balance" "reason reason" "folio folio" "date actor";
+    gap: 2px 12px; padding: 12px;
+  }
+  .receipt-table.receipt-list.history-table.history-no-item tr {
+    grid-template-areas: "change balance" "reason reason" "folio folio" "date actor";
+  }
+  .receipt-table.receipt-list.history-table.history-no-item td.history-cell-change { justify-self: start; text-align: left; }
+  .receipt-table.receipt-list.history-table td { grid-column: auto; grid-row: auto; justify-self: stretch; }
+  .receipt-table.receipt-list.history-table td.history-cell-item { grid-area: item; }
+  .receipt-table.receipt-list.history-table td.history-cell-reason { grid-area: reason; color: #52525b; font-size: 14px; }
+  .receipt-table.receipt-list.history-table td.history-cell-change { grid-area: change; justify-self: end; text-align: right; white-space: nowrap; font-size: 17px; }
+  .receipt-table.receipt-list.history-table td.history-cell-balance { grid-area: balance; justify-self: end; text-align: right; white-space: nowrap; font-size: 14px; }
+  .receipt-table.receipt-list.history-table td.history-cell-folio {
+    grid-area: folio; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid #e4e4e7;
+  }
+  .receipt-table.receipt-list.history-table td.history-cell-date { grid-area: date; color: #52525b; font-size: 13px; white-space: nowrap; }
+  .receipt-table.receipt-list.history-table td.history-cell-actor { grid-area: actor; justify-self: end; color: #52525b; font-size: 13px; text-align: right; }
+  .history-table .history-badges { margin-top: 0; }
+  .history-table .receipt-mobile-label { display: inline; font-size: inherit; }
+  .history-table .history-cell-actor .receipt-mobile-label { display: none; }
+  .history-table .history-cell-item .receipt-link { display: inline; }
+}
+@media (max-width: 420px) {
+  .receipt-table.receipt-list.history-table tr { grid-template-areas: "item change" "item balance" "reason reason" "folio folio" "date date" "actor actor"; }
+  .receipt-table.receipt-list.history-table.history-no-item tr { grid-template-areas: "change balance" "reason reason" "folio folio" "date date" "actor actor"; }
+  .receipt-table.receipt-list.history-table td.history-cell-actor { justify-self: start; text-align: left; }
+  .history-table .history-cell-actor .receipt-mobile-label { display: inline; }
+}
+@media (max-width: 370px) {
+  .receipt-table.receipt-list.history-table.history-no-item tr { grid-template-columns: minmax(0, 1fr); grid-template-areas: "change" "balance" "reason" "folio" "date" "actor"; }
+  .receipt-table.receipt-list.history-table.history-no-item td.history-cell-balance { justify-self: start; text-align: left; }
+}

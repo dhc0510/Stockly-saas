@@ -28,7 +28,7 @@ public class StockMovementService {
         String filter = RULES.term(search);
         var entries = jdbc.query(MOVEMENTS + """
             AND m.kind IN ('OUT','ADJUST')
-            AND (m.folio LIKE ? ESCAPE '!' OR COALESCE(m.reference,'') LIKE ? ESCAPE '!')
+            AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(m.reference,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')
             AND (?='' OR m.kind=?)
             AND (?='' OR (?='voided' AND r.id IS NOT NULL) OR (?='confirmed' AND r.id IS NULL))
             ORDER BY m.created_at DESC,m.id DESC LIMIT ? OFFSET ?

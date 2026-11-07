@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { normalizeSearch } from "../../lib/search";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Bell, Boxes, MapPin, PackagePlus, Pencil, Plus, Search, Settings2, Trash2, UserRound, X } from "lucide-react";
 import { request } from "../../lib/http";
@@ -31,11 +32,11 @@ export function InventoryPage({canEditCatalog,isAdmin}:{canEditCatalog:boolean;i
   useEffect(()=>{setSelected(searchParams.get("branchId")??"");const productId=searchParams.get("productId")??"";setFocusedProductId(productId);if(productId){setSearch("");setCategory("");setStatus("ALL");setSort("NAME");}},[searchParams]);
   const categories=useMemo(()=>[...new Set(rows.map(row=>row.category).filter((v):v is string=>!!v))].sort((a,b)=>a.localeCompare(b)),[rows]);
   const visibleRows=useMemo(()=>{
-    const term=search.trim().toLocaleLowerCase();
+    const term=normalizeSearch(search);
     const matching=rows.filter(row=>{
       if(selected&&row.branchId!==selected)return false;
       if(category&&row.category!==category)return false;
-      if(term&&![row.productName,row.sku,row.barcode??"",row.category??"",row.variantName??""].some(value=>value.toLocaleLowerCase().includes(term)))return false;
+      if(term&&![row.productName,row.sku,row.barcode??"",row.category??"",row.variantName??""].some(value=>normalizeSearch(value).includes(term)))return false;
       if(status==="AVAILABLE")return row.available>0;
       if(status==="LOW")return row.state==="LOW";
       if(status==="MINIMUM")return row.state==="MINIMUM";

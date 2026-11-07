@@ -41,7 +41,7 @@ public class CompanyAccessFilter extends OncePerRequestFilter {
     private static void revoke(HttpServletRequest req,HttpServletResponse res) throws IOException {
         if(req.getSession(false)!=null) req.getSession(false).invalidate();
         SecurityContextHolder.clearContext();
-        res.setStatus(401); res.setContentType("application/json");
+        res.setStatus(401); res.setContentType("application/json"); res.setCharacterEncoding("UTF-8");
         res.getWriter().write("{\"code\":\"SESSION_REVOKED\",\"message\":\"El acceso ya no está disponible. Inicia sesión de nuevo.\",\"fieldErrors\":{},\"requestId\":\""+java.util.UUID.randomUUID()+"\"}");
     }
 }

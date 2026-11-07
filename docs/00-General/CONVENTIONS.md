@@ -80,3 +80,8 @@ Si la copia está atrasada, detener el desarrollo dependiente y ayudar al usuari
 Al terminar cada sesión de trabajo, recordar al usuario que la última versión debe quedar publicada en GitHub. Informar explícitamente si los cambios ya están subidos y, cuando corresponda, indicar rama y commit; si no lo están, explicar qué queda pendiente. No afirmar publicación sin verificar el remoto.
 
 Este recordatorio complementa el cierre automático: después de aprobar la aplicación en local, hacer commit/push y actualizar Trello con la autorización permanente existente. Sin esa aprobación, recordar lo pendiente sin publicar por iniciativa propia ni confundir el recordatorio con autorización adicional.
+
+
+## Búsquedas sin distinguir tildes
+
+Regla permanente aprobada por el propietario el 2026-11-07: toda búsqueda de Stockly debe encontrar el resultado aunque se escriba sin tildes o con mayúsculas distintas, por ejemplo «cafe» encuentra «Café» y «guia» encuentra «GUÍA-083». Aplica al filtrado en el servidor y en el navegador. Cada funcionalidad con búsqueda debe probarlo.

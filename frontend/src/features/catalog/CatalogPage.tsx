@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { normalizeSearch } from "../../lib/search";
 import { useSearchParams } from "react-router-dom";
 import { ImagePlus, Package, Pencil, Plus, Search, Tag, Tags, Trash2, X } from "lucide-react";
 import { request } from "../../lib/http";
@@ -109,14 +110,14 @@ export function CatalogPage({ access }: { access: Access }) {
     setReload(value => value + 1);
   }
 
-  const term = search.trim().toLocaleLowerCase();
+  const term = normalizeSearch(search);
   const rows = page.products.flatMap<{ product: Product; item?: Item }>(product => {
     const group = product.items.some(item => item.variantName !== null);
     const visible = product.items.filter(item => (product.active && item.active) === active);
     if (!group) return visible.map(item => ({ product, item }));
-    const exact = term ? visible.filter(item => [item.sku, item.barcode].some(code => code?.toLocaleLowerCase() === term)) : [];
-    const matches = exact.length || !term || product.name.toLocaleLowerCase().includes(term) ? exact
-      : visible.filter(item => [item.sku, item.barcode].some(code => code?.toLocaleLowerCase().includes(term)));
+    const exact = term ? visible.filter(item => [item.sku, item.barcode].some(code => normalizeSearch(code) === term)) : [];
+    const matches = exact.length || !term || normalizeSearch(product.name).includes(term) ? exact
+      : visible.filter(item => [item.sku, item.barcode].some(code => normalizeSearch(code).includes(term)));
     if (matches.length || (!active && product.active)) return (matches.length ? matches : visible).map(item => ({ product, item }));
     return [{ product, item: undefined }];
   });
@@ -182,8 +183,8 @@ function CategoryManager({ categories, close, saved, notice, loading }: {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const term = search.trim().toLocaleLowerCase();
-  const filtered = categories.filter(name => name.toLocaleLowerCase().includes(term));
+  const term = normalizeSearch(search);
+  const filtered = categories.filter(name => normalizeSearch(name).includes(term));
   const title = action?.mode === "create" ? "Nueva categoría" : action?.mode === "edit" ? "Editar categoría"
     : action?.mode === "delete" ? "Eliminar categoría" : "Gestionar categorías";
 

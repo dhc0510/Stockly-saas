@@ -28,7 +28,7 @@ public class ReceiptService {
         String filter = RULES.term(search);
         var entries = jdbc.query(MOVEMENTS + """
             AND m.kind='RECEIPT'
-            AND (m.folio LIKE ? ESCAPE '!' OR COALESCE(m.reference,'') LIKE ? ESCAPE '!')
+            AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(m.reference,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')
             AND (?='' OR (?='voided' AND r.id IS NOT NULL) OR (?='confirmed' AND r.id IS NULL))
             ORDER BY m.created_at DESC,m.id DESC LIMIT ? OFFSET ?
             """, (rs, row) -> summary(rs), company, filter, filter, status, status, status, PAGE_SIZE + 1, (long) page * PAGE_SIZE);

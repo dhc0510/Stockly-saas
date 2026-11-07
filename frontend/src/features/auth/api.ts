@@ -29,9 +29,11 @@ export function ensureCsrf() {
 }
 
 export const authApi = {
-  login: (identifier: string, password: string) => request<LoginResult>("/api/auth/login", {
-    method: "POST", body: JSON.stringify({ identifier, password }),
-  }),
+  login: async (identifier: string, password: string) => {
+    // La sesión pudo cerrarse, vencer o revocarse: el token anterior ya no sirve.
+    await ensureCsrf();
+    return request<LoginResult>("/api/auth/login", { method: "POST", body: JSON.stringify({ identifier, password }) });
+  },
   verify: (challengeId: string, code: string, rememberDevice: boolean) => request<SessionUser>("/api/auth/device-challenges/verify", {
     method: "POST", body: JSON.stringify({ challengeId, code, rememberDevice }),
   }),

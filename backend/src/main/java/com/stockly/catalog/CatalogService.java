@@ -31,7 +31,7 @@ public class CatalogService {
             WHERE p.company_id=? AND (?='' OR p.category=?)
               AND EXISTS (SELECT 1 FROM catalog_items i
                 WHERE i.company_id=p.company_id AND i.product_id=p.id AND (p.active AND i.active)=?
-                  AND (p.name LIKE ? ESCAPE '!' OR i.sku LIKE ? ESCAPE '!' OR i.barcode LIKE ? ESCAPE '!'))
+                  AND (p.name COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR i.sku COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR i.barcode COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!'))
             ORDER BY p.name,p.id LIMIT ? OFFSET ?
             """, (rs, row) -> product(company, rs),
             company, category, category, active, term, term, term, PAGE_SIZE + 1, Math.max(0L, page) * PAGE_SIZE);

@@ -153,7 +153,7 @@ public class InventoryService {
         if (branchId != null) { sql.append(" AND b.id=?"); params.add(branchId); }
         else { sql.append(" AND b.id IN (").append(String.join(",", Collections.nCopies(allowed.size(), "?"))).append(")"); params.addAll(allowed); }
         if (!term.isEmpty()) {
-            sql.append(" AND (p.name LIKE ? ESCAPE '!' OR i.sku LIKE ? ESCAPE '!' OR i.barcode LIKE ? ESCAPE '!' OR p.category LIKE ? ESCAPE '!')");
+            sql.append(" AND (p.name COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR i.sku COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR i.barcode COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR p.category COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')");
             String like = "%" + term + "%"; params.addAll(List.of(like, like, like, like));
         }
         if (!selectedCategory.isEmpty()) { sql.append(" AND p.category=?"); params.add(selectedCategory); }

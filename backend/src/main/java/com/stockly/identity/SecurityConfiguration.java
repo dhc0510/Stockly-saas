@@ -35,6 +35,8 @@ public class SecurityConfiguration {
                     "MODULE_INVENTORY_RECEIPTS_READ", "MODULE_INVENTORY_RECEIPTS_OPERATE", "MODULE_INVENTORY_RECEIPTS_ADMIN")
                 .requestMatchers("/api/inventory/movements", "/api/inventory/movements/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
                     "MODULE_INVENTORY_MOVEMENTS_READ", "MODULE_INVENTORY_MOVEMENTS_OPERATE", "MODULE_INVENTORY_MOVEMENTS_ADMIN")
+                .requestMatchers("/api/inventory/history", "/api/inventory/history/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
+                    "MODULE_INVENTORY_HISTORY_READ", "MODULE_INVENTORY_HISTORY_OPERATE", "MODULE_INVENTORY_HISTORY_ADMIN")
                 .requestMatchers("/api/inventory", "/api/inventory/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
                     "MODULE_INVENTORY_READ", "MODULE_INVENTORY_OPERATE", "MODULE_INVENTORY_ADMIN",
                     "MODULE_CATALOG_OPERATE", "MODULE_CATALOG_ADMIN")
@@ -48,7 +50,7 @@ public class SecurityConfiguration {
             .build();
     }
     private static void error(jakarta.servlet.http.HttpServletResponse res,int status,String code,String message) throws java.io.IOException {
-        res.setStatus(status); res.setContentType("application/json");
+        res.setStatus(status); res.setContentType("application/json"); res.setCharacterEncoding("UTF-8");
         res.getWriter().write("{\"code\":\""+code+"\",\"message\":\""+message+"\",\"fieldErrors\":{},\"requestId\":\""+java.util.UUID.randomUUID()+"\"}");
     }
 }

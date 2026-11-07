@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
     return ()=>{alive=false;};
   },[]);
-  const logout=useCallback(async()=>{try{await authApi.logout();}finally{setUser(null);}},[]);
+  const logout=useCallback(async()=>{try{await authApi.logout();}finally{await ensureCsrf().catch(()=>undefined);setUser(null);}},[]);
   return <Context.Provider value={{user,loading,refresh,logout}}>{children}</Context.Provider>;
 }
 export function useAuth() {

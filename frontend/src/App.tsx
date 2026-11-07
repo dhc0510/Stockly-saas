@@ -17,6 +17,7 @@ export function App() {
   useEffect(() => {
     const page = pathname.startsWith("/inventory/receipts") ? "Entradas de inventario"
       : pathname.startsWith("/inventory/movements") ? "Salidas y ajustes"
+      : pathname.startsWith("/inventory/history") ? "Historial"
       : pathname.startsWith("/catalog") ? "Catálogo de productos"
       : pathname.startsWith("/companies") ? "Empresas"
       : pageTitles[pathname];

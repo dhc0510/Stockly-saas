@@ -19,6 +19,8 @@ public class InventoryLedger {
     static final String PRINCIPAL = "principal";
     static final int PAGE_SIZE = 25;
     static final int MAX_LINES = 200;
+    /** Búsqueda sin distinguir tildes ni mayúsculas, sin depender de la colación por defecto de la base. */
+    static final String ACCENT_INSENSITIVE = "COLLATE utf8mb4_0900_ai_ci";
     static final BigDecimal MAX_QUANTITY = new BigDecimal("1000000");
     static final BigDecimal MAX_BALANCE = new BigDecimal("999999999999999.999");
     static final String MOVEMENTS = """
@@ -49,8 +51,8 @@ public class InventoryLedger {
         if (value == null) return List.of();
         String filter = rules.term(value);
         String condition = barcode ? "i.barcode=?" : """
-            (p.name LIKE ? ESCAPE '!' OR i.variant_name LIKE ? ESCAPE '!'
-             OR i.sku LIKE ? ESCAPE '!' OR i.barcode LIKE ? ESCAPE '!')
+            (p.name COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR i.variant_name COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!'
+             OR i.sku COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR i.barcode COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')
             """;
         Object[] params = barcode ? new Object[]{company, value} : new Object[]{company, filter, filter, filter, filter};
         return jdbc.query("""
