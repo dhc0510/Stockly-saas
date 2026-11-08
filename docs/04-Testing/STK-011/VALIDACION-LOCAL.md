@@ -24,3 +24,7 @@ Chromium a 320 px y 1440 px con React, Spring Boot y MySQL conectados. Se usaron
 - A 320 px se recuperó el borrador tras recargar, con dos líneas y una cantidad escrita con coma. La venta de 0,125 kg y 2 unidades quedó en ₡1.654,31. Se interrumpió la respuesta de red después de que MySQL confirmara la venta. El reintento devolvió VTA-0001 y el listado mantuvo una sola venta.
 - Existencias e Historial reflejaron ambas líneas. El comprobante abrió por su URL sin desbordamiento horizontal.
 - A 1440 px se anuló el comprobante desde la aplicación. Centro recuperó 10 kg y 5 unidades. Norte siguió en cero.
+
+## Revisión de los ajustes finales
+
+El propietario aprobó los cambios de interfaz y pidió integrarlos en main. La migración V10 se aplicó en el esquema aislado. La compilación de producción y las 53 pruebas seleccionadas pasaron (31 de backend, 12 de Vitest y 10 de Playwright). Las pruebas ampliadas verifican el contacto guardado en la venta, el borrador y el comprobante, la etiqueta Motivo y el bloqueo del fondo al abrir el menú móvil. CompanyIntegrationTest quedó fuera porque requiere Docker.

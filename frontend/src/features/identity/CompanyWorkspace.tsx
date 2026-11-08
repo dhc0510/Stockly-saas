@@ -1,5 +1,5 @@
 import { SalesPage } from "../sales/SalesPage";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart } from "lucide-react";
 import { CatalogPage, catalogAccess } from "../catalog/CatalogPage";
@@ -16,6 +16,42 @@ function Busy() { return <div className="state-panel" role="status">Cargando…<
 export function CompanyWorkspace() {
   const {user,logout}=useAuth();const navigate=useNavigate();
   const [menuOpen,setMenuOpen]=useState(false);
+  const menuToggle = useRef<HTMLButtonElement>(null);
+  const drawerClose = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const mobile = window.matchMedia("(max-width: 640px)");
+    if (!mobile.matches) {
+      setMenuOpen(false);
+      return;
+    }
+
+    const scrollY = window.scrollY;
+    const body = document.body.style;
+    const previous = { position: body.position, top: body.top, width: body.width };
+    Object.assign(body, { position: "fixed", top: `-${scrollY}px`, width: "100%" });
+    drawerClose.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    const onResize = (event: MediaQueryListEvent) => {
+      if (!event.matches) setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    mobile.addEventListener("change", onResize);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      mobile.removeEventListener("change", onResize);
+      Object.assign(body, previous);
+      window.scrollTo({ top: scrollY, behavior: "instant" });
+      if (mobile.matches && !menuToggle.current?.closest("[inert]")) {
+        menuToggle.current?.focus({ preventScroll: true });
+      }
+    };
+  }, [menuOpen]);
   if(!user) return <Navigate to="/login" replace/>;
   const canUsers=user.role==="COMPANY_ADMIN"||user.specialPermissions.includes("MANAGE_USERS");
   const canRoles=user.role==="COMPANY_ADMIN"||user.specialPermissions.includes("MANAGE_PERMISSIONS");
@@ -35,8 +71,12 @@ export function CompanyWorkspace() {
     (user.role === "COMPANY_ADMIN" || !!salesLevel && salesLevel !== "NONE");
   const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":canInventory?"/inventory":canReceipts?"/inventory/receipts":canMovements?"/inventory/movements":canHistory?"/inventory/history":canSales?"/sales":"/account";
   const closeMenu=()=>setMenuOpen(false);
-  return <div className={`app-shell${import.meta.env.MODE === "stk005-demo" ? " stk005-demo-shell" : ""}`}>
-    <aside className={`sidebar company-sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación de empresa"><Link className="brand" to="/" onClick={closeMenu}>Stockly<span className="brand-dot">.</span></Link><nav className="company-sidebar-links" aria-label="Secciones de empresa"><div className="nav-caption">MI EMPRESA</div>
+  return <div className={`app-shell company-shell${import.meta.env.MODE === "stk005-demo" ? " stk005-demo-shell" : ""}`}>
+    <aside className={`sidebar company-sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación de empresa"><div className="company-sidebar-heading">
+        <Link className="brand" to="/" onClick={closeMenu}>Stockly<span className="brand-dot">.</span></Link>
+        {menuOpen && <button ref={drawerClose} className="company-drawer-close icon-button" type="button"
+          aria-label="Cerrar menú" onClick={closeMenu}><X size={20} aria-hidden="true" /></button>}
+      </div><nav className="company-sidebar-links" aria-label="Secciones de empresa"><div className="nav-caption">MI EMPRESA</div>
       {canUsers&&<NavLink className="identity-nav" to="/users" onClick={closeMenu}><Users size={18}/> Usuarios</NavLink>}
       {canRoles&&<NavLink className="identity-nav" to="/roles" onClick={closeMenu}><Shield size={18}/> Roles y permisos</NavLink>}
       {canPolicy&&<NavLink className="identity-nav" to="/security" onClick={closeMenu}><Settings2 size={18}/> Seguridad</NavLink>}
@@ -52,8 +92,8 @@ export function CompanyWorkspace() {
       </nav>
       <div className="sidebar-footer"><span className="avatar"><UserRound size={18}/></span><span><strong>{user.fullName}</strong><br/><small>{user.role === "COMPANY_ADMIN" ? "Administración de empresa" : user.email}</small></span></div>
     </aside>
-    {menuOpen&&<button className="mobile-drawer-scrim" type="button" aria-label="Cerrar menú" onClick={closeMenu}/>}
-    <div className="workspace">{(import.meta.env.MODE === "stk005-demo"||import.meta.env.MODE === "stk007-demo")&&<div className="demo-notice" role="status"><strong>{import.meta.env.MODE==="stk007-demo"?"Simulación STK-007":"Simulación STK-005"}</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span>Mi empresa</span><div className="company-top-actions">{canInventory&&<InventoryBell/>}<button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></div></header>
+    {menuOpen&&<button className="mobile-drawer-scrim" type="button" tabIndex={-1} aria-label="Cerrar menú" onClick={closeMenu}/>}
+    <div className="workspace" inert={menuOpen}>{(import.meta.env.MODE === "stk005-demo"||import.meta.env.MODE === "stk007-demo")&&<div className="demo-notice" role="status"><strong>{import.meta.env.MODE==="stk007-demo"?"Simulación STK-007":"Simulación STK-005"}</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button ref={menuToggle} className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span>Mi empresa</span><div className="company-top-actions">{canInventory&&<InventoryBell/>}<button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></div></header>
       <main id="main" tabIndex={-1}><Routes>
         {canUsers&&<Route path="/users" element={<UsersPage/>}/>}
         {canRoles&&<Route path="/roles" element={<RolesPage/>}/>}

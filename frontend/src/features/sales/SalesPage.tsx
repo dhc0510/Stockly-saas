@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, ChevronRight, ClipboardList, FileText, Package, Plus, ReceiptText, Search, Trash2, UserRound, X } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { MovementBranch, useMovementBranch } from "../inventory/MovementBranch";
 import { amount, failureMessage, receiptDate, type Article } from "../receipts/receiptApi";
@@ -14,10 +14,17 @@ const currency = new Intl.NumberFormat("es-CR", { style: "currency", currency: "
 const money = (value: number) => currency.format(value);
 type Product = { article: Article; price: number | null };
 type Line = Product & { quantity: string };
-type Draft = { branchId?: string; customer: string; lines: Line[]; requestKey?: string };
+type Draft = {
+  branchId?: string;
+  customer: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  lines: Line[];
+  requestKey?: string;
+};
 type Row = { id: string; folio: string; date: string; branchName: string; customer: string | null; total: number; voided: boolean };
 type Sale = {
-  sale: { branchName: string; customer: string | null; total: number };
+  sale: { branchName: string; customer: string | null; customerPhone: string | null; customerEmail: string | null; total: number };
   movement: { folio: string; date: string; actor: string; voidId: string | null; voidReason: string | null; voidFolio: string | null };
   lines: { itemId: string; name: string; sku: string; unit: string; quantity: number; unitPrice: number; amount: number }[];
 };
@@ -29,9 +36,35 @@ function load(key: string): Draft {
   } catch { return empty(); }
 }
 
-function Heading({ title, children }: { title: string; children?: React.ReactNode }) {
-  return <header className="catalog-heading"><div><p className="catalog-eyebrow">Operación comercial / Ventas</p><h1>{title}</h1></div>{children}</header>;
+function Heading({ title, description, children }: { title: string; description: string; children?: React.ReactNode }) {
+  return <header className="sales-heading">
+    <div className="sales-heading-copy">
+      <p className="sales-eyebrow"><ReceiptText size={15} aria-hidden="true" /> Operación comercial</p>
+      <h1>{title}</h1>
+      <p className="sales-description">{description}</p>
+    </div>
+    {children && <div className="sales-heading-action">{children}</div>}
+  </header>;
 }
+
+function SaleStatus({ voided }: { voided: boolean }) {
+  const Icon = voided ? X : Check;
+  return <span className={voided ? "sales-status sales-status-void" : "sales-status"}>
+    <Icon size={13} aria-hidden="true" />{voided ? "Anulada" : "Confirmada"}
+  </span>;
+}
+
+function PanelHeading({ icon: Icon, title, description }: {
+  icon: typeof ReceiptText;
+  title: string;
+  description: string;
+}) {
+  return <div className="sales-panel-heading">
+    <span className="sales-icon" aria-hidden="true"><Icon size={19} /></span>
+    <div><h2>{title}</h2><p>{description}</p></div>
+  </div>;
+}
+
 
 export function SalesPage() {
   const { user } = useAuth();
@@ -50,7 +83,7 @@ export function SalesPage() {
 
 function List({ storage, canWrite }: { storage: string; canWrite: boolean }) {
   const draft = load(storage);
-  const [hasDraft, setHasDraft] = useState(!!(draft.lines.length || draft.customer.trim()));
+  const [hasDraft, setHasDraft] = useState(!!(draft.lines.length || draft.customer.trim() || draft.customerPhone?.trim() || draft.customerEmail?.trim()));
   const [discard, setDiscard] = useState(false);
   const [search, setSearch] = useState("");
   const [branchId, setBranchId] = useState("");
@@ -70,42 +103,79 @@ function List({ storage, canWrite }: { storage: string; canWrite: boolean }) {
   }, [search, branchId, status, page]);
 
   return <>
-    <Heading title="Ventas">{canWrite && <Link className="catalog-primary" to={path + "/new"}><Plus size={17} /> Nueva venta</Link>}</Heading>
-    {canWrite && hasDraft && <div className="notice">
-      <p>Tienes una venta sin confirmar.</p>
-      <Link to={path + "/new"}>Continuar</Link>
-      {!draft.requestKey && <button className="button secondary" type="button" onClick={() => setDiscard(true)}>Descartar</button>}
-      {discard && <div><p>¿Descartar el borrador de este navegador?</p><button autoFocus type="button" onClick={() => setDiscard(false)}>Volver</button>
-        <button type="button" onClick={() => {
-          try { localStorage.removeItem(storage); setHasDraft(false); setDiscard(false); }
-          catch (failure) { setError(failureMessage(failure)); }
-        }}>Descartar borrador</button></div>}
-    </div>}
-    <section className="catalog-panel receipt-panel">
-      <div className="sales-filters">
-        <label>Buscar<input type="search" placeholder="Folio o cliente" value={search} onChange={event => { setSearch(event.target.value); setPage(0); }} /></label>
-        <label>Sucursal<select value={branchId} onChange={event => { setBranchId(event.target.value); setPage(0); }}>
-          <option value="">Todas</option>{branches.map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
-        </select></label>
-        <label>Estado<select value={status} onChange={event => { setStatus(event.target.value); setPage(0); }}>
-          <option value="">Todos</option><option value="confirmed">Confirmadas</option><option value="voided">Anuladas</option>
-        </select></label>
+    <Heading title="Ventas" description="Registra ventas y consulta sus comprobantes por sucursal.">
+      {canWrite && <Link className="button primary sales-new-sale" to={path + "/new"}>
+        <Plus size={18} aria-hidden="true" /> Nueva venta
+      </Link>}
+    </Heading>
+    {canWrite && hasDraft && <aside className="sales-draft" aria-labelledby="sales-draft-title">
+      <div className="sales-draft-copy">
+        <span className="sales-icon" aria-hidden="true"><ClipboardList size={20} /></span>
+        <div><h2 id="sales-draft-title">Venta sin confirmar</h2><p>Retoma el borrador que guardaste en este navegador.</p></div>
       </div>
-      {error ? <p role="alert">{error}</p> : !result ? <p role="status">Cargando ventas…</p> :
-        !result.entries.length ? <p>No hay ventas para esta consulta.</p> : <ul className="sales-list">
-          {result.entries.map(sale => <li key={sale.id}><Link to={path + "/" + sale.folio}>
-            <strong>{sale.folio}</strong><time className="sales-date">{receiptDate(sale.date)}</time>
-            <span>{sale.branchName} · {sale.customer || "Público general"}</span>
-            <strong>{money(sale.total)}</strong><span>{sale.voided ? "Anulada" : "Confirmada"}</span>
-          </Link></li>)}
-        </ul>}
-      {(page > 0 || result?.hasMore) && <div className="sales-actions">
-        <button type="button" disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button>
-        <button type="button" disabled={!result?.hasMore} onClick={() => setPage(page + 1)}>Siguiente</button>
+      {discard ? <div className="sales-draft-confirm">
+        <p>¿Descartar este borrador?</p>
+        <div className="sales-draft-actions">
+          <button className="button secondary" autoFocus type="button" onClick={() => setDiscard(false)}>Conservar</button>
+          <button className="button danger" type="button" onClick={() => {
+            try { localStorage.removeItem(storage); setHasDraft(false); setDiscard(false); }
+            catch (failure) { setError(failureMessage(failure)); }
+          }}>Descartar borrador</button>
+        </div>
+      </div> : <div className="sales-draft-actions">
+        {!draft.requestKey && <button className="button sales-quiet" type="button" onClick={() => setDiscard(true)}>Descartar</button>}
+        <Link className="button secondary" to={path + "/new"}>Continuar <ArrowRight size={16} aria-hidden="true" /></Link>
+      </div>}
+    </aside>}
+    <section className="sales-panel sales-register" aria-label="Historial de ventas">
+      <div className="sales-register-tools">
+        <PanelHeading icon={ReceiptText} title="Historial de ventas" description="Busca por folio o cliente, o acota por sucursal y estado." />
+        <div className="sales-filters">
+          <label className="sales-search-filter">Buscar
+            <span className="sales-search">
+              <Search size={17} aria-hidden="true" />
+              <input type="search" placeholder="Folio o cliente" value={search} onChange={event => { setSearch(event.target.value); setPage(0); }} />
+            </span>
+          </label>
+          <label>Sucursal<select value={branchId} onChange={event => { setBranchId(event.target.value); setPage(0); }}>
+            <option value="">Todas</option>{branches.map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+          </select></label>
+          <label>Estado<select value={status} onChange={event => { setStatus(event.target.value); setPage(0); }}>
+            <option value="">Todos</option><option value="confirmed">Confirmadas</option><option value="voided">Anuladas</option>
+          </select></label>
+        </div>
+      </div>
+      {error ? <p className="sales-list-message" role="alert">{error}</p> :
+        !result ? <p className="sales-list-message" role="status">Cargando ventas…</p> :
+        !result.entries.length ? <div className="sales-empty">
+          <span className="sales-icon" aria-hidden="true"><ReceiptText size={22} /></span>
+          <h3>No hay ventas para esta consulta</h3>
+          <p>{search || branchId || status ? "Prueba con otros filtros." : "Los comprobantes aparecerán aquí al confirmar una venta."}</p>
+        </div> : <>
+          <div className="sales-register-head sales-row-grid" aria-hidden="true">
+            <span>Venta</span><span>Cliente</span><span>Sucursal</span><span>Fecha y hora</span>
+            <span className="sales-amount">Total</span><span>Estado</span><span />
+          </div>
+          <ul className="sales-list" role="list">
+            {result.entries.map(sale => <li key={sale.id}><Link className="sales-row sales-row-grid" to={path + "/" + sale.folio}>
+              <span className="sales-folio"><span className="sales-folio-icon" aria-hidden="true"><FileText size={16} /></span><strong>{sale.folio}</strong></span>
+              <span className="sales-row-customer">{sale.customer || "Público general"}</span>
+              <span className="sales-row-branch"><Building2 size={14} aria-hidden="true" />{sale.branchName}</span>
+              <time className="sales-date" dateTime={sale.date}>{receiptDate(sale.date)}</time>
+              <strong className="sales-amount">{money(sale.total)}</strong>
+              <SaleStatus voided={sale.voided} />
+              <ChevronRight className="sales-row-arrow" size={17} aria-hidden="true" />
+            </Link></li>)}
+          </ul>
+        </>}
+      {(page > 0 || result?.hasMore) && <div className="sales-pagination">
+        <button className="button secondary" type="button" disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button>
+        <button className="button secondary" type="button" disabled={!result?.hasMore} onClick={() => setPage(page + 1)}>Siguiente</button>
       </div>}
     </section>
   </>;
 }
+
 
 function quantity(line: Line) { return line.quantity.trim().replace(",", "."); }
 function valid(line: Line) {
@@ -127,6 +197,8 @@ function Editor({ storage }: { storage: string }) {
   const [results, setResults] = useState<Product[]>([]);
   const [error, setError] = useState("");
   const [issues, setIssues] = useState<Record<string, string>>({});
+  const [emailInvalid, setEmailInvalid] = useState(false);
+  const emailInput = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [discard, setDiscard] = useState(false);
   const branch = useMovementBranch(api, draft.branchId);
@@ -156,6 +228,12 @@ function Editor({ storage }: { storage: string }) {
     persist({ ...draft, ...next });
   }
   function startReview() {
+    const email = draft.customerEmail?.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailInvalid(true);
+      emailInput.current?.focus();
+      return;
+    }
     const invalid = Object.fromEntries(draft.lines.flatMap(line => !valid(line)
       ? [[line.article.id, line.article.unit === "unidad" ? "Ingresa una cantidad entera positiva." : "Ingresa una cantidad positiva de hasta tres decimales."]]
       : line.price === null ? [[line.article.id, "Configura el precio en el catálogo."]] : []));
@@ -172,6 +250,7 @@ function Editor({ storage }: { storage: string }) {
     try {
       const sale = await request<Sale>(api, { method: "POST", body: JSON.stringify({
         requestKey: attempt.requestKey, branchId: attempt.branchId, customer: attempt.customer,
+        customerPhone: attempt.customerPhone, customerEmail: attempt.customerEmail,
         lines: attempt.lines.map(line => ({ itemId: line.article.id, quantity: quantity(line), expectedPrice: line.price })),
       }) });
       localStorage.removeItem(storage);
@@ -199,18 +278,36 @@ function Editor({ storage }: { storage: string }) {
   }
 
   return <>
-    <Heading title={review ? "Revisar venta" : "Nueva venta"}><Link to={path}>Volver a ventas</Link></Heading>
+    <Heading title={review ? "Revisar venta" : "Nueva venta"} description={review ? "Verifica los artículos y el total antes de confirmar." : "Elige la sucursal y agrega los artículos de la venta."}>
+      <Link className="button secondary sales-back" to={path}><ArrowLeft size={16} aria-hidden="true" /> Volver a ventas</Link>
+    </Heading>
     {error && <p className="notice error" role="alert">{error}</p>}
-    <section className="catalog-panel receipt-panel">
-      {review ? <><h2>{branch.selected?.name ?? "Sucursal seleccionada"}</h2><p>{draft.customer || "Público general"}</p></> :
-        <div className="sales-filters">
+    <section className="sales-panel sales-work-panel">
+      {review ? <>
+        <PanelHeading icon={UserRound} title={branch.selected?.name ?? "Sucursal seleccionada"} description="Datos de la venta" />
+        <dl className="sales-details">
+          <div><dt>Cliente</dt><dd>{draft.customer.trim() || "Público general"}</dd></div>
+          {draft.customerPhone?.trim() && <div><dt>Teléfono</dt><dd>{draft.customerPhone.trim()}</dd></div>}
+          {draft.customerEmail?.trim() && <div><dt>Correo electrónico</dt><dd>{draft.customerEmail.trim()}</dd></div>}
+        </dl>
+      </> : <>
+        <PanelHeading icon={UserRound} title="Datos de la venta" description="Puedes registrar el contacto del cliente si lo necesitas." />
+        <div className="sales-contact-fields">
           {branch.legacy ? <p role="status">Crea y configura una sucursal antes de registrar ventas.</p> :
             <MovementBranch state={branch} locked={draft.lines.length > 0} onChange={id => { setSearch(""); update({ branchId: id }); }} />}
           <label>Cliente opcional<input value={draft.customer} maxLength={150} onChange={event => update({ customer: event.target.value })} /></label>
-        </div>}
+          <label>Teléfono opcional<input type="tel" autoComplete="tel" maxLength={30} value={draft.customerPhone ?? ""}
+            onChange={event => update({ customerPhone: event.target.value })} /></label>
+          <label>Correo electrónico opcional<input ref={emailInput} type="email" autoComplete="email" maxLength={254}
+            value={draft.customerEmail ?? ""} aria-invalid={emailInvalid}
+            aria-describedby={emailInvalid ? "sales-email-error" : undefined}
+            onChange={event => { setEmailInvalid(false); update({ customerEmail: event.target.value }); }} />
+            {emailInvalid && <small id="sales-email-error" role="alert">Ingresa un correo electrónico válido.</small>}
+          </label>
+        </div></>}
     </section>
-    <section className="catalog-panel receipt-panel">
-      <h2>Artículos</h2>
+    <section className="sales-panel sales-work-panel">
+      <PanelHeading icon={Package} title="Artículos" description={review ? "Cantidades y precios aplicados a esta venta." : "Busca en el catálogo y agrega las cantidades."} />
       {!review && <>
         <label>Buscar por nombre, SKU o código de barras<input type="search" value={search} disabled={!branchId || !!branch.problem}
           onChange={event => setSearch(event.target.value)} /></label>
@@ -263,6 +360,8 @@ function Document({ canVoid }: { canVoid: boolean }) {
   const [sale, setSale] = useState<Sale>();
   const [voiding, setVoiding] = useState(false);
   const [reason, setReason] = useState("");
+  const [reasonInvalid, setReasonInvalid] = useState(false);
+  const reasonInput = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const url = api + "/" + encodeURIComponent(folio ?? "");
@@ -276,25 +375,38 @@ function Document({ canVoid }: { canVoid: boolean }) {
   }, [url]);
 
   return <>
-    <Heading title={sale ? "Venta " + sale.movement.folio : "Comprobante de venta"}><Link to={path}>Volver a ventas</Link></Heading>
+    <Heading title={sale ? "Venta " + sale.movement.folio : "Comprobante de venta"} description="Comprobante interno de la operación.">
+      <Link className="button secondary sales-back" to={path}><ArrowLeft size={16} aria-hidden="true" /> Volver a ventas</Link>
+    </Heading>
     {error && <p className="notice error" role="alert">{error}</p>}
-    {!sale ? !error && <p role="status">Cargando comprobante…</p> : <section className="catalog-panel receipt-panel">
-      <h2>Detalle de la venta <small>{sale.movement.voidId ? <a href="#anulacion">Anulada</a> : "Confirmada"}</small></h2>
+    {!sale ? !error && <p role="status">Cargando comprobante…</p> : <section className="sales-panel sales-work-panel">
+      <div className="sales-document-heading"><PanelHeading icon={ReceiptText} title="Detalle de la venta" description="Artículos, precios y datos del comprobante." />
+        {sale.movement.voidId ? <a className="sales-status-link" href="#anulacion"><SaleStatus voided /></a> : <SaleStatus voided={false} />}</div>
       <dl className="sales-details">
         <div><dt>Sucursal</dt><dd>{sale.sale.branchName}</dd></div>
         <div><dt>Fecha y hora</dt><dd><time className="sales-date">{receiptDate(sale.movement.date)}</time></dd></div>
         <div><dt>Responsable</dt><dd>{sale.movement.actor}</dd></div>
         {sale.sale.customer && <div><dt>Cliente</dt><dd>{sale.sale.customer}</dd></div>}
+        {sale.sale.customerPhone && <div><dt>Teléfono</dt><dd>{sale.sale.customerPhone}</dd></div>}
+        {sale.sale.customerEmail && <div><dt>Correo electrónico</dt><dd>{sale.sale.customerEmail}</dd></div>}
       </dl>
       <ul className="sales-lines">{sale.lines.map(line => <li key={line.itemId}>
         <div><strong>{line.name}</strong><small>{line.sku}</small></div>
         <span>{amount(line.quantity, line.unit)} · {money(line.unitPrice)} por {line.unit}</span><strong>{money(line.amount)}</strong>
       </li>)}</ul>
       <p className="sales-total">Total <strong>{money(sale.sale.total)}</strong></p>
-      {sale.movement.voidId ? <div className="notice" id="anulacion"><strong>Anulación {sale.movement.voidFolio}</strong><p>{sale.movement.voidReason}</p></div> :
-        canVoid && (voiding ? <form onSubmit={async event => {
+      {sale.movement.voidId ? <section className="sales-void-summary" id="anulacion" aria-labelledby="sales-void-summary-title">
+        <h3 id="sales-void-summary-title">Anulación {sale.movement.voidFolio}</h3>
+        <dl><dt>Motivo</dt><dd>{sale.movement.voidReason}</dd></dl>
+      </section> :
+        canVoid && (voiding ? <form className="sales-void-form" aria-labelledby="sales-void-title" onSubmit={async event => {
           event.preventDefault();
-          if (!reason.trim()) { setError("Escribe el motivo de la anulación."); return; }
+          if (busy) return;
+          if (!reason.trim()) {
+            setReasonInvalid(true);
+            reasonInput.current?.focus();
+            return;
+          }
           setError(""); setBusy(true);
           try {
             setSale(await request<Sale>(url + "/void", { method: "POST", body: JSON.stringify({ reason }) }));
@@ -302,10 +414,21 @@ function Document({ canVoid }: { canVoid: boolean }) {
           } catch (failure) { setError(failureMessage(failure)); }
           finally { setBusy(false); }
         }}>
-          <label>Motivo de anulación<textarea autoFocus maxLength={150} value={reason} onChange={event => setReason(event.target.value)} /></label>
+          <div>
+            <h3 id="sales-void-title">Anular esta venta</h3>
+            <p id="sales-void-help">Las cantidades volverán a la sucursal original.</p>
+          </div>
+          <label>Motivo de anulación
+            <textarea ref={reasonInput} autoFocus maxLength={150} rows={3} value={reason}
+              placeholder="Escribe el motivo" aria-invalid={reasonInvalid}
+              aria-describedby={reasonInvalid ? "sales-void-help sales-void-error" : "sales-void-help"}
+              onChange={event => { setReasonInvalid(false); setReason(event.target.value); }} />
+            {reasonInvalid && <small id="sales-void-error" role="alert">Escribe el motivo de la anulación.</small>}
+          </label>
           <div className="sales-actions">
-            <button className="button secondary" type="button" disabled={busy} onClick={() => setVoiding(false)}>Cancelar</button>
-            <button className="button danger" type="submit" disabled={busy}>Confirmar anulación</button>
+            <button className="button secondary" type="button" disabled={busy}
+              onClick={() => { setVoiding(false); setReasonInvalid(false); }}>Cancelar</button>
+            <button className="button danger" type="submit" disabled={busy}>{busy ? "Anulando…" : "Confirmar anulación"}</button>
           </div>
         </form> : <button type="button" className="button danger" onClick={() => setVoiding(true)}>Anular venta</button>)}
     </section>}

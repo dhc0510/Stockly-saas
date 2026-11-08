@@ -1442,6 +1442,8 @@ h1 {
 
 .company-sidebar { overflow: hidden; }
 .company-sidebar .brand, .company-sidebar .sidebar-footer { flex: none; }
+.company-sidebar-heading { flex: none; }
+.company-drawer-close { display: none; }
 .company-sidebar-links { min-height: 0; overflow-y: auto; padding: 3px; margin: -3px; }
 .company-sidebar .sidebar-footer { margin-top: auto; }
 @media (min-width: 641px) {
@@ -1464,5 +1466,32 @@ h1 {
   .company-sidebar .identity-nav { padding: 12px 10px; }
 }
 @media (max-width: 640px) {
-  .company-sidebar { width: min(295px, 86vw); }
+  .company-shell > .company-sidebar {
+    top: 0;
+    height: 100dvh;
+    width: min(295px, 86vw);
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .company-shell > .mobile-drawer-scrim {
+    inset: 0;
+    border: 0;
+    touch-action: none;
+  }
+  .company-sidebar-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .company-sidebar-heading .brand { padding-bottom: 0; }
+  .company-sidebar-heading .company-drawer-close {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+  }
+  .company-sidebar-links { overscroll-behavior: contain; }
 }

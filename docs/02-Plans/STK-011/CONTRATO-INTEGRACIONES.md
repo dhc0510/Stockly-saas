@@ -8,7 +8,7 @@ La API de Ventas devuelve un identificador interno en `movement.id`, el folio vi
 
 ## Reintentos de sincronización
 
-[STK-014](https://trello.com/c/RHfLlp05) guarda el UUID `requestKey` al preparar cada envío. Si se pierde la respuesta, reenvía la misma clave con la misma sucursal, cliente, artículos, cantidades y precios esperados. Si la venta ya existe, la API devuelve el folio original, incluso si después cambiaron el precio o el saldo.
+[STK-014](https://trello.com/c/RHfLlp05) guarda el UUID `requestKey` al preparar cada envío. Si se pierde la respuesta, reenvía la misma clave con la misma sucursal, datos opcionales del cliente (nombre, teléfono y correo), artículos, cantidades y precios esperados. Si la venta ya existe, la API devuelve el folio original, incluso si después cambiaron el precio o el saldo.
 
 | Respuesta de Ventas | Tratamiento en STK-014 |
 | --- | --- |

@@ -99,6 +99,8 @@ class SaleLocalIntegrationTest {
             var sale = sales.confirm(actor, input);
             assertThat(sale.movement().folio()).isEqualTo("VTA-0001");
             assertThat(sale.sale().total()).isEqualByComparingTo("154.31");
+            assertThat(sale.sale().customerPhone()).isEqualTo("+506 2222 2222");
+            assertThat(sale.sale().customerEmail()).isEqualTo("ana@example.invalid");
             assertThat(sales.get(actor, "VTA-0001")).isEqualTo(sale);
             assertThat(sales.list(actor, "VTA-", "confirmed", branch, 0).entries()).hasSize(1);
             var historyRows = history.list(actor, "VTA-0001", item, "SALE", "", "", "", 0).rows();
@@ -146,7 +148,7 @@ class SaleLocalIntegrationTest {
     private String confirmLastUnit(StocklyPrincipal actor, String branch, String item) {
         var line = new SaleService.LineInput(item, BigDecimal.ONE, new BigDecimal("1500"));
         try {
-            return sales.confirm(actor, new SaleService.SaleInput(id(), branch, null, List.of(line))).movement().folio();
+            return sales.confirm(actor, new SaleService.SaleInput(id(), branch, null, null, null, List.of(line))).movement().folio();
         } catch (IdentityFailure failure) {
             return failure.code;
         }
@@ -155,7 +157,7 @@ class SaleLocalIntegrationTest {
 
     private static SaleService.SaleInput input(String key, String branch, String item, String price) {
         var line = new SaleService.LineInput(item, new BigDecimal("0.125"), new BigDecimal(price));
-        return new SaleService.SaleInput(key, branch, null, List.of(line));
+        return new SaleService.SaleInput(key, branch, null, "+506 2222 2222", "ana@example.invalid", List.of(line));
     }
 
     private BigDecimal balance(String company, String branch, String item) {

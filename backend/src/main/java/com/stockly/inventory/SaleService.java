@@ -73,9 +73,16 @@ public class SaleService {
         String request = RULES.uuid(input.requestKey(), "Identificador de confirmación inválido.");
         String branchId = RULES.uuid(input.branchId(), "Selecciona una sucursal.");
         String customer = RULES.optional(input.customer(), 150);
+        String customerPhone = RULES.optional(input.customerPhone(), 30);
+        String customerEmail = RULES.optional(input.customerEmail(), 254);
+        if (customerEmail != null && !customerEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"))
+            throw RULES.invalid("Ingresa un correo electrónico válido.");
         var requested = validateLines(input.lines());
         String hash = InventoryLedger.hash("SALE", actor.accountId(), branchId,
             Objects.toString(customer, ""), requested.toString());
+        // Conserva la huella de los intentos creados antes de añadir el contacto.
+        if (customerPhone != null || customerEmail != null)
+            hash = InventoryLedger.hash(hash, Objects.toString(customerPhone, ""), Objects.toString(customerEmail, ""));
 
         ledger.lockLocation(company);
         var existing = ledger.registered(company, request, hash, RULES);
@@ -140,8 +147,11 @@ public class SaleService {
 
         String id = UUID.randomUUID().toString();
         ledger.record(actor, branch.location(), id, "SALE", Series.SALE, "Venta", null, request, hash, lines);
-        jdbc.update("INSERT INTO sales(company_id,id,branch_id,branch_name,customer_name,total) VALUES (?,?,?,?,?,?)",
-            company, id, branchId, branch.name(), customer, total);
+        jdbc.update("""
+            INSERT INTO sales(company_id,id,branch_id,branch_name,customer_name,customer_phone,customer_email,total)
+            VALUES (?,?,?,?,?,?,?,?)
+            """,
+            company, id, branchId, branch.name(), customer, customerPhone, customerEmail, total);
         for (Price price : prices)
             jdbc.update("INSERT INTO sale_line_prices(company_id,sale_id,item_id,unit_price,amount) VALUES (?,?,?,?,?)",
                 company, id, price.itemId(), price.unitPrice(), price.amount());
@@ -156,8 +166,8 @@ public class SaleService {
             """, String.class, company, id).stream().findFirst().orElseThrow(SaleService::missing)
             : RULES.uuid(id, "Identificador de venta inválido.");
         var header = jdbc.query("""
-            SELECT branch_id,branch_name,customer_name,total FROM sales WHERE company_id=? AND id=?
-            """, (rs, row) -> new SaleHeader(rs.getString(1), rs.getString(2), rs.getString(3), rs.getBigDecimal(4)), company, saleId)
+            SELECT branch_id,branch_name,customer_name,customer_phone,customer_email,total FROM sales WHERE company_id=? AND id=?
+            """, (rs, row) -> new SaleHeader(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getBigDecimal(6)), company, saleId)
             .stream().findFirst().orElseThrow(SaleService::missing);
         branch(actor, header.branchId());
         var movement = ledger.document(company, saleId, "m.kind='SALE'").orElseThrow(SaleService::missing);
@@ -233,9 +243,11 @@ public class SaleService {
     public record SaleRow(String id, String folio, java.time.Instant date, String branchName, String customer,
                           BigDecimal total, boolean voided) {}
     public record SalePage(List<SaleRow> entries, boolean hasMore) {}
-    public record SaleInput(String requestKey, String branchId, String customer, List<LineInput> lines) {}
+    public record SaleInput(String requestKey, String branchId, String customer, String customerPhone,
+                            String customerEmail, List<LineInput> lines) {}
     public record LineInput(String itemId, BigDecimal quantity, BigDecimal expectedPrice) {}
-    public record SaleHeader(String branchId, String branchName, String customer, BigDecimal total) {}
+    public record SaleHeader(String branchId, String branchName, String customer, String customerPhone,
+                             String customerEmail, BigDecimal total) {}
     public record SaleLine(String itemId, String name, String sku, String unit, BigDecimal quantity,
                            BigDecimal unitPrice, BigDecimal amount) {}
     public record Sale(SaleHeader sale, Summary movement, List<SaleLine> lines) {}
