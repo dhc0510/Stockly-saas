@@ -21,7 +21,52 @@ public class InventoryService {
     private static final BigDecimal DEFAULT_RECOVERY = new BigDecimal("1.00");
     private final JdbcTemplate jdbc;
 
-    public InventoryService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final InventoryLedger ledger;
+
+    public InventoryService(JdbcTemplate jdbc, InventoryLedger ledger) {
+        this.jdbc = jdbc;
+        this.ledger = ledger;
+    }
+
+    public record LocationSetup(List<Branch> branches, boolean needsPrincipal, boolean pending) {}
+
+    @Transactional(readOnly = true)
+    public LocationSetup locationSetup(StocklyPrincipal actor) {
+        String company = requireAdmin(actor);
+        boolean linked = Boolean.TRUE.equals(jdbc.queryForObject("""
+            SELECT EXISTS(SELECT 1 FROM inventory_branches WHERE company_id=? AND location_id='principal')
+            """, Boolean.class, company));
+        boolean history = Boolean.TRUE.equals(jdbc.queryForObject("""
+            SELECT EXISTS(SELECT 1 FROM inventory_movements WHERE company_id=? AND location_id='principal')
+                OR EXISTS(SELECT 1 FROM inventory_balances WHERE company_id=? AND location_id='principal' AND quantity>0)
+            """, Boolean.class, company, company));
+        boolean pending = Boolean.TRUE.equals(jdbc.queryForObject("""
+            SELECT EXISTS(SELECT 1 FROM inventory_branches WHERE company_id=? AND active AND location_id IS NULL)
+            """, Boolean.class, company));
+        return new LocationSetup(branches(actor, false), history && !linked, pending);
+    }
+
+    @Transactional
+    public LocationSetup configureLocations(StocklyPrincipal actor, String branchId) {
+        String company = requireAdmin(actor);
+        ledger.lockLocation(company);
+        LocationSetup setup = locationSetup(actor);
+        if (setup.needsPrincipal()) {
+            if (branchId == null || setup.branches().stream().noneMatch(branch -> branch.id().equals(branchId)))
+                throw invalid("Selecciona la sucursal que corresponde al inventario de Principal.");
+            jdbc.update("UPDATE inventory_branches SET location_id='principal' WHERE company_id=? AND id=?",
+                company, branchId);
+        }
+        jdbc.update("""
+            INSERT INTO inventory_locations(company_id,id,name)
+            SELECT company_id,id,name FROM inventory_branches WHERE company_id=? AND active AND location_id IS NULL
+            """, company);
+        jdbc.update("""
+            UPDATE inventory_branches SET location_id=id WHERE company_id=? AND active AND location_id IS NULL
+            """, company);
+        return locationSetup(actor);
+    }
+
 
     @Transactional(readOnly = true)
     public List<Branch> branches(StocklyPrincipal actor, boolean includeInactive) {
@@ -71,7 +116,18 @@ public class InventoryService {
 
     @Transactional
     public void deactivateBranch(StocklyPrincipal actor, String branchId) {
-        String company = requireAdmin(actor); requireBranchExists(company, branchId);
+        String company = requireAdmin(actor);
+        ledger.lockLocation(company);
+        requireBranchExists(company, branchId);
+        Integer stock = jdbc.queryForObject("""
+            SELECT EXISTS (
+                SELECT 1 FROM inventory_balances s JOIN inventory_branches b
+                  ON b.company_id=s.company_id AND b.location_id=s.location_id
+                WHERE b.company_id=? AND b.id=? AND s.quantity>0
+            )
+            """, Integer.class, company, branchId);
+        if (stock != null && stock != 0)
+            throw conflict("Reasigna las existencias antes de desactivar esta sucursal.");
         Long assignments = jdbc.queryForObject("""
             SELECT COUNT(*) FROM inventory_branch_items current_item
             WHERE current_item.company_id=? AND current_item.branch_id=?
@@ -99,10 +155,25 @@ public class InventoryService {
 
     @Transactional
     public void deleteBranch(StocklyPrincipal actor, String branchId) {
-        String company = requireAdmin(actor); requireBranchExists(company, branchId);
+        String company = requireAdmin(actor);
+        ledger.lockLocation(company);
+        requireBranchExists(company, branchId);
         Long count = jdbc.queryForObject("SELECT COUNT(*) FROM inventory_branch_items WHERE company_id=? AND branch_id=?",
             Long.class, company, branchId);
         if (count != null && count > 0) throw conflict("No se puede borrar una sucursal con productos asignados. Desactívala y conserva su historial.");
+        Integer activity = jdbc.queryForObject("""
+            SELECT EXISTS (
+                SELECT 1 FROM inventory_movements m JOIN inventory_branches b
+                  ON b.company_id=m.company_id AND b.location_id=m.location_id
+                WHERE b.company_id=? AND b.id=?
+            ) OR EXISTS (
+                SELECT 1 FROM inventory_balances s JOIN inventory_branches b
+                  ON b.company_id=s.company_id AND b.location_id=s.location_id
+                WHERE b.company_id=? AND b.id=? AND s.quantity>0
+            )
+            """, Integer.class, company, branchId, company, branchId);
+        if (activity != null && activity != 0)
+            throw conflict("No se puede borrar una sucursal con existencias o historial.");
         jdbc.update("DELETE FROM inventory_branches WHERE company_id=? AND id=?", company, branchId);
     }
 
@@ -143,11 +214,12 @@ public class InventoryService {
         List<Object> params = new ArrayList<>(); params.add(company);
         StringBuilder sql = new StringBuilder("""
             SELECT p.id,p.name,p.category,i.id,i.variant_name,i.sku,i.barcode,i.unit,b.id,b.name,
-              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis
+              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0)
             FROM inventory_branch_items bi
             JOIN inventory_branches b ON b.company_id=bi.company_id AND b.id=bi.branch_id AND b.active=TRUE
             JOIN catalog_items i ON i.company_id=bi.company_id AND i.id=bi.item_id AND i.active=TRUE
             JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id AND p.active=TRUE
+            LEFT JOIN inventory_balances stock ON stock.company_id=b.company_id AND stock.location_id=b.location_id AND stock.item_id=i.id
             WHERE bi.company_id=?
             """);
         if (branchId != null) { sql.append(" AND b.id=?"); params.add(branchId); }
@@ -240,13 +312,14 @@ public class InventoryService {
             Timestamp.from(now), Timestamp.from(now), row.get("id"));
         return jdbc.query("""
             SELECT a.id,a.alert_type,p.id,p.name,i.variant_name,i.sku,i.unit,b.id,b.name,
-              CASE WHEN a.alert_type='EXHAUSTED' THEN 0 ELSE COALESCE(bi.minimum_quantity,0) END,
+              COALESCE(stock.quantity,0),
               bi.minimum_quantity,a.last_notified_at
             FROM inventory_alerts a
             JOIN inventory_branch_items bi ON bi.company_id=a.company_id AND bi.branch_id=a.branch_id AND bi.item_id=a.item_id
             JOIN inventory_branches b ON b.company_id=a.company_id AND b.id=a.branch_id AND b.active=TRUE
             JOIN catalog_items i ON i.company_id=a.company_id AND i.id=a.item_id
             JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id
+            LEFT JOIN inventory_balances stock ON stock.company_id=b.company_id AND stock.location_id=b.location_id AND stock.item_id=i.id
             WHERE a.company_id=? AND a.recipient_id=? AND a.active=TRUE
               AND (a.dismissed_at IS NULL OR a.last_notified_at>=?)
             ORDER BY CASE a.alert_type WHEN 'EXHAUSTED' THEN 0 ELSE 1 END,b.name,p.name,i.variant_name
@@ -310,10 +383,11 @@ public class InventoryService {
         if (branches.isEmpty()) return List.of();
         return jdbc.query("""
             SELECT p.id,p.name,p.category,i.id,i.variant_name,i.sku,i.barcode,i.unit,b.id,b.name,
-              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis
+              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0)
             FROM inventory_branch_items bi JOIN inventory_branches b ON b.company_id=bi.company_id AND b.id=bi.branch_id AND b.active=TRUE
             JOIN catalog_items i ON i.company_id=bi.company_id AND i.id=bi.item_id AND i.active=TRUE
             JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id AND p.active=TRUE
+            LEFT JOIN inventory_balances stock ON stock.company_id=b.company_id AND stock.location_id=b.location_id AND stock.item_id=i.id
             WHERE bi.company_id=? AND b.id IN (""" + String.join(",", Collections.nCopies(branches.size(), "?")) + ")",
             (rs,row)->stockItem(rs), combine(new Object[]{company},branches.toArray()));
     }
@@ -321,17 +395,18 @@ public class InventoryService {
     private StockItem loadOne(String company, String branchId, String itemId) {
         return jdbc.query("""
             SELECT p.id,p.name,p.category,i.id,i.variant_name,i.sku,i.barcode,i.unit,b.id,b.name,
-              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis
+              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0)
             FROM inventory_branch_items bi JOIN inventory_branches b ON b.company_id=bi.company_id AND b.id=bi.branch_id
             JOIN catalog_items i ON i.company_id=bi.company_id AND i.id=bi.item_id JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id
+            LEFT JOIN inventory_balances stock ON stock.company_id=b.company_id AND stock.location_id=b.location_id AND stock.item_id=i.id
             WHERE bi.company_id=? AND bi.branch_id=? AND bi.item_id=?
             """, (rs,row)->stockItem(rs), company, branchId, itemId).stream().findFirst().orElseThrow(InventoryService::missing);
     }
 
     private StockItem stockItem(java.sql.ResultSet rs) throws java.sql.SQLException {
-        // STK-008/009 have not supplied a movement ledger yet; these are the opening balances.
+        BigDecimal onHand = rs.getBigDecimal(15);
         return new StockItem(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5),rs.getString(6),rs.getString(7),rs.getString(8),
-            rs.getString(9),rs.getString(10),ZERO,ZERO,ZERO,rs.getBigDecimal(11),rs.getBigDecimal(12),rs.getBigDecimal(13),rs.getString(14),"");
+            rs.getString(9),rs.getString(10),onHand,ZERO,onHand,rs.getBigDecimal(11),rs.getBigDecimal(12),rs.getBigDecimal(13),rs.getString(14),"");
     }
 
     private StockItem withState(StockItem item) {

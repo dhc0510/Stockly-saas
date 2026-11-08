@@ -1,3 +1,4 @@
+import { LocationSetup } from "./LocationSetup";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { normalizeSearch } from "../../lib/search";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -9,7 +10,7 @@ import "./inventory.css";
 type CatalogItem = { id:string; variantName:string|null; sku:string; unit:string; active:boolean };
 type CatalogProduct = { id:string; name:string; category:string|null; active:boolean; items:CatalogItem[] };
 type CatalogPage = { products:CatalogProduct[]; categories:string[]; hasMore:boolean };
-const money = (value:number|null|undefined, unit:string) => `${Number(value??0).toLocaleString("es-CR",{minimumFractionDigits:0,maximumFractionDigits:2})} ${unit}`;
+const money = (value:number|null|undefined, unit:string) => `${Number(value??0).toLocaleString("es-CR",{minimumFractionDigits:0,maximumFractionDigits:3})} ${unit}`;
 const statusLabel:Record<StockItem["state"],string>={AVAILABLE:"Disponible",LOW:"Stock bajo",MINIMUM:"Stock mínimo",EXHAUSTED:"Agotado"};
 function Failure({error}:{error:unknown}) { return error?<div className="notice error" role="alert">{error instanceof Error?error.message:"No se pudo completar la operación."}</div>:null; }
 function apiError(error:unknown){return error instanceof Error?error.message:"No se pudo completar la operación.";}
@@ -64,6 +65,7 @@ export function InventoryPage({canEditCatalog,isAdmin}:{canEditCatalog:boolean;i
   const pendingVisible=isAdmin&&!selected&&status==="ALL"&&!search&&!category&&pending.length>0;
   async function saved(){setEditing(undefined);setReload(v=>v+1);}
   return <section className="inventory-page"><div className="page-heading"><div><p className="eyebrow">INVENTARIO / CONSULTA</p><h1>Existencias</h1><p className="subtitle">Consulta disponibilidad por producto y sucursal.</p></div><div className="inventory-heading-actions"><label className="inventory-branch-select"><span>Sucursal</span><select value={selected} onChange={e=>chooseBranch(e.target.value)}><option value="">Consolidado · Mis sucursales</option>{branches.filter(b=>b.active).map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label></div></div>
+    {isAdmin && <LocationSetup onConfigured={() => setReload(value => value + 1)} />}
     <Failure error={error}/>
     {branches.length===0&&!loading&&<div className="empty-state panel"><div className="empty-icon"><MapPin size={26}/></div><h2>Aún no hay sucursales asignadas</h2><p>Solicita al administrador que cree una sucursal y te asigne acceso.</p></div>}
     {branches.length>0&&<><div className="inventory-controls"><label className="inventory-search"><Search size={17}/><input type="search" placeholder="Nombre, SKU, código de barras o categoría" value={search} onChange={e=>setSearch(e.target.value)}/></label><label><span>Categoría</span><select value={category} onChange={e=>setCategory(e.target.value)}><option value="">Todas las categorías</option>{categories.map(value=><option key={value}>{value}</option>)}</select></label><label><span>Ordenar</span><select value={sort} onChange={e=>setSort(e.target.value)}><option value="NAME">Nombre A–Z</option><option value="AVAILABLE_DESC">Mayor disponible</option><option value="AVAILABLE_ASC">Menor disponible</option><option value="ALERTS">Alertas primero</option></select></label></div>

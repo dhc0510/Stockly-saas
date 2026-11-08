@@ -1,3 +1,4 @@
+import { MovementBranch, useMovementBranch } from "../inventory/MovementBranch";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { ApiError } from "../../lib/http";
@@ -8,6 +9,7 @@ const MAX_QUANTITY = 1_000_000;
 const reasons = { RECEIPT: "Recepción de mercancía", INITIAL: "Carga inicial", OTHER: "Otro" };
 type DraftLine = { article: Article; quantity: string };
 type Draft = {
+  branchId?: string;
   reason: keyof typeof reasons | ""; detail: string; reference: string; lines: DraftLine[];
   search: string; article?: Article; quantity: string; requestKey?: string;
 };
@@ -61,22 +63,24 @@ export function ReceiptEditor({ storageKey, close, saved }: {
   const quantityInput = useRef<HTMLInputElement>(null);
   const results = useRef<HTMLDivElement>(null);
   const pending = !!draft.article || !!draft.quantity.trim();
+  const branch = useMovementBranch("/api/inventory/receipts", draft.branchId);
+  const branchId = draft.branchId ?? branch.selected?.id;
   const term = draft.search.trim();
 
   useEffect(() => {
-    if (!showSuggestions || !term || draft.article) return;
+    if (branch.problem || !showSuggestions || !term || draft.article) return;
     const controller = new AbortController();
     setSearching(true);
     setSuggestions([]);
     const timer = window.setTimeout(() => {
-      receiptApi.items(term, false, controller.signal).then(items => {
+      receiptApi.items(term, false, controller.signal, branchId).then(items => {
         if (!controller.signal.aborted) setSuggestions(items);
       }).catch(failure => {
         if (!controller.signal.aborted) { setNotice(""); setError(failureMessage(failure)); }
       }).finally(() => { if (!controller.signal.aborted) setSearching(false); });
     }, 150);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [term, showSuggestions, draft.article]);
+  }, [term, showSuggestions, draft.article, branchId, branch.problem]);
 
   useEffect(() => {
     function align() {
@@ -142,7 +146,7 @@ export function ReceiptEditor({ storageKey, close, saved }: {
     const quantity = String(total).replace(".", ",");
     const lines = line ? draft.lines.map(value => value === line ? { article, quantity } : value)
       : [...draft.lines, { article, quantity }];
-    store({ ...draft, lines, article: undefined, search: "", quantity: "" });
+    store({ ...draft, branchId, lines, article: undefined, search: "", quantity: "" });
     setShowSuggestions(false);
     setError("");
     setQuantityIssue(undefined);
@@ -152,17 +156,17 @@ export function ReceiptEditor({ storageKey, close, saved }: {
   }
 
   async function scan() {
-    if (!term || scanning) return;
+    if (branch.problem || !term || scanning) return;
     if (draft.article) { quantityInput.current?.focus(); return; }
     setScanning(true);
     setShowSuggestions(false);
     try {
-      const [match] = await receiptApi.items(term, true);
+      const [match] = await receiptApi.items(term, true, undefined, branchId);
       if (match) {
         if (match.unit === "unidad") add(match, "1");
         else select(match);
       } else {
-        const matches = await receiptApi.items(term, false);
+        const matches = await receiptApi.items(term, false, undefined, branchId);
         const exact = matches.find(article => article.sku.toLocaleLowerCase() === term.toLocaleLowerCase());
         if (exact) select(exact);
         else if (matches.length) { setSuggestions(matches); setShowSuggestions(true); }
@@ -178,6 +182,7 @@ export function ReceiptEditor({ storageKey, close, saved }: {
   }
 
   function startReview() {
+    if (branch.problem) { fail(branch.problem); return; }
     if (pending) { reviewFailure("Hay un artículo sin agregar. Agrégalo o limpia el artículo y la cantidad antes de revisar."); return; }
     if (!draft.reason) {
       setError(""); setNotice(""); setQuantityIssue(undefined); setReasonInvalid(true);
@@ -196,11 +201,11 @@ export function ReceiptEditor({ storageKey, close, saved }: {
   async function confirm() {
     if (busy) return;
     const key = draft.requestKey ?? crypto.randomUUID();
-    const pendingDraft = { ...draft, requestKey: key };
+    const pendingDraft = { ...draft, requestKey: key, branchId: draft.requestKey ? draft.branchId : branchId };
     if (!store(pendingDraft)) { fail("Permite el almacenamiento local para confirmar con recuperación ante fallos."); return; }
     setBusy(true); setError("");
     try {
-      const receipt = await receiptApi.confirm({ requestKey: key, reason: draft.reason, detail: draft.detail,
+      const receipt = await receiptApi.confirm({ requestKey: key, branchId: pendingDraft.branchId, reason: draft.reason, detail: draft.detail,
         reference: draft.reference, lines: draft.lines.map(line => ({ itemId: line.article.id, quantity: parse(line.quantity) })) });
       clear();
       saved(receipt);
@@ -223,7 +228,7 @@ export function ReceiptEditor({ storageKey, close, saved }: {
     {review ? <>
       {draft.requestKey && <p className="receipt-note">Hay una confirmación pendiente. Puedes reintentar con los mismos datos.</p>}
       <section className="catalog-panel receipt-panel">
-        <h2>Destino Principal</h2>
+        <h2>Destino {branch.selected?.name ?? "Principal"}</h2>
         <p>{draft.reason && reasons[draft.reason]}{draft.reason === "OTHER" && " · " + draft.detail}</p>
         {draft.reference && <p>Referencia: {draft.reference}</p>}
         <ul className="receipt-review-lines">{draft.lines.map(line => <li key={line.article.id}>
@@ -252,6 +257,10 @@ export function ReceiptEditor({ storageKey, close, saved }: {
       </section>
       <section className="catalog-panel receipt-panel receipt-items">
         <h2>Artículos recibidos</h2>
+        <MovementBranch state={branch} locked={draft.lines.length > 0 || !!draft.requestKey} onChange={id => {
+          setSuggestions([]); setShowSuggestions(false);
+          change({ branchId: id, article: undefined, search: "", quantity: "" });
+        }} />
         <form className="receipt-add" onSubmit={(event: FormEvent) => { event.preventDefault(); if (draft.article) add(draft.article, draft.quantity); }}>
           <div className="receipt-item-search">
             <label>Buscar artículo<span className="catalog-search"><Search size={16} aria-hidden="true" />
@@ -297,7 +306,7 @@ export function ReceiptEditor({ storageKey, close, saved }: {
         <div className="catalog-actions"><button onClick={() => setDiscard(false)}>Volver</button>
           <button className="receipt-danger" onClick={() => { clear(); close(); }}>Descartar entrada</button></div></section>
         : <div className="catalog-actions receipt-editor-actions"><button disabled={scanning} onClick={() => setDiscard(true)}>Descartar</button>
-          <button className="catalog-primary" disabled={scanning || (!draft.lines.length && !pending)} onClick={startReview}>Revisar entrada</button></div>}
+          <button className="catalog-primary" disabled={!!branch.problem || scanning || (!draft.lines.length && !pending)} onClick={startReview}>Revisar entrada</button></div>}
     </>}
   </section>;
 }

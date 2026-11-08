@@ -1,0 +1,3 @@
+ALTER TABLE sales
+ ADD COLUMN customer_phone VARCHAR(30) NULL,
+ ADD COLUMN customer_email VARCHAR(254) NULL;
