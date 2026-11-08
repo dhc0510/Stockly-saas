@@ -107,7 +107,7 @@ public class FiscalXmlBuilder {
                 w.text(ref, "TipoDocIR", draft.reference().docType());
                 w.text(ref, "Numero", draft.reference().key());
                 w.text(ref, "FechaEmisionIR", DATE.format(draft.reference().issuedAt().atZone(FiscalNumbers.COSTA_RICA).toOffsetDateTime().withNano(0)));
-                w.text(ref, "Codigo", "01");
+                w.text(ref, "Codigo", draft.reference().code());
                 w.text(ref, "Razon", clip(draft.reference().reason(), 180));
             }
             var out = new ByteArrayOutputStream();

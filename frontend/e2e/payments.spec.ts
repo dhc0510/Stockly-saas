@@ -45,6 +45,7 @@ test("voids from the list with a mixed refund and shows the payment summary and 
       sale.refund = { date: "2026-11-07T17:00:00Z", actor: "Revisión", lines: refunds };
       return route.fulfill({ json: sale });
     }
+    if (url.pathname === "/api/sales/VTA-0004/returns") return route.fulfill({ json: { lines: [], returns: [] } });
     if (url.pathname === "/api/sales/VTA-0004") return route.fulfill({ json: sale });
     if (url.pathname === "/api/sales") {
       expect(url.searchParams.has("payment")).toBe(true);

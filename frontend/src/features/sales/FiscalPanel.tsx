@@ -3,7 +3,7 @@ import { Download, FileCheck2, RefreshCw, Send } from "lucide-react";
 import { failureMessage, receiptDate } from "../receipts/receiptApi";
 import { request } from "../../lib/http";
 import {
-  ID_TYPES, creditNoteOf, currentDocument, fiscalStatusLabels, fiscalTone, fiscalTypeLabels, idProblem,
+  ID_TYPES, currentDocument, fiscalStatusLabels, fiscalTone, fiscalTypeLabels, idProblem,
   type FiscalDocument, type FiscalStatus,
 } from "./fiscal";
 
@@ -22,7 +22,7 @@ export function FiscalPanel({ api, folio, documents, voided, canWrite, hasEmail,
   const [message, setMessage] = useState<{ text: string; error: boolean }>();
   const [busy, setBusy] = useState(false);
   const doc = currentDocument(documents);
-  const credit = creditNoteOf(documents, doc);
+  const credits = documents.filter(item => item.docType === "03" && item.referenceId === doc?.id);
   const base = api + "/" + encodeURIComponent(folio) + "/fiscal";
 
   async function act(action: () => Promise<void>, success: string) {
@@ -74,12 +74,12 @@ export function FiscalPanel({ api, folio, documents, voided, canWrite, hasEmail,
         onSubmit={body => act(async () => { onChange(await request(base + "/correct", { method: "POST", body: JSON.stringify(body) })); },
           "Comprobante nuevo enviado a Hacienda. El rechazado queda en el historial.")} />}
     </>}
-    {credit && <div className="sales-credit-note">
+    {credits.map(credit => <div key={credit.id} className="sales-credit-note">
       <div className="sales-document-heading"><h3>Nota de crédito</h3><FiscalBadge status={credit.status} /></div>
-      <p>Anula por completo el comprobante {doc.consecutive}. Consecutivo <span className="sales-mono">{credit.consecutive}</span>.</p>
+      <p>{credit.saleReturnId ? "Ajuste por devolución del comprobante" : "Anula por completo el comprobante"} {doc.consecutive}. Consecutivo <span className="sales-mono">{credit.consecutive}</span>.</p>
       {credit.reason && credit.status !== "ACCEPTED" && <p className="notice">{credit.reason}</p>}
       {credit.status === "ACCEPTED" && <Files base={base} doc={credit} />}
-    </div>}
+    </div>)}
     {history.length > 0 && <details className="sales-fiscal-history"><summary>Comprobantes anteriores ({history.length})</summary>
       <ul>{history.map(item => <li key={item.id}>{fiscalTypeLabels[item.docType]} <span className="sales-mono">{item.consecutive}</span> ·{" "}
         {fiscalStatusLabels[item.status]}{item.reason ? " · " + item.reason : ""}</li>)}</ul></details>}

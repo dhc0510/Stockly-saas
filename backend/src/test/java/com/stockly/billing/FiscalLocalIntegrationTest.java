@@ -4,6 +4,7 @@ import com.stockly.identity.IdentityFailure;
 import com.stockly.identity.StocklyPrincipal;
 import com.stockly.inventory.SalePaymentService;
 import com.stockly.inventory.SaleService;
+import com.stockly.inventory.SaleReturnService;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -37,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class FiscalLocalIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired SaleService sales;
+    @Autowired SaleReturnService returns;
     @Autowired BillingSettingsService settings;
     @Autowired FiscalDispatcher dispatcher;
     @Autowired FiscalDocumentService documents;
@@ -194,6 +196,52 @@ class FiscalLocalIntegrationTest {
             assertThat(fiscalStatus(notSent)).isEqualTo("CANCELLED");
             assertThat(sales.get(admin, notSent.movement().id()).fiscal()).hasSize(1);
 
+            // STK-015: dos devoluciones esperan al mismo original, cada una con una nota independiente.
+            var partial = sales.confirm(admin, new SaleService.SaleInput(id(), branch, null, null, null,
+                List.of(new SaleService.LineInput(item, new BigDecimal("2"), new BigDecimal("3800"))),
+                List.of(new SalePaymentService.PaymentInput("CASH", new BigDecimal("7600"), null)), null, null));
+            String partialId = partial.movement().id();
+            String originalKey = partial.fiscal().getFirst().key();
+            var firstReturn = returns.confirm(admin, partialId, returnOne(item));
+            var secondReturn = returns.confirm(admin, partialId, returnOne(item));
+            assertThat(firstReturn.fiscal().status()).isEqualTo("WAITING");
+            assertThat(secondReturn.fiscal().status()).isEqualTo("WAITING");
+            assertThat(sales.get(admin, partialId).fiscal()).hasSize(1);
+            dispatcher.runOnce(20);
+            due(company);
+            dispatcher.runOnce(20);
+            assertThat(fiscalStatus(partial)).isEqualTo("ACCEPTED");
+            // El catálogo cambia después de firmar. La nota debe recuperar el CABYS del XML original.
+            jdbc.update("UPDATE catalog_items SET cabys_code='2391100000001',tax_rate_code='02' WHERE company_id=? AND id=?", company, item);
+            due(company);
+            dispatcher.runOnce(20);
+            due(company);
+            dispatcher.runOnce(20);
+            var partialNotes = sales.get(admin, partialId).fiscal().stream().filter(doc -> doc.saleReturnId() != null).toList();
+            assertThat(partialNotes).hasSize(2).allMatch(doc -> "ACCEPTED".equals(doc.status()));
+            assertThat(partialNotes).extracting(FiscalDocumentService.Document::saleReturnId).doesNotHaveDuplicates();
+            for (var note : partialNotes) {
+                String xml = jdbc.queryForObject("SELECT signed_xml FROM fiscal_documents WHERE company_id=? AND id=?", String.class, company, note.id());
+                assertThat(xml).contains("NotaCreditoElectronica", "<Codigo>06</Codigo>", originalKey,
+                    "<Cantidad>1.000</Cantidad>", "<CodigoCABYS>2391100000000</CodigoCABYS>", "<CodigoTarifaIVA>08</CodigoTarifaIVA>");
+                documents.issueForReturn(company, note.saleReturnId());
+            }
+            assertThat(sales.get(admin, partialId).fiscal()).hasSize(3);
+
+            var denied = sales.confirm(admin, sale(branch, item, null, null, null));
+            var deniedReturn = returns.confirm(admin, denied.movement().id(), returnOne(item));
+            assertThat(deniedReturn.fiscal().status()).isEqualTo("WAITING");
+            dispatcher.runOnce(20);
+            when(hacienda.status(any(), any(), eq(key(denied)))).thenReturn(new HaciendaClient.Result(HaciendaClient.Outcome.REJECTED,
+                "Rechazo de prueba", null));
+            due(company);
+            dispatcher.runOnce(20);
+            var rejectedReturn = returns.get(admin, denied.movement().id(), deniedReturn.folio());
+            assertThat(rejectedReturn.fiscal().status()).isEqualTo("REVIEW");
+            assertThat(rejectedReturn.fiscal().reason()).isEqualTo("Rechazo de prueba");
+            assertThat(rejectedReturn.refunds()).hasSize(1);
+            assertThat(sales.get(admin, denied.movement().id()).fiscal()).hasSize(1);
+
             // ADR-008: al borrar la empresa se archivan aceptados y rechazados por 5 años; pendientes y cancelados no.
             int archived = new org.springframework.transaction.support.TransactionTemplate(transactions).execute(s -> archive.archiveCompany(company));
             Integer expected = jdbc.queryForObject("SELECT COUNT(*) FROM fiscal_documents WHERE company_id=? AND status IN ('ACCEPTED','REJECTED') AND signed_xml IS NOT NULL",
@@ -223,6 +271,12 @@ class FiscalLocalIntegrationTest {
         return new SaleService.SaleInput(id(), branch, name, null, idType == null ? null : "cliente@example.test",
             List.of(new SaleService.LineInput(item, BigDecimal.ONE, new BigDecimal(price))),
             List.of(new SalePaymentService.PaymentInput("CASH", new BigDecimal("5000"), null)), idType, idNumber);
+    }
+
+    private static SaleReturnService.Confirmation returnOne(String item) {
+        return new SaleReturnService.Confirmation(id(), "Producto dañado", null,
+            List.of(new SaleReturnService.LineInput(item, BigDecimal.ONE, BigDecimal.ZERO)), new BigDecimal("3800"),
+            List.of(new SalePaymentService.RefundInput("CASH", new BigDecimal("3800"), null)));
     }
 
     private void due(String company) {

@@ -50,6 +50,7 @@ public class FiscalDispatcher {
 
     /** Procesa hasta {@code limit} comprobantes vencidos y los correos pendientes. Devuelve cuántos atendió. */
     public int runOnce(int limit) {
+        enqueueReturnCredits(limit);
         int handled = 0;
         for (var doc : claim(limit)) {
             try { process(doc); }
@@ -62,6 +63,24 @@ public class FiscalDispatcher {
         }
         mailer.sendPending(limit);
         return handled;
+    }
+
+    private void enqueueReturnCredits(int limit) {
+        var pending = jdbc.query("""
+            SELECT r.company_id,r.id FROM sale_returns r
+            JOIN fiscal_documents f ON f.company_id=r.company_id AND f.id=(
+              SELECT d.id FROM fiscal_documents d WHERE d.company_id=r.company_id AND d.sale_id=r.sale_id AND d.doc_type<>'03'
+              ORDER BY d.created_at DESC,d.id DESC LIMIT 1)
+            WHERE f.status='ACCEPTED'
+              AND NOT EXISTS(SELECT 1 FROM fiscal_documents c WHERE c.company_id=r.company_id AND c.sale_return_id=r.id)
+            ORDER BY r.created_at,r.id LIMIT ?
+            """, (rs,row) -> new String[]{rs.getString(1),rs.getString(2)}, limit);
+        for (var operation : pending) {
+            try { documents.issueForReturn(operation[0], operation[1]); }
+            catch (RuntimeException failure) {
+                log.warn("No se pudo encolar la nota de devolución {}: {}", operation[1], failure.getClass().getSimpleName());
+            }
+        }
     }
 
     private record Claimed(FiscalAssembler.Doc doc, String status, int attempts, boolean signed) {

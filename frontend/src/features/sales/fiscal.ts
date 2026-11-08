@@ -2,6 +2,7 @@
 export type FiscalStatus = "PENDING" | "PROCESSING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
 export type FiscalType = "01" | "03" | "04";
 export type FiscalDocument = {
+  saleReturnId?: string | null;
   id: string; docType: FiscalType; environment: "TEST" | "PROD"; consecutive: string; key: string; issuedAt: string;
   status: FiscalStatus; reason: string | null; attempts: number; sentAt: string | null; resolvedAt: string | null;
   referenceId: string | null; replacesId: string | null; mailStatus: "NONE" | "PENDING" | "SENT" | "FAILED"; branchCode: string;

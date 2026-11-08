@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InventoryHistoryService {
     private static final Rules RULES = new Rules("HISTORY_INVALID", "HISTORY_CONFLICT");
     private static final ZoneId COSTA_RICA = ZoneId.of("America/Costa_Rica");
-    private static final Set<String> KINDS = Set.of("RECEIPT", "OUT", "ADJUST", "SALE", "VOID");
+    private static final Set<String> KINDS = Set.of("RECEIPT", "OUT", "ADJUST", "SALE", "RETURN", "VOID");
     private static final String ROWS = """
         SELECT m.id,m.kind,m.folio,m.created_at,COALESCE(actor.full_name,m.actor_name) AS actor_name,m.reason,m.reference,
                r.folio AS void_folio,o.folio AS original_folio,

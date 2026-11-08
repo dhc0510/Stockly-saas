@@ -140,16 +140,28 @@ public class SalePaymentService {
 
     void refund(String company, String saleId, String voidId, List<RefundInput> input) {
         var payments = payments(company, saleId);
+        BigDecimal paid = payments.stream().map(Payment::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (payments.isEmpty() && input != null && !input.isEmpty())
+            throw invalid("La venta no tiene cobro registrado; no hay dinero que devolver.");
+        var clean = checkedRefunds(company, payments, paid, input, true);
+        for (int i = 0; i < clean.size(); i++) {
+            Refund refund = clean.get(i);
+            jdbc.update("""
+                INSERT INTO sale_refunds(company_id,sale_id,void_id,position,method,amount,reference) VALUES (?,?,?,?,?,?,?)
+                """, company, saleId, voidId, i, refund.method(), refund.amount(), refund.reference());
+        }
+    }
+
+    List<Refund> checkedRefunds(String company, List<Payment> payments, BigDecimal expected, List<RefundInput> input, boolean fullVoid) {
         var refunds = input == null ? List.<RefundInput>of() : input;
-        if (payments.isEmpty()) {
-            if (!refunds.isEmpty()) throw invalid("La venta no tiene cobro registrado; no hay dinero que devolver.");
-            return;
+        if (expected.signum() == 0) {
+            if (!refunds.isEmpty()) throw invalid("Esta devolución no tiene un importe que reintegrar.");
+            return List.of();
         }
         if (refunds.isEmpty()) throw invalid("Registra cómo se devolvió el dinero.");
         if (refunds.size() > MAX_PAYMENTS) throw invalid("Registra como máximo " + MAX_PAYMENTS + " medios de devolución.");
         var allowed = new HashSet<>(active(company));
         payments.forEach(payment -> allowed.add(payment.method()));
-        BigDecimal paid = payments.stream().map(Payment::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal sum = BigDecimal.ZERO;
         var clean = new ArrayList<Refund>();
         for (int i = 0; i < refunds.size(); i++) {
@@ -161,15 +173,11 @@ public class SalePaymentService {
             sum = sum.add(amount);
             clean.add(new Refund(refund.method(), amount, reference));
         }
-        if (sum.compareTo(paid) != 0)
-            throw invalid("La devolución debe sumar exactamente lo cobrado (₡" + paid.toPlainString() + ").");
-        for (int i = 0; i < clean.size(); i++) {
-            Refund refund = clean.get(i);
-            jdbc.update("""
-                INSERT INTO sale_refunds(company_id,sale_id,void_id,position,method,amount,reference) VALUES (?,?,?,?,?,?,?)
-                """, company, saleId, voidId, i, refund.method(), refund.amount(), refund.reference());
-        }
+        if (sum.compareTo(expected) != 0)
+            throw invalid("La devolución debe sumar exactamente " + (fullVoid ? "lo cobrado" : "el reintegro") + " (₡" + expected.toPlainString() + ").");
+        return clean;
     }
+
 
     // ---------- Consultas ----------
 
@@ -226,6 +234,22 @@ public class SalePaymentService {
             JOIN inventory_movements m ON m.company_id=x.company_id AND m.id=x.void_id
             """ + visible, Integer.class, params);
 
+        String visibleReturns = """
+            JOIN sales s ON s.company_id=r.company_id AND s.id=r.sale_id
+            WHERE r.company_id=? AND r.created_at>=? AND r.created_at<? AND (?='' OR s.branch_id=?)
+              AND (? OR EXISTS (SELECT 1 FROM inventory_branch_users u
+                   WHERE u.company_id=s.company_id AND u.branch_id=s.branch_id AND u.user_id=?))
+            """;
+        jdbc.query("""
+            SELECT r.created_at,x.method,x.amount FROM sale_return_refunds x
+            JOIN sale_returns r ON r.company_id=x.company_id AND r.id=x.return_id
+            """ + visibleReturns, rs -> { refunded.add(new Amount(rs.getTimestamp(1).toInstant(), rs.getString(2), rs.getBigDecimal(3))); }, params);
+        Integer returns = jdbc.queryForObject("""
+            SELECT COUNT(DISTINCT r.id) FROM sale_return_refunds x
+            JOIN sale_returns r ON r.company_id=x.company_id AND r.id=x.return_id
+            """ + visibleReturns, Integer.class, params);
+
+
         var totals = new LinkedHashMap<String, MethodTotal>();
         for (String method : METHODS) totals.put(method, MethodTotal.of(method, LABELS.get(method), BigDecimal.ZERO, BigDecimal.ZERO));
         var days = new TreeMap<LocalDate, Map<String, BigDecimal>>(Comparator.reverseOrder());
@@ -241,7 +265,7 @@ public class SalePaymentService {
             METHODS.stream().map(method -> entry.getValue().getOrDefault(method, BigDecimal.ZERO)).toList(),
             entry.getValue().values().stream().reduce(BigDecimal.ZERO, BigDecimal::add))).toList();
         return new Summary(start, end, List.copyOf(totals.values()), dayRows,
-            sales == null ? 0 : sales, voids == null ? 0 : voids);
+            sales == null ? 0 : sales, (voids == null ? 0 : voids) + (returns == null ? 0 : returns));
     }
 
     private boolean visibleBranch(StocklyPrincipal actor, String branch) {

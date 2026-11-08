@@ -11,6 +11,7 @@ import {
 } from "./payments";
 import { ID_TYPES, fiscalShortLabels, idProblem, idTypeLabel, type FiscalDocument, type FiscalStatus } from "./fiscal";
 import { FiscalBadge, FiscalPanel } from "./FiscalPanel";
+import { SaleReturnEditor, SaleReturnReceipt, SaleReturnsSection, useSaleReturns } from "./SaleReturnsPage";
 import "../receipts/receipts.css";
 import "./sales.css";
 
@@ -32,7 +33,7 @@ type Draft = {
   requestKey?: string;
 };
 type Row = { id: string; folio: string; date: string; branchName: string; customer: string | null; total: number; voided: boolean; payment: PaymentState;
-  fiscalType: "01" | "04" | null; fiscalStatus: FiscalStatus | "NONE"; creditStatus: FiscalStatus | null };
+  fiscalType: "01" | "04" | null; fiscalStatus: FiscalStatus | "NONE"; creditStatus: FiscalStatus | null; returnStatus?: "partial" | "complete" | null };
 type Sale = {
   sale: { branchName: string; customer: string | null; customerPhone: string | null; customerEmail: string | null; total: number;
     customerIdType: string | null; customerIdNumber: string | null };
@@ -79,7 +80,8 @@ export function Heading({ title, description, children }: { title: string; descr
   </header>;
 }
 
-function SaleStatus({ voided }: { voided: boolean }) {
+function SaleStatus({ voided, returnStatus }: { voided: boolean; returnStatus?: Row["returnStatus"] }) {
+  if (returnStatus) return <span className="sales-status sales-return-state">{returnStatus === "complete" ? "Devuelta por completo" : "Devuelta parcialmente"}</span>;
   const Icon = voided ? X : Check;
   return <span className={voided ? "sales-status sales-status-void" : "sales-status"}>
     <Icon size={13} aria-hidden="true" />{voided ? "Anulada" : "Confirmada"}
@@ -106,14 +108,18 @@ export function SalesPage() {
   const admin = user.role === "COMPANY_ADMIN";
   const canWrite = admin || level === "OPERATE" || level === "ADMIN";
   const canVoid = admin || user.specialPermissions.includes("VOID_SALES");
+  const canReturn = admin || user.specialPermissions.includes("REGISTER_SALE_RETURNS");
+  const canSeeHistory = admin || user.modules.some(module => module.moduleKey === "INVENTORY_HISTORY" && module.accessLevel !== "NONE");
   return <div className="catalog-page sales-page"><Routes>
-    <Route index element={<List storage={storage} canWrite={canWrite} canVoid={canVoid} />} />
+    <Route index element={<List storage={storage} canWrite={canWrite} canVoid={canVoid} canReturn={canReturn} />} />
     {canWrite && <Route path="new" element={<Editor storage={storage} />} />}
-    <Route path=":folio" element={<Document canVoid={canVoid} canWrite={canWrite} />} />
+    <Route path=":folio" element={<Document canVoid={canVoid} canWrite={canWrite} canReturn={canReturn} />} />
+    {canReturn && <Route path=":folio/returns/new" element={<SaleReturnEditor storage={storage} />} />}
+    <Route path=":folio/returns/:returnFolio" element={<SaleReturnReceipt canSeeHistory={canSeeHistory} />} />
   </Routes></div>;
 }
 
-function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boolean; canVoid: boolean }) {
+function List({ storage, canWrite, canVoid, canReturn }: { storage: string; canWrite: boolean; canVoid: boolean; canReturn: boolean }) {
   const draft = load(storage);
   const [hasDraft, setHasDraft] = useState(!!(draft.lines.length || draft.customer.trim() || draft.customerPhone?.trim() || draft.customerEmail?.trim()));
   const [discard, setDiscard] = useState(false);
@@ -175,7 +181,7 @@ function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boole
             <option value="">Todas</option>{branches.map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
           </select></label>
           <label>Estado<select value={status} onChange={event => { setStatus(event.target.value); setPage(0); }}>
-            <option value="">Todos</option><option value="confirmed">Confirmadas</option><option value="voided">Anuladas</option>
+            <option value="">Todos</option><option value="confirmed">Confirmadas</option><option value="voided">Anuladas</option><option value="partial">Devueltas parcialmente</option><option value="complete">Devueltas por completo</option>
           </select></label>
           <label>Cobro<select value={payment} onChange={event => { setPayment(event.target.value); setPage(0); }}>
             <option value="">Todos</option><option value="paid">Cobradas</option><option value="voided">Cobro anulado</option>
@@ -206,11 +212,13 @@ function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boole
               <span className="sales-row-branch"><Building2 size={14} aria-hidden="true" />{sale.branchName}</span>
               <time className="sales-date" dateTime={sale.date}>{receiptDate(sale.date)}</time>
               <strong className="sales-amount">{money(sale.total)}</strong>
-              <SaleStatus voided={sale.voided} />
+              <SaleStatus voided={sale.voided} returnStatus={sale.returnStatus} />
               <PaymentBadge state={sale.payment} />
               <span className="sales-row-fiscal"><FiscalBadge status={sale.fiscalStatus ?? "NONE"} prefix={sale.fiscalType ? fiscalShortLabels[sale.fiscalType] : undefined} />
                 {sale.creditStatus && <FiscalBadge status={sale.creditStatus} prefix="Nota de crédito" />}</span>
-              <span className="sales-row-action">{canVoid && !sale.voided
+              <span className="sales-row-action">{canReturn && sale.returnStatus === "partial" ? <Link className="button secondary sales-void-link"
+                  to={path + "/" + sale.folio + "/returns/new?restante=1"}>Devolver lo restante</Link>
+                : canVoid && !sale.voided && !sale.returnStatus
                 ? <Link className="button secondary sales-void-link" to={path + "/" + sale.folio + "?anular=1"}
                   aria-label={"Anular venta " + sale.folio}>Anular venta</Link>
                 : <span className="sales-row-none" aria-hidden="true">—</span>}</span>
@@ -518,9 +526,14 @@ function PaymentPanel({ total, payments, locked, state, issues, onChange }: {
   </>;
 }
 
-function Document({ canVoid, canWrite }: { canVoid: boolean; canWrite: boolean }) {
+function Document({ canVoid, canWrite, canReturn }: { canVoid: boolean; canWrite: boolean; canReturn: boolean }) {
   const { folio } = useParams();
   const [query] = useSearchParams();
+  const returnState = useSaleReturns(folio);
+  const returnContext = returnState.data;
+  const returnStatus = returnContext?.returns?.length
+    ? returnContext.lines.some(line => line.remaining > 0) ? "partial" : "complete"
+    : null;
   const [sale, setSale] = useState<Sale>();
   const [voiding, setVoiding] = useState(query.get("anular") === "1");
   const [error, setError] = useState("");
@@ -542,7 +555,7 @@ function Document({ canVoid, canWrite }: { canVoid: boolean; canWrite: boolean }
     {!sale ? !error && <p role="status">Cargando comprobante…</p> : <>
       <section className="sales-panel sales-work-panel">
         <div className="sales-document-heading"><PanelHeading icon={ReceiptText} title="Detalle de la venta" description="Artículos, precios y datos del comprobante." />
-          {sale.movement.voidId ? <a className="sales-status-link" href="#anulacion"><SaleStatus voided /></a> : <SaleStatus voided={false} />}</div>
+          {sale.movement.voidId ? <a className="sales-status-link" href="#anulacion"><SaleStatus voided /></a> : <SaleStatus voided={false} returnStatus={returnStatus} />}</div>
         <dl className="sales-details">
           <div><dt>Sucursal</dt><dd>{sale.sale.branchName}</dd></div>
           <div><dt>Fecha y hora</dt><dd><time className="sales-date">{receiptDate(sale.movement.date)}</time></dd></div>
@@ -563,11 +576,13 @@ function Document({ canVoid, canWrite }: { canVoid: boolean; canWrite: boolean }
         </section>}
       </section>
       <PaymentSummary sale={sale} />
+      {returnState.error && <p className="notice error" role="alert">{returnState.error}</p>}
+      {returnContext?.returns && <SaleReturnsSection context={returnContext} canReturn={canReturn} />}
       <FiscalPanel api={api} folio={sale.movement.folio} documents={sale.fiscal ?? []} voided={!!sale.movement.voidId} canWrite={canWrite}
         hasEmail={!!sale.sale.customerEmail} onChange={next => setSale(next as Sale)}
         customer={{ name: sale.sale.customer, idType: sale.sale.customerIdType, idNumber: sale.sale.customerIdNumber }} />
-      {!sale.movement.voidId && canVoid && (voiding
-        ? <VoidForm sale={sale} url={url} onCancel={() => setVoiding(false)} onVoided={next => { setSale(next); setVoiding(false); }} />
+      {!sale.movement.voidId && canVoid && returnContext && !returnStatus && (voiding
+        ? <VoidForm sale={sale} url={url} onCancel={() => setVoiding(false)} onVoided={next => { setSale(next); setVoiding(false); returnState.reload(); }} />
         : <div className="sales-actions"><button type="button" className="button danger" onClick={() => setVoiding(true)}>Anular venta</button></div>)}
     </>}
   </>;

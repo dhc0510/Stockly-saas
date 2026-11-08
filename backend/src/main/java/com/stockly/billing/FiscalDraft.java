@@ -16,7 +16,11 @@ public record FiscalDraft(String docType, String key, String consecutive, Instan
     /** Línea de venta con su total cobrado (IVA incluido) y la tarifa del catálogo (nota 8.1). */
     public record Line(String cabys, BigDecimal quantity, String unit, String detail, BigDecimal total, String rateCode) {}
 
-    public record Reference(String docType, String key, Instant issuedAt, String reason) {}
+    public record Reference(String docType, String key, Instant issuedAt, String reason, String code) {
+        public Reference(String docType, String key, Instant issuedAt, String reason) {
+            this(docType, key, issuedAt, reason, "01");
+        }
+    }
 
     /** Tarifa (%) por código de la nota 8.1. Los códigos 05-07 solo existen para notas de crédito/débito. */
     static final Map<String, BigDecimal> RATES = Map.ofEntries(
