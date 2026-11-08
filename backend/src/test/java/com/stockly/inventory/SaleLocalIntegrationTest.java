@@ -40,7 +40,7 @@ class SaleLocalIntegrationTest {
             INSERT INTO companies(id,commercial_name,legal_name,identification_type,identification_normalized,
               contact_email,status,created_at,updated_at)
             VALUES (?, 'Prueba STK-011', 'Prueba STK-011', 'LEGAL', ?, 'test@example.com', 'ACTIVE', NOW(), NOW())
-            """, company, company.substring(0, 12));
+            """, company, legalId());
         try {
             jdbc.update("""
                 INSERT INTO users(id,company_id,full_name,username_normalized,email_normalized,password_hash,must_change_password,role)
@@ -169,4 +169,7 @@ class SaleLocalIntegrationTest {
     }
 
     private static String id() { return UUID.randomUUID().toString(); }
+
+    /** Cédula jurídica de prueba (10 dígitos), como exige STK-004 y la clave de Hacienda. */
+    private static String legalId() { return "3" + String.format("%09d", java.util.concurrent.ThreadLocalRandom.current().nextLong(1_000_000_000L)); }
 }

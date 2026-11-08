@@ -1,8 +1,9 @@
 import { SalesPage } from "../sales/SalesPage";
 import { PaymentMethodsPage, PaymentSummaryPage } from "../sales/PaymentPages";
+import { BillingPage } from "../billing/BillingPage";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart, BarChart3, Wallet } from "lucide-react";
+import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart, BarChart3, Wallet, FileText } from "lucide-react";
 import { CatalogPage, catalogAccess } from "../catalog/CatalogPage";
 import { ReceiptsPage, receiptAccess } from "../receipts/ReceiptsPage";
 import { MovementsPage, movementAccess } from "../movements/MovementsPage";
@@ -74,7 +75,7 @@ export function CompanyWorkspace() {
   const closeMenu=()=>setMenuOpen(false);
   return <div className={`app-shell company-shell${import.meta.env.MODE === "stk005-demo" ? " stk005-demo-shell" : ""}`}>
     <aside className={`sidebar company-sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación de empresa"><div className="company-sidebar-heading">
-        <Link className="brand" to="/" onClick={closeMenu}>Stockly<span className="brand-dot">.</span></Link>
+        <Link className="brand" to="/" onClick={closeMenu}><img className="brand-mark" src="/brand/stockly-caja.svg" alt="" width="30" height="30" /><span>Stockly<span className="brand-dot">.</span></span></Link>
         {menuOpen && <button ref={drawerClose} className="company-drawer-close icon-button" type="button"
           aria-label="Cerrar menú" onClick={closeMenu}><X size={20} aria-hidden="true" /></button>}
       </div><nav className="company-sidebar-links" aria-label="Secciones de empresa"><div className="nav-caption">MI EMPRESA</div>
@@ -89,12 +90,12 @@ export function CompanyWorkspace() {
       {canReceipts&&<NavLink className="identity-nav" to="/inventory/receipts" onClick={closeMenu}><PackagePlus size={18}/> Entradas de inventario</NavLink>}
       {canMovements&&<NavLink className="identity-nav" to="/inventory/movements" onClick={closeMenu}><PackageMinus size={18}/> Salidas y ajustes</NavLink>}
       {canHistory&&<NavLink className="identity-nav" to="/inventory/history" onClick={closeMenu}><History size={18}/> Historial</NavLink>}
-      {canSales && <><div className="nav-caption inventory-caption">OPERACIÓN COMERCIAL</div><NavLink className="identity-nav" to="/sales" onClick={closeMenu}><ShoppingCart size={18}/> Ventas</NavLink><NavLink className="identity-nav" to="/payments" end onClick={closeMenu}><BarChart3 size={18}/> Resumen de cobros</NavLink>{user.role === "COMPANY_ADMIN" && <NavLink className="identity-nav" to="/payments/methods" onClick={closeMenu}><Wallet size={18}/> Medios de pago</NavLink>}</>}
+      {canSales && <><div className="nav-caption inventory-caption">OPERACIÓN COMERCIAL</div><NavLink className="identity-nav" to="/sales" onClick={closeMenu}><ShoppingCart size={18}/> Ventas</NavLink><NavLink className="identity-nav" to="/payments" end onClick={closeMenu}><BarChart3 size={18}/> Resumen de cobros</NavLink>{user.role === "COMPANY_ADMIN" && <NavLink className="identity-nav" to="/payments/methods" onClick={closeMenu}><Wallet size={18}/> Medios de pago</NavLink>}{user.role === "COMPANY_ADMIN" && <NavLink className="identity-nav" to="/billing" onClick={closeMenu}><FileText size={18}/> Facturación</NavLink>}</>}
       </nav>
       <div className="sidebar-footer"><span className="avatar"><UserRound size={18}/></span><span><strong>{user.fullName}</strong><br/><small>{user.role === "COMPANY_ADMIN" ? "Administración de empresa" : user.email}</small></span></div>
     </aside>
     {menuOpen&&<button className="mobile-drawer-scrim" type="button" tabIndex={-1} aria-label="Cerrar menú" onClick={closeMenu}/>}
-    <div className="workspace" inert={menuOpen}>{(import.meta.env.MODE === "stk005-demo"||import.meta.env.MODE === "stk007-demo")&&<div className="demo-notice" role="status"><strong>{import.meta.env.MODE==="stk007-demo"?"Simulación STK-007":"Simulación STK-005"}</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button ref={menuToggle} className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span>Mi empresa</span><div className="company-top-actions">{canInventory&&<InventoryBell/>}<button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></div></header>
+    <div className="workspace" inert={menuOpen}>{(import.meta.env.MODE === "stk005-demo"||import.meta.env.MODE === "stk007-demo")&&<div className="demo-notice" role="status"><strong>{import.meta.env.MODE==="stk007-demo"?"Simulación STK-007":"Simulación STK-005"}</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button ref={menuToggle} className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span className="topbar-title"><img className="topbar-mark" src="/brand/stockly-caja.svg" alt="Stockly" width="26" height="26" /><span className="topbar-name">Mi empresa</span></span><div className="company-top-actions">{canInventory&&<InventoryBell/>}<button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></div></header>
       <main id="main" tabIndex={-1}><Routes>
         {canUsers&&<Route path="/users" element={<UsersPage/>}/>}
         {canRoles&&<Route path="/roles" element={<RolesPage/>}/>}
@@ -109,6 +110,7 @@ export function CompanyWorkspace() {
         {canSales && <Route path="/sales/*" element={<SalesPage />} />}
         {canSales && <Route path="/payments" element={<PaymentSummaryPage />} />}
         {canSales && user.role === "COMPANY_ADMIN" && <Route path="/payments/methods" element={<PaymentMethodsPage />} />}
+        {canSales && user.role === "COMPANY_ADMIN" && <Route path="/billing" element={<BillingPage />} />}
         <Route path="/account" element={<AccountPage/>}/>
         <Route path="*" element={<Navigate to={defaultPath} replace/>}/>
       </Routes></main>

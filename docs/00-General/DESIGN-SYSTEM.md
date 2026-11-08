@@ -12,6 +12,8 @@
 
 **Logotipo:** Imagen de referencia proporcionada, con símbolo de caja cúbica naranja y texto «Stockly» blanco sobre negro. Archivo original vectorial, versiones horizontal/compacta, claro/oscuro, monocromática, favicon y zonas de seguridad: **Por definir y preparar a partir del arte original autorizado**. No reconstruir ni alterar el logotipo sin aprobación.
 
+**Isotipo (caja):** el propietario aprobó el 2026-11-08 una versión vectorial de la caja naranja, `frontend/public/brand/stockly-caja.svg`, con fondo transparente y caras de color plano (`#FD8D10` arriba, `#FC7B03` izquierda y `#FC6502` derecha) medidas en el logo original. Se muestra junto a «Stockly.» en el menú lateral y en la barra superior móvil.
+
 ---
 
 ## 2. Paleta de colores

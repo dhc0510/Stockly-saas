@@ -23,9 +23,11 @@ public class CompanyService {
     private final CompanyValidation validation;
     private final PasswordEncoder encoder;
     private final DeletionJournal journal;
+    private final com.stockly.billing.FiscalArchive archive;
     private final JdbcTemplate jdbc;
-    public CompanyService(CompanyRepository companies,AccountRepository accounts,CompanyRoleRepository roles,CompanyValidation validation,PasswordEncoder encoder,DeletionJournal journal,JdbcTemplate jdbc) {
+    public CompanyService(CompanyRepository companies,AccountRepository accounts,CompanyRoleRepository roles,CompanyValidation validation,PasswordEncoder encoder,DeletionJournal journal,JdbcTemplate jdbc,com.stockly.billing.FiscalArchive archive) {
         this.companies=companies; this.accounts=accounts; this.roles=roles; this.validation=validation; this.encoder=encoder; this.journal=journal; this.jdbc=jdbc;
+        this.archive=archive;
     }
     @Transactional
     public CompanyView create(CreateCompany request) {
@@ -92,6 +94,8 @@ public class CompanyService {
                 if(status==STATUS_ROLLED_BACK) journal.rolledBack(company.id);
             }
         });
+        // ADR-008: los comprobantes enviados a Hacienda se conservan 5 años aunque se borre la empresa.
+        archive.archiveCompany(company.id);
         accounts.deleteByCompanyId(company.id);
         accounts.flush();
         roles.deleteByCompanyId(company.id);

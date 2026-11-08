@@ -16,7 +16,12 @@ type Item = {
   price: number | null;
   active: boolean;
   hasMovements: boolean;
+  cabys: string | null;
+  taxRate: string | null;
 };
+// STK-013 · Tarifas de IVA de venta (nota 8.1 de los Anexos v4.4 de Hacienda).
+const TAX_RATES: [string, string][] = [["08", "13 % · Tarifa general"], ["04", "4 %"], ["03", "2 %"], ["02", "1 %"], ["09", "0,5 %"],
+  ["01", "0 % · Artículo 32 RLIVA"], ["11", "0 % sin derecho a crédito"], ["10", "Exenta"]];
 type Product = {
   id: string;
   name: string;
@@ -353,8 +358,11 @@ function ProductForm({ selection: { product, item, category }, access, categorie
       return;
     }
     const price = value("price") === "" ? null : Number(value("price"));
+    const cabys = value("cabys").replace(/\s/g, "");
+    if (access.edit && cabys && !/^\d{13}$/.test(cabys)) { setError("El código CABYS debe tener 13 dígitos."); return; }
     const body = { sku: value("sku"), barcode: value("barcode"), unit: value("unit") || current?.unit || "unidad",
-      price, setPrice: access.price && !converting };
+      price, setPrice: access.price && !converting,
+      ...(access.edit && !converting ? { cabys, taxRate: value("taxRate") } : {}) };
     setBusy(true);
     setError("");
     let productCreated=false;
@@ -416,7 +424,12 @@ function ProductForm({ selection: { product, item, category }, access, categorie
         <label>SKU<input name="sku" maxLength={80} defaultValue={current?.sku} placeholder="Automático si se deja vacío" disabled={!access.edit || (configure && !!simple)} /></label>
         <label>Código de barras<input name="barcode" maxLength={80} defaultValue={current?.barcode ?? ""} disabled={!access.edit || (configure && !!simple)} /></label>
         <label>Unidad base<select name="unit" defaultValue={current?.unit ?? "unidad"} disabled={!access.edit || current?.hasMovements || (configure && !!simple)}>{["unidad", "kg", "litro", "metro"].map(unit => <option key={unit}>{unit}</option>)}</select></label>
-        <label>Precio de venta (₡)<input name="price" type="number" step=".01" min="0" max="9999999999999.99" defaultValue={current?.price ?? ""} disabled={!access.price || (configure && !!simple)} /></label>
+        <label>Precio de venta con IVA (₡)<input name="price" type="number" step=".01" min="0" max="9999999999999.99" defaultValue={current?.price ?? ""} disabled={!access.price || (configure && !!simple)} /></label>
+        <label>Código CABYS<input name="cabys" inputMode="numeric" maxLength={13} placeholder="13 dígitos" defaultValue={current?.cabys ?? ""}
+          disabled={!access.edit || (configure && !!simple)} aria-describedby="catalog-cabys-help" />
+          <small id="catalog-cabys-help">Catálogo oficial de bienes y servicios. Sin él, la factura queda pendiente.</small></label>
+        <label>Tarifa de IVA<select name="taxRate" defaultValue={current?.taxRate ?? ""} disabled={!access.edit || (configure && !!simple)}>
+          <option value="">Sin definir</option>{TAX_RATES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label>
       </div>}
       {isGroup && <fieldset><legend>Variantes</legend><div className="catalog-variants">{product.items.map(variant =>
         <button key={variant.id} type="button" onClick={() => open({ product, item: variant })}>{variant.variantName} · {variant.sku}{variant.price != null && " · " + currency.format(variant.price)}{!variant.active && " · Archivada"}</button>)}</div></fieldset>}

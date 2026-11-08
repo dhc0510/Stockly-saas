@@ -24,7 +24,7 @@ Documentación aprobada por el propietario el 2026-11-07. [SPEC](../../01-Specs/
 - [x] Permisos de configurar, cobrar, anular y consultar, y aislamiento entre empresas y sucursales. AC-09.
 
 ## Integraciones
-- [ ] Comunicar a Gabo el contrato de pagos para STK-014.
+- [x] Contrato de pagos comunicado a Gabo el 2026-11-08 en la [tarjeta de STK-014](https://trello.com/c/RHfLlp05).
 
 ## Pruebas
 - [x] Integración en MySQL, Vitest y Playwright a 320 y 1440 px, con evidencia en `docs/04-Testing/STK-012/`. AC-01 a AC-10.

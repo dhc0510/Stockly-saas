@@ -21,6 +21,7 @@ export function App() {
       : pathname.startsWith("/sales") ? "Ventas"
       : pathname === "/payments/methods" ? "Medios de pago"
       : pathname === "/payments" ? "Resumen de cobros"
+      : pathname === "/billing" ? "Facturación electrónica"
       : pathname.startsWith("/catalog") ? "Catálogo de productos"
       : pathname.startsWith("/companies") ? "Empresas"
       : pageTitles[pathname];
@@ -34,7 +35,7 @@ function DemoApp() {
   return <div className="app-shell">
     <a className="skip-link" href="#main">Saltar al contenido</a>
     <aside className="sidebar">
-      <NavLink className="brand" to="/companies" aria-label="Stockly, empresas">Stockly<span className="brand-dot" aria-hidden="true">.</span></NavLink>
+      <NavLink className="brand" to="/companies" aria-label="Stockly, empresas"><img className="brand-mark" src="/brand/stockly-caja.svg" alt="" width="30" height="30" /><span>Stockly<span className="brand-dot" aria-hidden="true">.</span></span></NavLink>
       <div className="nav-caption">ADMINISTRACIÓN</div>
       <NavLink className="nav-item" to="/companies"><Building2 size={19}/> Empresas</NavLink>
       <div className="sidebar-footer"><span className="avatar"><Building2 size={19}/></span><span>Demostración<br/><strong>local</strong></span><ChevronDown size={15}/></div>
@@ -63,7 +64,7 @@ function AuthenticatedApp() {
   return <div className={`app-shell${import.meta.env.MODE === "stk005-demo" ? " stk005-demo-shell" : ""}`}>
     <a className="skip-link" href="#main">Saltar al contenido</a>
     <aside className={`sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación principal">
-      <NavLink className="brand" to="/companies" aria-label="Stockly, empresas">Stockly<span className="brand-dot" aria-hidden="true">.</span></NavLink>
+      <NavLink className="brand" to="/companies" aria-label="Stockly, empresas"><img className="brand-mark" src="/brand/stockly-caja.svg" alt="" width="30" height="30" /><span>Stockly<span className="brand-dot" aria-hidden="true">.</span></span></NavLink>
       <div className="nav-caption">ADMINISTRACIÓN</div>
       <NavLink className="nav-item" to="/companies" onClick={closeMenu}><Building2 size={19}/> Empresas</NavLink>
       <div className="sidebar-footer"><span className="avatar"><Building2 size={19}/></span><span>{user.fullName}<br/><strong>{user.email}</strong></span><ChevronDown size={15}/></div>

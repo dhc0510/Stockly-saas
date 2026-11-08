@@ -9,6 +9,8 @@ import {
   applied, balance, cents, methodHints, methodLabels, paymentProblem, paymentStateLabels, toAmount, toInput,
   type Method, type MethodState, type Payment, type PaymentDraft, type PaymentState, type Refund,
 } from "./payments";
+import { ID_TYPES, fiscalShortLabels, idProblem, idTypeLabel, type FiscalDocument, type FiscalStatus } from "./fiscal";
+import { FiscalBadge, FiscalPanel } from "./FiscalPanel";
 import "../receipts/receipts.css";
 import "./sales.css";
 
@@ -23,17 +25,22 @@ type Draft = {
   customer: string;
   customerPhone?: string;
   customerEmail?: string;
+  customerIdType?: string;
+  customerIdNumber?: string;
   lines: Line[];
   payments?: PaymentDraft[];
   requestKey?: string;
 };
-type Row = { id: string; folio: string; date: string; branchName: string; customer: string | null; total: number; voided: boolean; payment: PaymentState };
+type Row = { id: string; folio: string; date: string; branchName: string; customer: string | null; total: number; voided: boolean; payment: PaymentState;
+  fiscalType: "01" | "04" | null; fiscalStatus: FiscalStatus | "NONE"; creditStatus: FiscalStatus | null };
 type Sale = {
-  sale: { branchName: string; customer: string | null; customerPhone: string | null; customerEmail: string | null; total: number };
+  sale: { branchName: string; customer: string | null; customerPhone: string | null; customerEmail: string | null; total: number;
+    customerIdType: string | null; customerIdNumber: string | null };
   movement: { folio: string; date: string; actor: string; voidId: string | null; voidReason: string | null; voidFolio: string | null };
   lines: { itemId: string; name: string; sku: string; unit: string; quantity: number; unitPrice: number; amount: number }[];
   payments: Payment[];
   refund: { date: string; actor: string; lines: Refund[] } | null;
+  fiscal: FiscalDocument[];
 };
 const toCents = (value: number) => BigInt(Math.round(value * 100));
 /** Medios activos de la empresa; vacío mientras carga. */
@@ -102,7 +109,7 @@ export function SalesPage() {
   return <div className="catalog-page sales-page"><Routes>
     <Route index element={<List storage={storage} canWrite={canWrite} canVoid={canVoid} />} />
     {canWrite && <Route path="new" element={<Editor storage={storage} />} />}
-    <Route path=":folio" element={<Document canVoid={canVoid} />} />
+    <Route path=":folio" element={<Document canVoid={canVoid} canWrite={canWrite} />} />
   </Routes></div>;
 }
 
@@ -114,6 +121,7 @@ function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boole
   const [branchId, setBranchId] = useState("");
   const [status, setStatus] = useState("");
   const [payment, setPayment] = useState("");
+  const [fiscal, setFiscal] = useState("");
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<{ entries: Row[]; hasMore: boolean }>();
   const [error, setError] = useState("");
@@ -122,11 +130,11 @@ function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boole
     const controller = new AbortController();
     setError("");
     setResult(undefined);
-    const params = new URLSearchParams({ search, branchId, status, payment, page: String(page) });
+    const params = new URLSearchParams({ search, branchId, status, payment, fiscal, page: String(page) });
     request<{ entries: Row[]; hasMore: boolean }>(api + "?" + params, { signal: controller.signal }).then(setResult)
       .catch(failure => { if (!controller.signal.aborted) setError(failureMessage(failure)); });
     return () => controller.abort();
-  }, [search, branchId, status, payment, page]);
+  }, [search, branchId, status, payment, fiscal, page]);
 
   return <>
     <Heading title="Ventas" description="Registra ventas y consulta sus comprobantes por sucursal.">
@@ -173,6 +181,10 @@ function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boole
             <option value="">Todos</option><option value="paid">Cobradas</option><option value="voided">Cobro anulado</option>
             <option value="none">Sin cobro registrado</option>
           </select></label>
+          <label>Comprobante<select value={fiscal} onChange={event => { setFiscal(event.target.value); setPage(0); }}>
+            <option value="">Todos</option><option value="ACCEPTED">Aceptados</option><option value="PENDING">Pendientes de envío</option>
+            <option value="PROCESSING">En revisión</option><option value="REJECTED">Rechazados</option><option value="NONE">Sin comprobante</option>
+          </select></label>
         </div>
       </div>
       {error ? <p className="sales-list-message" role="alert">{error}</p> :
@@ -180,11 +192,11 @@ function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boole
         !result.entries.length ? <div className="sales-empty">
           <span className="sales-icon" aria-hidden="true"><ReceiptText size={22} /></span>
           <h3>No hay ventas para esta consulta</h3>
-          <p>{search || branchId || status || payment ? "Prueba con otros filtros." : "Los comprobantes aparecerán aquí al confirmar una venta."}</p>
+          <p>{search || branchId || status || payment || fiscal ? "Prueba con otros filtros." : "Los comprobantes aparecerán aquí al confirmar una venta."}</p>
         </div> : <>
           <div className="sales-register-head sales-row-grid" aria-hidden="true">
             <span>Venta</span><span>Cliente</span><span>Sucursal</span><span>Fecha y hora</span>
-            <span className="sales-amount">Total</span><span>Estado</span><span>Cobro</span><span>Acción</span>
+            <span className="sales-amount">Total</span><span>Estado</span><span>Cobro</span><span>Comprobante</span><span>Acción</span>
           </div>
           <ul className="sales-list" role="list">
             {result.entries.map(sale => <li key={sale.id} className="sales-row sales-row-grid">
@@ -196,6 +208,8 @@ function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boole
               <strong className="sales-amount">{money(sale.total)}</strong>
               <SaleStatus voided={sale.voided} />
               <PaymentBadge state={sale.payment} />
+              <span className="sales-row-fiscal"><FiscalBadge status={sale.fiscalStatus ?? "NONE"} prefix={sale.fiscalType ? fiscalShortLabels[sale.fiscalType] : undefined} />
+                {sale.creditStatus && <FiscalBadge status={sale.creditStatus} prefix="Nota de crédito" />}</span>
               <span className="sales-row-action">{canVoid && !sale.voided
                 ? <Link className="button secondary sales-void-link" to={path + "/" + sale.folio + "?anular=1"}
                   aria-label={"Anular venta " + sale.folio}>Anular venta</Link>
@@ -233,6 +247,8 @@ function Editor({ storage }: { storage: string }) {
   const [error, setError] = useState("");
   const [issues, setIssues] = useState<Record<string, string>>({});
   const [emailInvalid, setEmailInvalid] = useState(false);
+  const [idError, setIdError] = useState("");
+  const idInput = useRef<HTMLInputElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [discard, setDiscard] = useState(false);
@@ -267,6 +283,12 @@ function Editor({ storage }: { storage: string }) {
     persist({ ...draft, ...next });
   }
   function startReview() {
+    // STK-013: con tipo de identificación se emite factura y se exigen número y nombre.
+    if (draft.customerIdType) {
+      const problem = idProblem(draft.customerIdType, draft.customerIdNumber ?? "");
+      if (problem) { setIdError(problem); idInput.current?.focus(); return; }
+      if (!draft.customer.trim()) { setIdError("La factura necesita el nombre del cliente."); return; }
+    }
     const email = draft.customerEmail?.trim();
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setEmailInvalid(true);
@@ -290,6 +312,8 @@ function Editor({ storage }: { storage: string }) {
       const sale = await request<Sale>(api, { method: "POST", body: JSON.stringify({
         requestKey: attempt.requestKey, branchId: attempt.branchId, customer: attempt.customer,
         customerPhone: attempt.customerPhone, customerEmail: attempt.customerEmail,
+        customerIdType: attempt.customerIdType || null,
+        customerIdNumber: attempt.customerIdType ? (attempt.customerIdNumber ?? "").replace(/\D/g, "") : null,
         lines: attempt.lines.map(line => ({ itemId: line.article.id, quantity: quantity(line), expectedPrice: line.price })),
         payments: (attempt.payments ?? []).map(payment => ({
           method: payment.method, amount: toAmount(cents(payment.amount) ?? 0n),
@@ -322,6 +346,7 @@ function Editor({ storage }: { storage: string }) {
       } else if (failure instanceof ApiError && ["SALE_INVALID", "SALE_NOT_READY", "SALE_PAYMENT_INVALID"].includes(failure.code)) {
         persist({ ...attempt, requestKey: undefined });
         if (failure.code === "SALE_PAYMENT_INVALID") setPaymentIssues(failure.fieldErrors);
+        if (failure.fieldErrors.customerIdNumber || failure.fieldErrors.customer) { setReview(false); setIdError(failure.fieldErrors.customerIdNumber ?? failure.fieldErrors.customer); }
       }
     } finally { setSaving(false); }
   }
@@ -336,6 +361,8 @@ function Editor({ storage }: { storage: string }) {
         <PanelHeading icon={UserRound} title={branch.selected?.name ?? "Sucursal seleccionada"} description="Datos de la venta" />
         <dl className="sales-details">
           <div><dt>Cliente</dt><dd>{draft.customer.trim() || "Público general"}</dd></div>
+          {draft.customerIdType && <div><dt>{idTypeLabel(draft.customerIdType)}</dt><dd>{draft.customerIdNumber}</dd></div>}
+          <div><dt>Comprobante</dt><dd>{draft.customerIdType ? "Factura electrónica" : "Tiquete electrónico"}</dd></div>
           {draft.customerPhone?.trim() && <div><dt>Teléfono</dt><dd>{draft.customerPhone.trim()}</dd></div>}
           {draft.customerEmail?.trim() && <div><dt>Correo electrónico</dt><dd>{draft.customerEmail.trim()}</dd></div>}
         </dl>
@@ -353,7 +380,19 @@ function Editor({ storage }: { storage: string }) {
             onChange={event => { setEmailInvalid(false); update({ customerEmail: event.target.value }); }} />
             {emailInvalid && <small id="sales-email-error" role="alert">Ingresa un correo electrónico válido.</small>}
           </label>
-        </div></>}
+          <label>Tipo de identificación opcional<select value={draft.customerIdType ?? ""}
+            onChange={event => { setIdError(""); update({ customerIdType: event.target.value || undefined, ...(event.target.value ? {} : { customerIdNumber: "" }) }); }}>
+            <option value="">Sin identificar</option>{ID_TYPES.map(type => <option key={type.code} value={type.code}>{type.label}</option>)}
+          </select></label>
+          <label>Número de identificación<input ref={idInput} inputMode="numeric" maxLength={20} disabled={!draft.customerIdType}
+            value={draft.customerIdNumber ?? ""} aria-invalid={!!idError} aria-describedby={idError ? "sales-id-error" : undefined}
+            onChange={event => { setIdError(""); update({ customerIdNumber: event.target.value }); }} />
+            {idError && <small id="sales-id-error" role="alert">{idError}</small>}
+          </label>
+        </div>
+        <p className="sales-doc-type" aria-live="polite"><FileText size={16} aria-hidden="true" />{draft.customerIdType
+          ? <span><strong>Se emitirá una factura electrónica.</strong> Hacienda exige el nombre y una identificación válida.</span>
+          : <span><strong>Se emitirá un tiquete electrónico.</strong> Para factura, indica el tipo y el número de identificación.</span>}</p></>}
     </section>
     <section className="sales-panel sales-work-panel">
       <PanelHeading icon={Package} title="Artículos" description={review ? "Cantidades y precios aplicados a esta venta." : "Busca en el catálogo y agrega las cantidades."} />
@@ -479,7 +518,7 @@ function PaymentPanel({ total, payments, locked, state, issues, onChange }: {
   </>;
 }
 
-function Document({ canVoid }: { canVoid: boolean }) {
+function Document({ canVoid, canWrite }: { canVoid: boolean; canWrite: boolean }) {
   const { folio } = useParams();
   const [query] = useSearchParams();
   const [sale, setSale] = useState<Sale>();
@@ -509,6 +548,7 @@ function Document({ canVoid }: { canVoid: boolean }) {
           <div><dt>Fecha y hora</dt><dd><time className="sales-date">{receiptDate(sale.movement.date)}</time></dd></div>
           <div><dt>Responsable</dt><dd>{sale.movement.actor}</dd></div>
           {sale.sale.customer && <div><dt>Cliente</dt><dd>{sale.sale.customer}</dd></div>}
+          {sale.sale.customerIdType && <div><dt>{idTypeLabel(sale.sale.customerIdType)}</dt><dd>{sale.sale.customerIdNumber}</dd></div>}
           {sale.sale.customerPhone && <div><dt>Teléfono</dt><dd>{sale.sale.customerPhone}</dd></div>}
           {sale.sale.customerEmail && <div><dt>Correo electrónico</dt><dd>{sale.sale.customerEmail}</dd></div>}
         </dl>
@@ -523,6 +563,9 @@ function Document({ canVoid }: { canVoid: boolean }) {
         </section>}
       </section>
       <PaymentSummary sale={sale} />
+      <FiscalPanel api={api} folio={sale.movement.folio} documents={sale.fiscal ?? []} voided={!!sale.movement.voidId} canWrite={canWrite}
+        hasEmail={!!sale.sale.customerEmail} onChange={next => setSale(next as Sale)}
+        customer={{ name: sale.sale.customer, idType: sale.sale.customerIdType, idNumber: sale.sale.customerIdNumber }} />
       {!sale.movement.voidId && canVoid && (voiding
         ? <VoidForm sale={sale} url={url} onCancel={() => setVoiding(false)} onVoided={next => { setSale(next); setVoiding(false); }} />
         : <div className="sales-actions"><button type="button" className="button danger" onClick={() => setVoiding(true)}>Anular venta</button></div>)}

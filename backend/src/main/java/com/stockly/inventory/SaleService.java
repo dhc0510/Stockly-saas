@@ -7,6 +7,7 @@ import com.stockly.identity.StocklyPrincipal;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import com.stockly.billing.FiscalDocumentService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +19,14 @@ public class SaleService {
     private final InventoryLedger ledger;
     private final InventoryScope scope;
     private final SalePaymentService payments;
+    private final FiscalDocumentService fiscal;
 
-    SaleService(JdbcTemplate jdbc, InventoryLedger ledger, InventoryScope scope, SalePaymentService payments) {
+    SaleService(JdbcTemplate jdbc, InventoryLedger ledger, InventoryScope scope, SalePaymentService payments, FiscalDocumentService fiscal) {
         this.jdbc = jdbc;
         this.ledger = ledger;
         this.scope = scope;
         this.payments = payments;
+        this.fiscal = fiscal;
     }
 
     public InventoryScope.Choices branches(StocklyPrincipal actor) {
@@ -49,10 +52,18 @@ public class SaleService {
         return list(actor, search, status, "", branchId, page);
     }
 
-    @Transactional(readOnly = true)
     public SalePage list(StocklyPrincipal actor, String search, String status, String payment, String branchId, int page) {
+        return list(actor, search, status, payment, "", "", branchId, page);
+    }
+
+    /** fiscal: estado del comprobante vigente (PENDING, PROCESSING, ACCEPTED, REJECTED, CANCELLED o NONE); fiscalType: 01 o 04. */
+    @Transactional(readOnly = true)
+    public SalePage list(StocklyPrincipal actor, String search, String status, String payment, String fiscal, String fiscalType,
+                         String branchId, int page) {
         String company = company(actor);
-        if (page < 0 || !Set.of("", "confirmed", "voided").contains(status) || !Set.of("", "paid", "voided", "none").contains(payment))
+        if (page < 0 || !Set.of("", "confirmed", "voided").contains(status) || !Set.of("", "paid", "voided", "none").contains(payment)
+            || !Set.of("", "PENDING", "PROCESSING", "ACCEPTED", "REJECTED", "CANCELLED", "NONE").contains(fiscal)
+            || !Set.of("", "01", "04").contains(fiscalType))
             throw RULES.invalid("Revisa el estado y la página.");
         if (!branchId.isEmpty()) branch(actor, branchId);
         String term = RULES.term(search);
@@ -61,20 +72,28 @@ public class SaleService {
             SELECT * FROM (
             SELECT s.id,m.folio,m.created_at,s.branch_name,s.customer_name,s.total,r.id IS NOT NULL AS voided,
               CASE WHEN NOT EXISTS (SELECT 1 FROM sale_payments p WHERE p.company_id=s.company_id AND p.sale_id=s.id) THEN 'none'
-                   WHEN r.id IS NOT NULL THEN 'voided' ELSE 'paid' END AS payment
+                   WHEN r.id IS NOT NULL THEN 'voided' ELSE 'paid' END AS payment,
+              f.doc_type AS fiscal_type, COALESCE(f.status,'NONE') AS fiscal_status,
+              (SELECT c.status FROM fiscal_documents c WHERE c.company_id=f.company_id AND c.reference_id=f.id ORDER BY c.created_at DESC LIMIT 1) AS credit_status,
+              s.customer_id_number
             FROM sales s JOIN inventory_movements m ON m.company_id=s.company_id AND m.id=s.id
             LEFT JOIN inventory_movements r ON r.company_id=m.company_id AND r.reversed_id=m.id
+            LEFT JOIN fiscal_documents f ON f.company_id=s.company_id AND f.id=(
+              SELECT x.id FROM fiscal_documents x WHERE x.company_id=s.company_id AND x.sale_id=s.id AND x.doc_type<>'03'
+              ORDER BY x.created_at DESC,x.id DESC LIMIT 1)
             WHERE s.company_id=? AND
             """ + InventoryScope.VISIBLE_MOVEMENT + """
             AND (?='' OR s.branch_id=?)
-            AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(s.customer_name,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')
+            AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(s.customer_name,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!'
+              OR COALESCE(s.customer_id_number,'') LIKE ? ESCAPE '!')
             AND (?='' OR (?='confirmed' AND r.id IS NULL) OR (?='voided' AND r.id IS NOT NULL))
-            ) sale WHERE (?='' OR sale.payment=?)
+            ) sale WHERE (?='' OR sale.payment=?) AND (?='' OR sale.fiscal_status=?) AND (?='' OR sale.fiscal_type=?)
             ORDER BY sale.created_at DESC,sale.id DESC LIMIT ? OFFSET ?
             """, (rs, row) -> new SaleRow(rs.getString(1), rs.getString(2), rs.getTimestamp(3).toInstant(),
-            rs.getString(4), rs.getString(5), rs.getBigDecimal(6), rs.getBoolean(7), rs.getString(8)),
-            company, InventoryScope.administrator(actor), actor.accountId(), branchId, branchId, term, term, status, status,
-            status, payment, payment, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
+            rs.getString(4), rs.getString(5), rs.getBigDecimal(6), rs.getBoolean(7), rs.getString(8), rs.getString(9), rs.getString(10),
+            rs.getString(11), rs.getString(12)),
+            company, InventoryScope.administrator(actor), actor.accountId(), branchId, branchId, term, term, term, status, status,
+            status, payment, payment, fiscal, fiscal, fiscalType, fiscalType, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
         return new SalePage(rows.stream().limit(PAGE_SIZE).toList(), rows.size() > PAGE_SIZE);
     }
 
@@ -89,6 +108,8 @@ public class SaleService {
         String customerEmail = RULES.optional(input.customerEmail(), 254);
         if (customerEmail != null && !customerEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"))
             throw RULES.invalid("Ingresa un correo electrónico válido.");
+        // STK-013: con tipo y número de identificación se emite factura; sin ellos, tiquete.
+        var fiscalCustomer = FiscalDocumentService.customer(input.customerIdType(), input.customerIdNumber(), customer);
         var requested = validateLines(input.lines());
         String hash = InventoryLedger.hash("SALE", actor.accountId(), branchId,
             Objects.toString(customer, ""), requested.toString());
@@ -96,6 +117,7 @@ public class SaleService {
         if (customerPhone != null || customerEmail != null)
             hash = InventoryLedger.hash(hash, Objects.toString(customerPhone, ""), Objects.toString(customerEmail, ""));
         // Los pagos forman parte del intento: la misma clave con otros pagos es un conflicto (STK-012).
+        if (fiscalCustomer.number() != null) hash = InventoryLedger.hash(hash, "ID", fiscalCustomer.type(), fiscalCustomer.number());
         var requestedPayments = SalePaymentService.normalize(input.payments());
         if (!requestedPayments.isEmpty())
             hash = InventoryLedger.hash(hash, "PAYMENTS", SalePaymentService.fingerprint(requestedPayments));
@@ -166,14 +188,15 @@ public class SaleService {
         String id = UUID.randomUUID().toString();
         ledger.record(actor, branch.location(), id, "SALE", Series.SALE, "Venta", null, request, hash, lines);
         jdbc.update("""
-            INSERT INTO sales(company_id,id,branch_id,branch_name,customer_name,customer_phone,customer_email,total)
-            VALUES (?,?,?,?,?,?,?,?)
+            INSERT INTO sales(company_id,id,branch_id,branch_name,customer_name,customer_phone,customer_email,total,customer_id_type,customer_id_number)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
             """,
-            company, id, branchId, branch.name(), customer, customerPhone, customerEmail, total);
+            company, id, branchId, branch.name(), customer, customerPhone, customerEmail, total, fiscalCustomer.type(), fiscalCustomer.number());
         for (Price price : prices)
             jdbc.update("INSERT INTO sale_line_prices(company_id,sale_id,item_id,unit_price,amount) VALUES (?,?,?,?,?)",
                 company, id, price.itemId(), price.unitPrice(), price.amount());
         payments.record(company, id, applied);
+        fiscal.issueForSale(company, id);
         return get(actor, id);
     }
 
@@ -185,8 +208,9 @@ public class SaleService {
             """, String.class, company, id).stream().findFirst().orElseThrow(SaleService::missing)
             : RULES.uuid(id, "Identificador de venta inválido.");
         var header = jdbc.query("""
-            SELECT branch_id,branch_name,customer_name,customer_phone,customer_email,total FROM sales WHERE company_id=? AND id=?
-            """, (rs, row) -> new SaleHeader(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getBigDecimal(6)), company, saleId)
+            SELECT branch_id,branch_name,customer_name,customer_phone,customer_email,total,customer_id_type,customer_id_number FROM sales WHERE company_id=? AND id=?
+            """, (rs, row) -> new SaleHeader(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getBigDecimal(6),
+            rs.getString(7), rs.getString(8)), company, saleId)
             .stream().findFirst().orElseThrow(SaleService::missing);
         branch(actor, header.branchId());
         var movement = ledger.document(company, saleId, "m.kind='SALE'").orElseThrow(SaleService::missing);
@@ -209,7 +233,7 @@ public class SaleService {
                 """, (rs, row) -> new Refunded(rs.getTimestamp(1).toInstant(), rs.getString(2),
                 payments.refunds(company, saleId)), company, movement.movement().voidId()).stream().findFirst().orElse(null);
         }
-        return new Sale(header, movement.movement(), lines, payments.payments(company, saleId), refund);
+        return new Sale(header, movement.movement(), lines, payments.payments(company, saleId), refund, fiscal.documents(company, saleId));
     }
 
     public Sale reverse(StocklyPrincipal actor, String id, String input) {
@@ -227,6 +251,7 @@ public class SaleService {
         var movement = ledger.document(company, originalId, "m.kind='SALE'").orElseThrow(SaleService::missing);
         String reversal = ledger.reverse(actor, originalId, movement.lines(), reason, RULES);
         payments.refund(company, originalId, reversal, refunds);
+        fiscal.onSaleVoided(company, originalId);
         return get(actor, id);
     }
 
@@ -274,21 +299,27 @@ public class SaleService {
     private record Price(String itemId, BigDecimal unitPrice, BigDecimal amount) {}
     public record SaleArticle(Article article, BigDecimal price) {}
     public record SaleRow(String id, String folio, java.time.Instant date, String branchName, String customer,
-                          BigDecimal total, boolean voided, String payment) {}
+                          BigDecimal total, boolean voided, String payment, String fiscalType, String fiscalStatus,
+                          String creditStatus, String customerIdNumber) {}
     public record SalePage(List<SaleRow> entries, boolean hasMore) {}
     public record SaleInput(String requestKey, String branchId, String customer, String customerPhone,
-                            String customerEmail, List<LineInput> lines, List<SalePaymentService.PaymentInput> payments) {
+                            String customerEmail, List<LineInput> lines, List<SalePaymentService.PaymentInput> payments,
+                            String customerIdType, String customerIdNumber) {
         public SaleInput(String requestKey, String branchId, String customer, String customerPhone,
                          String customerEmail, List<LineInput> lines) {
-            this(requestKey, branchId, customer, customerPhone, customerEmail, lines, null);
+            this(requestKey, branchId, customer, customerPhone, customerEmail, lines, null, null, null);
+        }
+        public SaleInput(String requestKey, String branchId, String customer, String customerPhone,
+                         String customerEmail, List<LineInput> lines, List<SalePaymentService.PaymentInput> payments) {
+            this(requestKey, branchId, customer, customerPhone, customerEmail, lines, payments, null, null);
         }
     }
     public record Refunded(java.time.Instant date, String actor, List<SalePaymentService.Refund> lines) {}
     public record LineInput(String itemId, BigDecimal quantity, BigDecimal expectedPrice) {}
     public record SaleHeader(String branchId, String branchName, String customer, String customerPhone,
-                             String customerEmail, BigDecimal total) {}
+                             String customerEmail, BigDecimal total, String customerIdType, String customerIdNumber) {}
     public record SaleLine(String itemId, String name, String sku, String unit, BigDecimal quantity,
                            BigDecimal unitPrice, BigDecimal amount) {}
     public record Sale(SaleHeader sale, Summary movement, List<SaleLine> lines,
-                       List<SalePaymentService.Payment> payments, Refunded refund) {}
+                       List<SalePaymentService.Payment> payments, Refunded refund, List<FiscalDocumentService.Document> fiscal) {}
 }

@@ -106,7 +106,7 @@
 
 .sales-page label { display: grid; gap: 6px; min-width: 0; font-size: 13px; font-weight: 650; }
 .sales-page input, .sales-page select, .sales-page textarea { width: 100%; min-width: 0; min-height: 44px; font-weight: 500; }
-.sales-filters { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: 12px; }
+.sales-filters { display: grid; grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr)); gap: 12px; }
 .sales-search { position: relative; display: block; }
 .sales-search > svg { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: var(--sales-muted); pointer-events: none; }
 .sales-page .sales-search > input { padding-inline-start: 38px; }
@@ -131,7 +131,7 @@
 
 .sales-row-grid {
   display: grid;
-  grid-template-columns: minmax(7rem, .95fr) minmax(0, 1.2fr) minmax(0, .9fr) minmax(9rem, 1.1fr) minmax(0, .85fr) max-content max-content minmax(7.5rem, max-content);
+  grid-template-columns: minmax(7rem, .9fr) minmax(0, 1.1fr) minmax(0, .8fr) minmax(8.5rem, 1fr) minmax(0, .8fr) max-content max-content minmax(0, 1.1fr) minmax(7.5rem, max-content);
   align-items: center;
   gap: 12px;
 }
@@ -238,7 +238,7 @@
   .sales-list li + li { border-top: 0; }
   .sales-row {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "folio status" "customer amount" "branch payment" "date date" "action action";
+    grid-template-areas: "folio status" "customer amount" "branch payment" "fiscal fiscal" "date date" "action action";
     gap: 7px 12px;
     padding: 12px;
     border: 1px solid var(--sales-border);
@@ -366,3 +366,36 @@
   .sales-method-row > :not(:first-child) { display: flex; justify-content: space-between; gap: 8px; }
   .sales-method-row .sales-day-label { display: inline; font-size: 13px; }
 }
+
+/* STK-013 · Comprobante electrónico */
+.sales-fiscal-ok { background: #dcfce7; color: #166534; }
+.sales-fiscal-wait { background: #fff7ed; color: #7c2d12; }
+.sales-fiscal-error { background: #fef2f2; color: #991b1b; }
+.sales-fiscal-muted { background: #f4f4f5; color: #3f3f46; }
+.sales-fiscal-test { background: #eef2ff; color: #3730a3; }
+.sales-row-fiscal { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.sales-row-fiscal .sales-status { white-space: normal; }
+.sales-fiscal-title { margin: 0 0 12px; font-size: 16px; }
+.sales-fiscal-badges { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.sales-mono { font-family: ui-monospace, Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+.sales-details-wide { grid-column: 1 / -1; }
+.sales-actions-start { justify-content: flex-start; margin-block: 8px; }
+.sales-actions-start a { text-decoration: none; }
+.sales-doc-type { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 0; padding: 10px 12px; border: 1px dashed #a1a1aa; border-radius: 9px; font-size: 13px; color: var(--sales-muted); }
+.sales-doc-type strong { color: var(--sales-ink); }
+.sales-doc-type > svg { flex: none; margin-top: 2px; color: var(--sales-accent-ink); }
+.sales-credit-note { margin-top: 14px; padding: 14px; border: 1px solid var(--sales-border); border-radius: 10px; }
+.sales-credit-note h3 { margin: 0; font-size: 15px; }
+.sales-credit-note p { margin: 8px 0 0; font-size: 13px; }
+.sales-fiscal-fix { display: grid; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid var(--sales-border); border-radius: 10px; }
+.sales-fiscal-fix h3 { display: flex; gap: 6px; align-items: center; margin: 0; font-size: 15px; }
+.sales-fiscal-fix > p { margin: 0; color: var(--sales-muted); font-size: 13px; }
+.sales-fiscal-history { margin-top: 12px; font-size: 13px; }
+.sales-fiscal-history summary { cursor: pointer; color: var(--sales-muted); }
+@container catalog (max-width: 900px) {
+  .sales-row-fiscal { grid-area: fiscal; }
+}
+@container catalog (max-width: 540px) {
+  .sales-actions-start > * { flex: 1 1 100%; }
+}
+.sales-actions-start .button { font-size: 14px; }

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturación electrónica · Stockly · STK-013</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f4f5;color:#18181b;font:15px/1.5 Inter,system-ui,sans-serif}button,input,select{font:inherit;color:inherit;min-height:44px;border:1px solid #a1a1aa;border-radius:8px;background:white;padding:8px 12px}button{cursor:pointer;font-weight:650}button:disabled{opacity:.55;cursor:default}button:hover:not(:disabled){background:#fff2e5}.primary,.primary:hover:not(:disabled){background:#f97316;border-color:#f97316}.danger,.danger:hover:not(:disabled){background:#b91c1c;color:white;border-color:#b91c1c}input,select{min-width:0;width:100%}input[type=file]{padding:9px}label{display:grid;gap:4px;font-weight:650;min-width:0}label small{font-weight:400}:focus-visible{outline:2px solid #9a3412;outline-offset:2px}h1,h2,h3,p{margin:0}h1{font-size:30px;line-height:1.15}h2{font-size:19px}h3{font-size:16px}.muted,small{color:#52525b}
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);max-width:1520px;margin:auto;min-height:100dvh;background:white}aside{padding:22px 14px;background:#fafafa;border-right:1px solid #e4e4e7}aside strong{font-size:22px;padding:0 8px}aside small{display:block;margin:28px 8px 8px}.nav{display:block;width:100%;text-align:left;border:0;background:none;padding:10px;border-radius:8px;color:#3f3f46;font-weight:600;min-height:40px;margin-bottom:2px}.nav[aria-current]{color:#9a3412;background:#fff2e5}.tabs{display:none}
+header{display:flex;justify-content:space-between;gap:8px;padding:14px 26px;border-bottom:1px solid #e4e4e7}main{max-width:1140px;margin:auto;padding:28px}.heading,.actions,.total,.panel-title,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.heading{margin-bottom:20px}.heading p{margin-top:4px}.eyebrow{color:#9a3412;font-size:12px;font-weight:700}.panel{border:1px solid #e4e4e7;border-radius:12px;padding:16px;margin-bottom:14px}.panel>h2,.panel-title{margin-bottom:10px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.span{grid-column:1/-1}.actions{justify-content:flex-end}
+.notice{padding:10px 12px;border-radius:8px;margin:10px 0;background:#fff7ed;color:#7c2d12}.error{background:#fef2f2;color:#991b1b}.success{background:#dcfce7;color:#166534}.info{background:#f4f4f5;color:#3f3f46}.test{background:#eef2ff;color:#3730a3}
+table{width:100%;border-collapse:collapse;text-align:left;margin-top:10px}th,td{border-top:1px solid #e4e4e7;padding:9px;overflow-wrap:anywhere}th{background:#f4f4f5;font-size:13px}td small{display:block}.money,time,.mono{font-variant-numeric:tabular-nums}.money{white-space:nowrap}.num{text-align:right}.mono{font-family:ui-monospace,Consolas,monospace;font-size:13px;overflow-wrap:anywhere}
+.badge{display:inline-flex;align-items:center;gap:4px;width:max-content;padding:3px 8px;border-radius:7px;font-size:13px;font-weight:650;white-space:nowrap}.b-ok{background:#dcfce7;color:#166534}.b-wait{background:#fff7ed;color:#7c2d12}.b-err{background:#fef2f2;color:#991b1b}.b-gray{background:#f4f4f5;color:#3f3f46}.b-test{background:#eef2ff;color:#3730a3}
+.row-link{border:0;color:#9a3412;padding:4px 0;white-space:nowrap}.meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:8px 0}.meta dt{font-size:13px;color:#52525b}.meta dd{margin:0;font-weight:650;overflow-wrap:anywhere}
+.totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.totals div{padding:10px 12px;border-radius:8px;background:#f4f4f5}.totals dt{font-size:12px;color:#52525b}.totals dd{margin:0;font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}.totals .main{background:#fff7ed}
+.doc-type{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;border:1px dashed #a1a1aa;margin-top:12px}.doc-type strong{display:block}
+.secret{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:8px;background:#f4f4f5}.steps{margin:0;padding-left:20px}.steps li{margin:4px 0}
+.simulate{padding:12px;border:1px dashed #a1a1aa;border-radius:8px;margin-top:20px}.simulate summary{cursor:pointer;color:#52525b}.simulate .actions{justify-content:flex-start;margin-top:8px}.mobile-label{display:none}[hidden]{display:none!important}
+@media(max-width:760px){.shell{display:block}aside{display:none}.tabs{display:flex;gap:6px;overflow-x:auto;padding:8px 16px;border-bottom:1px solid #e4e4e7}.tabs .nav{width:auto;white-space:nowrap;margin:0}header{padding:12px 16px}main{padding:16px}h1{font-size:23px}.heading{display:grid}.heading>button{justify-self:start}.panel{padding:12px}.grid,.grid3,.totals{grid-template-columns:minmax(0,1fr)}.meta{grid-template-columns:repeat(2,minmax(0,1fr))}.meta .wide{grid-column:1/-1}
+thead{display:none}table,tbody{display:block}tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 8px;padding:8px;border:1px solid #e4e4e7;border-radius:8px;margin:6px 0}td{border:0;padding:0}td:first-child,td.wide{grid-column:1/-1}.num{text-align:left}.mobile-label{display:block;color:#52525b;font-size:12px}input,select{font-size:16px}.actions>*{flex:1 1 100%}}
+</style>
+</head>
+<body>
+<div class="shell"><aside><strong>Stockly</strong><small>OPERACIÓN COMERCIAL</small><nav id="side"></nav></aside>
+<div><header><strong>Mi empresa</strong><small>STK-013 · Datos simulados</small></header><nav class="tabs" id="tabs"></nav><main id="main"></main></div></div>
+<script>
+const main=document.querySelector('#main');
+const get=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const currency=new Intl.NumberFormat('es-CR',{style:'currency',currency:'CRC',minimumFractionDigits:2});
+const money=c=>currency.format(c/100);
+const date=v=>new Intl.DateTimeFormat('es-CR',{timeZone:'America/Costa_Rica',dateStyle:'medium',timeStyle:'short'}).format(new Date(v));
+const mobile=l=>'<span class="mobile-label">'+l+'</span>';
+const ID_TYPES={'01':'Cédula física','02':'Cédula jurídica','03':'DIMEX','04':'NITE'};
+const STATES={PENDING:['Pendiente de envío','b-wait'],PROCESSING:['Enviado, en revisión','b-wait'],ACCEPTED:['Aceptado','b-ok'],REJECTED:['Rechazado','b-err'],NONE:['Sin comprobante','b-gray']};
+const DOCS={FE:'Factura electrónica',TE:'Tiquete electrónico',NC:'Nota de crédito'};
+/* Configuración simulada de la empresa */
+const config={environment:'TEST',credentials:true,keyFile:'llave-ferreteria.p12',keyExpires:'2028-03-14',activity:'475203 · Venta al por menor de artículos de ferretería',province:'San José',canton:'Montes de Oca',district:'San Pedro',address:'200 m norte de la iglesia',email:'facturas@ferreteria.test',
+ branches:[{name:'Central',code:'001',pos:'00001'},{name:'Sucursal Norte',code:'002',pos:'00001'}]};
+let view='sales';
+/* Precio con IVA incluido: base = total / 1,13; IVA = total - base, por línea y redondeado a céntimos. */
+const split=(cents,rate)=>{const base=Math.round(cents*100/(100+rate));return {base,tax:cents-base};};
+function key(branch,doc,seq,situation='1'){return '506'+'081126'+'003101123456'+String(branch).padStart(3,'0')+'00001'+{FE:'01',TE:'04',NC:'03'}[doc]+String(seq).padStart(10,'0')+situation+'48210937';}
+function consecutive(branch,doc,seq){return String(branch).padStart(3,'0')+'00001'+{FE:'01',TE:'04',NC:'03'}[doc]+String(seq).padStart(10,'0');}
+const sales=[
+ {folio:'VTA-0006',branch:1,customer:{name:'Comercial Horizonte S.A.',idType:'02',id:'3101654321',email:'compras@horizonte.test'},date:'2026-11-08T15:40:00Z',lines:[{name:'Café molido 250 g',cabys:'2391100000000',rate:13,qty:'3 unidades',cents:1140000},{name:'Harina a granel',cabys:'2311100000000',rate:1,qty:'1,5 kg',cents:185175}],doc:{type:'FE',seq:12,state:'ACCEPTED',sent:'2026-11-08T15:40:20Z',mail:'Enviado a compras@horizonte.test'}},
+ {folio:'VTA-0005',branch:1,customer:null,date:'2026-11-08T15:02:00Z',lines:[{name:'Camiseta básica · M / Azul',cabys:'2821100000000',rate:13,qty:'1 unidad',cents:650000}],doc:{type:'TE',seq:44,state:'PENDING',attempts:3,last:'Hacienda no respondió. Próximo intento automático en 2 minutos.'}},
+ {folio:'VTA-0004',branch:2,customer:{name:'María Rojas',idType:'01',id:'1-0987-0654',email:'maria@correo.test'},date:'2026-11-08T14:10:00Z',lines:[{name:'Café molido 250 g',cabys:'2391100000000',rate:13,qty:'2 unidades',cents:760000}],doc:{type:'FE',seq:3,state:'REJECTED',reason:'La identificación del receptor no está inscrita en Hacienda.'}},
+ {folio:'VTA-0003',branch:1,customer:{name:'Jorge Solano',idType:'01',id:'2-0456-0789',email:''},date:'2026-11-07T19:40:00Z',lines:[{name:'Harina a granel',cabys:'2311100000000',rate:1,qty:'2 kg',cents:246900}],voided:{reason:'Cliente desistió de la compra',date:'2026-11-07T19:52:00Z'},doc:{type:'FE',seq:11,state:'ACCEPTED'},credit:{seq:2,state:'ACCEPTED'}},
+ {folio:'VTA-0001',branch:2,customer:null,date:'2026-11-05T15:25:00Z',lines:[{name:'Harina a granel',cabys:'2311100000000',rate:1,qty:'0,125 kg',cents:15431}],legacy:true}
+];
+const total=s=>s.lines.reduce((a,l)=>a+l.cents,0);
+function badge(state,label){const [t,c]=STATES[state];return '<span class="badge '+c+'">'+(label?label+' · ':'')+t+'</span>';}
+function heading(name,desc,action='',crumb='Ventas'){return '<div class="heading"><div><p class="eyebrow">Operación comercial / '+crumb+'</p><h1>'+name+'</h1><p class="muted">'+desc+'</p></div>'+action+'</div>';}
+const envBanner=()=>config.environment==='TEST'?'<p class="notice test" role="status"><strong>Ambiente de pruebas de Hacienda.</strong> Los comprobantes no tienen validez fiscal. El administrador activa producción en Facturación.</p>':'';
+function nav(){const items=[['sales','Ventas'],['new','Nueva venta'],['catalog','Catálogo · datos fiscales'],['billing','Facturación']];const html=items.map(([id,n])=>'<button class="nav" data-view="'+id+'" '+(view===id?'aria-current="page"':'')+'>'+n+'</button>').join('');get('side').innerHTML=html;get('tabs').innerHTML=html;document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render();});}
+function render(){nav();window.scrollTo(0,0);({sales:list,new:newSale,catalog:catalog,billing:billing})[view]();}
+
+/* ---------- Listado ---------- */
+function docCell(s){if(s.legacy)return badge('NONE');if(!s.doc)return badge('NONE');return badge(s.doc.state,s.doc.type==='FE'?'Factura':'Tiquete')+(s.credit?'<small>'+badge(s.credit.state,'Nota de crédito')+'</small>':'');}
+function list(filter=''){
+ main.innerHTML=heading('Ventas','Consulta y registra ventas por sucursal.','<button class="primary" id="new">+ Nueva venta</button>')+envBanner()+
+ (sales.some(s=>s.doc&&['PENDING','REJECTED'].includes(s.doc.state))?'<p class="notice" role="status">Hay comprobantes que requieren atención: '+sales.filter(s=>s.doc?.state==='REJECTED').length+' rechazado y '+sales.filter(s=>s.doc?.state==='PENDING').length+' pendiente de envío. <button class="row-link" id="attention">Ver solo esos</button></p>':'')+
+ '<section class="panel"><div class="grid3"><label>Buscar venta<input id="find" type="search" placeholder="Folio, cliente o cédula"></label><label>Comprobante<select id="f-doc"><option value="">Todos</option><option value="ACCEPTED">Aceptados</option><option value="PENDING">Pendientes de envío</option><option value="REJECTED">Rechazados</option><option value="NONE">Sin comprobante</option></select></label><label>Tipo<select id="f-type"><option value="">Todos</option><option value="FE">Factura</option><option value="TE">Tiquete</option></select></label></div>'+
+ '<table><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Venta</th><th>Comprobante electrónico</th></tr></thead><tbody id="rows"></tbody></table><p id="empty" class="muted" hidden>Sin ventas con estos filtros.</p></section>';
+ get('f-doc').value=filter;
+ const apply=()=>{const t=get('find').value.trim().toLowerCase(),d=get('f-doc').value,ty=get('f-type').value;
+  const rows=sales.filter(s=>(!d||(d==='NONE'?!s.doc:s.doc?.state===d))&&(!ty||s.doc?.type===ty)&&(!t||[s.folio,s.customer?.name,s.customer?.id].some(v=>String(v??'').toLowerCase().includes(t))));
+  get('rows').innerHTML=rows.map(s=>'<tr><td><button class="row-link" data-open="'+s.folio+'">'+s.folio+'</button><small>'+date(s.date)+'</small></td><td>'+mobile('Cliente')+esc(s.customer?.name||'Público general')+(s.customer?'<small>'+ID_TYPES[s.customer.idType]+' '+esc(s.customer.id)+'</small>':'')+'</td><td class="money">'+mobile('Total')+money(total(s))+'</td><td>'+(s.voided?'<span class="badge b-gray">Anulada</span>':'<span class="badge b-ok">Confirmada</span>')+'</td><td class="wide">'+mobile('Comprobante electrónico')+docCell(s)+'</td></tr>').join('');
+  get('empty').hidden=!!rows.length;
+  main.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>receipt(sales.find(s=>s.folio===b.dataset.open)));};
+ get('new').onclick=()=>{view='new';render();};
+ if(get('attention'))get('attention').onclick=()=>{get('f-doc').value='REJECTED';apply();};
+ get('find').oninput=apply;get('f-doc').onchange=apply;get('f-type').onchange=apply;apply();
+}
+
+/* ---------- Nueva venta: cliente y tipo de comprobante ---------- */
+function newSale(){
+ main.innerHTML=heading('Nueva venta','Los artículos y el cobro siguen igual que en STK-011 y STK-012.')+envBanner()+
+ '<section class="panel"><h2>Datos del cliente</h2><div class="grid"><label>Nombre · Opcional<input id="c-name" placeholder="Público general"></label><label>Correo electrónico · Opcional<input id="c-mail" type="email" placeholder="Para enviar el comprobante"></label>'+
+ '<label>Tipo de identificación · Opcional<select id="c-type"><option value="">Sin identificar</option>'+Object.entries(ID_TYPES).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select></label><label>Número de identificación<input id="c-id" inputmode="numeric" placeholder="Ej. 1-0987-0654" disabled></label></div>'+
+ '<p id="c-error" class="notice error" role="alert" hidden></p><div class="doc-type" id="doc-type" aria-live="polite"></div></section>'+
+ '<section class="panel"><h2>Artículos</h2><table><thead><tr><th>Producto</th><th>Cantidad</th><th class="num">Importe con IVA</th></tr></thead><tbody><tr><td><strong>Café molido 250 g</strong><small>CABYS 2391100000000 · IVA 13 %</small></td><td>'+mobile('Cantidad')+'3 unidades</td><td class="money num">'+mobile('Importe')+money(1140000)+'</td></tr><tr><td><strong>Vaso térmico</strong><small class="notice error" style="margin:4px 0 0;padding:4px 8px">Falta el código CABYS en el catálogo. La venta se puede confirmar, pero su comprobante quedará pendiente hasta completarlo.</small></td><td>'+mobile('Cantidad')+'1 unidad</td><td class="money num">'+mobile('Importe')+money(450000)+'</td></tr></tbody></table>'+
+ '<dl class="totals"><div><dt>Subtotal sin IVA</dt><dd class="money">'+money(split(1140000,13).base+split(450000,13).base)+'</dd></div><div><dt>IVA</dt><dd class="money">'+money(split(1140000,13).tax+split(450000,13).tax)+'</dd></div><div class="main"><dt>Total</dt><dd class="money">'+money(1590000)+'</dd></div></dl></section>'+
+ '<div class="actions"><button id="back">Volver</button><button class="primary" id="next">Revisar y cobrar</button></div>';
+ const typeSel=get('c-type'),idIn=get('c-id');
+ function update(){const has=!!typeSel.value;idIn.disabled=!has;if(!has)idIn.value='';
+  get('doc-type').innerHTML=has?'<span class="badge b-ok">FE</span><div><strong>Se emitirá una factura electrónica</strong><small>A nombre de '+esc(get('c-name').value||'el cliente')+'. Hacienda exige nombre y número de identificación válidos.</small></div>':'<span class="badge b-gray">TE</span><div><strong>Se emitirá un tiquete electrónico</strong><small>Venta a consumidor final. Para factura, indica el tipo y el número de identificación.</small></div>';}
+ typeSel.onchange=update;get('c-name').oninput=update;update();
+ get('back').onclick=()=>{view='sales';render();};
+ get('next').onclick=()=>{const err=get('c-error');err.hidden=true;
+  if(typeSel.value){const digits=idIn.value.replace(/\D/g,'');const need={'01':[9],'02':[10],'03':[11,12],'04':[10]}[typeSel.value];
+   if(!need.includes(digits.length)){err.textContent=ID_TYPES[typeSel.value]+': revisa el número ('+need.join(' o ')+' dígitos).';err.hidden=false;idIn.focus();return;}
+   if(!get('c-name').value.trim()){err.textContent='La factura necesita el nombre del cliente.';err.hidden=false;get('c-name').focus();return;}}
+  err.className='notice success';err.textContent='Datos válidos. El paso de cobro es el de STK-012; al confirmar, Stockly envía el comprobante a Hacienda.';err.hidden=false;};
+}
+
+/* ---------- Comprobante de la venta ---------- */
+function taxTable(s,title='Detalle fiscal'){
+ let base=0,tax=0;const rows=s.lines.map(l=>{const p=split(l.cents,l.rate);base+=p.base;tax+=p.tax;return '<tr><td><strong>'+esc(l.name)+'</strong><small>CABYS '+l.cabys+'</small></td><td>'+mobile('Cantidad')+l.qty+'</td><td>'+mobile('IVA')+l.rate+' %</td><td class="money num">'+mobile('Sin IVA')+money(p.base)+'</td><td class="money num">'+mobile('IVA')+money(p.tax)+'</td><td class="money num">'+mobile('Total')+money(l.cents)+'</td></tr>';}).join('');
+ return '<h3 style="margin-top:12px">'+title+'</h3><table><thead><tr><th>Producto</th><th>Cantidad</th><th>Tarifa</th><th class="num">Sin IVA</th><th class="num">IVA</th><th class="num">Total</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+ '<dl class="totals"><div><dt>Subtotal sin IVA</dt><dd class="money">'+money(base)+'</dd></div><div><dt>IVA</dt><dd class="money">'+money(tax)+'</dd></div><div class="main"><dt>Total</dt><dd class="money">'+money(base+tax)+'</dd></div></dl>';
+}
+function docPanel(s){
+ if(s.legacy)return '<section class="panel"><h2>Comprobante electrónico</h2><p class="notice info">Sin comprobante. Esta venta se registró antes de habilitar la facturación electrónica.</p></section>';
+ const d=s.doc,b=config.branches[s.branch-1];
+ let body='<dl class="meta"><div><dt>Tipo</dt><dd>'+DOCS[d.type]+'</dd></div><div><dt>Consecutivo</dt><dd class="mono">'+consecutive(s.branch,d.type,d.seq)+'</dd></div><div><dt>Sucursal Hacienda</dt><dd>'+b.code+' · '+b.name+'</dd></div><div class="wide" style="grid-column:1/-1"><dt>Clave numérica</dt><dd class="mono">'+key(s.branch,d.type,d.seq)+'</dd></div></dl>';
+ if(d.state==='ACCEPTED')body+='<p class="notice success">Hacienda aceptó el comprobante'+(d.sent?' el '+date(d.sent):'')+' · '+(d.mail?esc(d.mail)+'.':s.customer?.email?'':'La venta no tiene correo; puedes descargarlo.')+'</p>'+
+  '<div class="actions" style="justify-content:flex-start"><button id="pdf">Descargar PDF</button><button id="xml">Descargar XML</button><button id="xmlr">Respuesta de Hacienda</button>'+(s.customer?.email?'<button id="mail">Reenviar por correo</button>':'')+'</div>';
+ if(d.state==='PENDING')body+='<p class="notice">'+esc(d.last)+' Intentos: '+d.attempts+'. Stockly consulta el estado antes de reenviar, así no se duplica el comprobante.</p><div class="actions" style="justify-content:flex-start"><button id="retry">Reintentar ahora</button></div>';
+ if(d.state==='PROCESSING')body+='<p class="notice">Hacienda recibió el comprobante y lo está revisando. Stockly consultará el resultado automáticamente.</p>';
+ if(d.state==='REJECTED')body+='<p class="notice error"><strong>Motivo de Hacienda:</strong> '+esc(d.reason)+'</p>'+
+  '<form id="fix" class="panel" style="margin:0" novalidate><h3>Corregir y emitir de nuevo</h3><p class="muted" style="margin:4px 0 10px">Se emitirá un comprobante nuevo con otro consecutivo. El rechazado se conserva como historial.</p><div class="grid"><label>Tipo de identificación<select id="fx-type">'+Object.entries(ID_TYPES).map(([k,v])=>'<option value="'+k+'" '+(k===s.customer.idType?'selected':'')+'>'+v+'</option>').join('')+'<option value="">Sin identificar · emitir tiquete</option></select></label><label>Número<input id="fx-id" value="'+esc(s.customer.id)+'"></label><label class="span">Nombre<input id="fx-name" value="'+esc(s.customer.name)+'"></label></div><p id="fx-err" class="notice error" role="alert" hidden></p><div class="actions" style="margin-top:10px"><button class="primary">Emitir de nuevo</button></div></form>';
+ return '<section class="panel"><div class="panel-title row"><h2>Comprobante electrónico</h2><span>'+(config.environment==='TEST'?'<span class="badge b-test">Pruebas</span> ':'')+badge(d.state)+'</span></div>'+body+'</section>';
+}
+function creditPanel(s){
+ if(!s.voided||!s.doc||s.legacy)return '';
+ const c=s.credit;if(!c)return '';
+ return '<section class="panel"><div class="panel-title row"><h2>Nota de crédito</h2>'+badge(c.state)+'</div><p class="muted">Emitida automáticamente al anular la venta. Anula por completo '+DOCS[s.doc.type].toLowerCase()+' '+consecutive(s.branch,s.doc.type,s.doc.seq)+'.</p>'+
+ '<dl class="meta"><div><dt>Consecutivo</dt><dd class="mono">'+consecutive(s.branch,'NC',c.seq)+'</dd></div><div><dt>Motivo</dt><dd>'+esc(s.voided.reason)+'</dd></div><div><dt>Monto</dt><dd class="money">'+money(total(s))+'</dd></div></dl>'+
+ (c.state==='ACCEPTED'?'<div class="actions" style="justify-content:flex-start"><button>Descargar PDF</button><button>Descargar XML</button></div>':'')+'</section>';
+}
+function receipt(s,message=''){
+ view='sales';nav();window.scrollTo(0,0);
+ const c=s.customer;
+ main.innerHTML=heading('Venta '+s.folio,'Comprobante interno y comprobante electrónico.','<button id="back">Volver al listado</button>')+envBanner()+
+ (message?'<p class="notice success" role="status">'+esc(message)+'</p>':'')+
+ '<section class="panel"><div class="panel-title row"><h2>Detalle de la venta</h2>'+(s.voided?'<span class="badge b-gray">Anulada</span>':'<span class="badge b-ok">Confirmada</span>')+'</div>'+
+ '<dl class="meta"><div><dt>Sucursal</dt><dd>'+config.branches[s.branch-1].name+'</dd></div><div><dt>Fecha y hora</dt><dd>'+date(s.date)+'</dd></div><div><dt>Cliente</dt><dd>'+esc(c?.name||'Público general')+(c?'<small style="display:block;font-weight:400">'+ID_TYPES[c.idType]+' '+esc(c.id)+'</small>':'')+'</dd></div></dl>'+
+ (s.legacy?'':taxTable(s))+'</section>'+docPanel(s)+creditPanel(s)+
+ (!s.voided&&!s.legacy?'<div class="actions"><button id="void">Anular venta</button></div>':'')+
+ '<details class="simulate"><summary>Simular respuesta de Hacienda</summary><div class="actions"><button data-sim="ACCEPTED">Acepta</button><button data-sim="REJECTED">Rechaza</button><button data-sim="PENDING">No responde</button><button data-sim="PROCESSING">En revisión</button></div></details>';
+ get('back').onclick=list;
+ main.querySelectorAll('[data-sim]').forEach(b=>b.onclick=()=>{if(s.legacy)return;const st=b.dataset.sim;s.doc.state=st;
+  if(st==='REJECTED'){s.customer=s.customer||{name:'Cliente',idType:'01',id:'1-0000-0000',email:''};s.doc.type='FE';s.doc.reason=s.doc.reason||'La identificación del receptor no está inscrita en Hacienda.';}
+  if(st==='PENDING'){s.doc.attempts=(s.doc.attempts||0)+1;s.doc.last='Hacienda no respondió. Próximo intento automático en 2 minutos.';}
+  if(st==='ACCEPTED'){s.doc.sent=new Date().toISOString();s.doc.mail=s.customer?.email?'Enviado a '+s.customer.email:'';}
+  receipt(s);});
+ ['pdf','xml','xmlr'].forEach(id=>{if(get(id))get(id).onclick=()=>alert('Descarga simulada: '+s.folio+' · '+get(id).textContent);});
+ if(get('mail'))get('mail').onclick=()=>receipt(s,'Comprobante reenviado a '+s.customer.email+'.');
+ if(get('retry'))get('retry').onclick=()=>{s.doc.state='PROCESSING';receipt(s,'Se consultó el estado en Hacienda: no existía, así que se envió. Ahora está en revisión.');};
+ if(get('fix'))get('fix').onsubmit=e=>{e.preventDefault();const t=get('fx-type').value,digits=get('fx-id').value.replace(/\D/g,'');
+  if(t){const need={'01':[9],'02':[10],'03':[11,12],'04':[10]}[t];if(!need.includes(digits.length)){get('fx-err').textContent='Revisa el número: '+ID_TYPES[t]+' lleva '+need.join(' o ')+' dígitos.';get('fx-err').hidden=false;return;}
+   s.customer={...s.customer,idType:t,id:get('fx-id').value,name:get('fx-name').value};}else{s.customer=null;}
+  s.doc={type:t?'FE':'TE',seq:s.doc.seq+20,state:'PROCESSING'};receipt(s,'Comprobante nuevo enviado a Hacienda. El rechazado queda en el historial de la venta.');};
+ if(get('void'))get('void').onclick=()=>voidSale(s);
+}
+function voidSale(s){
+ const accepted=s.doc?.state==='ACCEPTED';
+ main.innerHTML=heading('Anular '+s.folio,'Igual que en STK-011 y STK-012: motivo obligatorio y devolución del dinero.')+
+ (accepted?'<p class="notice"><strong>Esta venta tiene '+DOCS[s.doc.type].toLowerCase()+' aceptada.</strong> Al anular, Stockly emitirá automáticamente una nota de crédito por '+money(total(s))+' y la enviará a Hacienda.</p>':
+  s.doc?'<p class="notice info">El comprobante aún no fue aceptado. Stockly dejará de intentar enviarlo; si Hacienda ya lo había recibido, emitirá la nota de crédito al confirmarlo.</p>':'')+
+ '<form id="vf" class="panel" novalidate><label>Motivo de la anulación · Obligatorio<input id="reason" maxlength="150" placeholder="Ej. Cliente desistió de la compra"></label><p class="muted" style="margin-top:8px">La sección Devolución del dinero de STK-012 sigue igual.</p><div class="actions" style="margin-top:12px"><button type="button" id="back">Volver</button><button class="danger" id="do" disabled>Confirmar anulación</button></div></form>';
+ get('reason').oninput=()=>get('do').disabled=!get('reason').value.trim();get('back').onclick=()=>receipt(s);
+ get('vf').onsubmit=e=>{e.preventDefault();s.voided={reason:get('reason').value.trim(),date:new Date().toISOString()};if(accepted)s.credit={seq:3,state:'PROCESSING'};receipt(s,'Venta anulada.'+(accepted?' Nota de crédito enviada a Hacienda.':''));};
+}
+
+/* ---------- Catálogo: datos fiscales por variante ---------- */
+function catalog(){
+ main.innerHTML=heading('Datos fiscales del producto','Se agregan a la variante del catálogo de STK-006, coordinado con Gabo.','','Catálogo')+
+ '<section class="panel"><h2>Café molido 250 g</h2><div class="grid"><label>Precio con IVA incluido<input value="3800,00" inputmode="decimal"></label><label>Tarifa de IVA<select><option>13 % · General</option><option>4 %</option><option>2 %</option><option>1 %</option><option>0 % · Exento</option></select></label><label class="span">Código CABYS · 13 dígitos<input id="cabys" value="2391100000000" inputmode="numeric" maxlength="13"><small>Búscalo en el catálogo CABYS oficial. Stockly valida que tenga 13 dígitos.</small></label></div><p id="cab-err" class="notice error" role="alert" hidden>El código CABYS debe tener 13 dígitos.</p>'+
+ '<dl class="totals"><div><dt>Precio sin IVA</dt><dd class="money">'+money(split(380000,13).base)+'</dd></div><div><dt>IVA</dt><dd class="money">'+money(split(380000,13).tax)+'</dd></div><div class="main"><dt>Precio de venta</dt><dd class="money">'+money(380000)+'</dd></div></dl><div class="actions" style="margin-top:12px"><button class="primary" id="save">Guardar</button></div></section>'+
+ '<p class="notice">Los productos sin CABYS se pueden vender, pero su comprobante queda pendiente hasta completar el dato. Existencias muestra cuántos faltan.</p>';
+ get('save').onclick=()=>{get('cab-err').hidden=/^\d{13}$/.test(get('cabys').value);};
+}
+
+/* ---------- Configuración de facturación (solo administrador) ---------- */
+function billing(message=''){
+ const tested=sales.some(x=>x.doc?.state==='ACCEPTED');
+ const ready=config.credentials&&config.activity&&config.district&&tested;
+ main.innerHTML=heading('Facturación electrónica','Credenciales de Hacienda, datos del emisor y sucursales. Solo administradores.','','Configuración')+
+ (message?'<p class="notice success" role="status">'+esc(message)+'</p>':'')+
+ '<section class="panel"><div class="panel-title row"><h2>Ambiente</h2>'+(config.environment==='TEST'?'<span class="badge b-test">Pruebas</span>':'<span class="badge b-ok">Producción</span>')+'</div>'+
+ (config.environment==='TEST'?'<p class="muted">Los comprobantes van al ambiente de pruebas de Hacienda y no tienen validez fiscal.</p><ol class="steps"><li>'+(config.credentials?'✓':'○')+' Credenciales cargadas y conexión probada</li><li>'+(config.activity&&config.district?'✓':'○')+' Datos del emisor completos</li><li>'+(tested?'✓':'○')+' Al menos un comprobante de prueba aceptado</li></ol><div class="actions"><button class="primary" id="prod" '+(ready?'':'disabled')+'>Activar producción</button></div>':'<p class="muted">Los comprobantes tienen validez fiscal.</p>')+'</section>'+
+ '<section class="panel"><h2>Credenciales de Hacienda</h2><p class="muted" style="margin-bottom:10px">Se obtienen en TRIBU-CR. Stockly las guarda cifradas y nunca las vuelve a mostrar.</p>'+
+ (config.credentials?'<div class="secret"><div><strong>Usuario y contraseña de API</strong><small style="display:block">Configurados</small></div><span class="badge b-ok">Guardado</span></div><div class="secret" style="margin-top:8px"><div><strong>Llave criptográfica</strong><small style="display:block">'+esc(config.keyFile)+' · vence el 14/03/2028</small></div><span class="badge b-ok">Guardada</span></div><div class="actions" style="margin-top:10px"><button id="test">Probar conexión</button><button id="replace">Reemplazar credenciales</button></div>':'')+
+ '<form id="cred" class="grid" style="margin-top:10px" '+(config.credentials?'hidden':'')+' novalidate><label>Usuario de API<input autocomplete="off"></label><label>Contraseña de API<input type="password" autocomplete="new-password"></label><label>Llave criptográfica (.p12)<input type="file" accept=".p12"></label><label>PIN de la llave<input type="password" inputmode="numeric" maxlength="4" autocomplete="new-password"></label><div class="actions span"><button type="button" id="cancel-cred">Cancelar</button><button class="primary">Guardar y probar</button></div></form></section>'+
+ '<section class="panel"><h2>Datos del emisor</h2><div class="grid"><label>Nombre y cédula<input value="Ferretería de Prueba · 3-101-123456" disabled><small>Vienen del registro de la empresa.</small></label><label>Correo para comprobantes<input value="'+esc(config.email)+'"></label><label class="span">Actividad económica<input value="'+esc(config.activity)+'"><small>Código inscrito en Hacienda.</small></label><label>Provincia<select><option>'+config.province+'</option></select></label><label>Cantón<select><option>'+config.canton+'</option></select></label><label>Distrito<select><option>'+config.district+'</option></select></label><label>Otras señas<input value="'+esc(config.address)+'"></label></div><div class="actions" style="margin-top:12px"><button class="primary" id="save-em">Guardar</button></div></section>'+
+ '<section class="panel"><h2>Sucursales en Hacienda</h2><p class="muted">Cada sucursal emite con su propio código y consecutivos.</p><table><thead><tr><th>Sucursal</th><th>Código</th><th>Punto de venta</th><th>Último consecutivo</th></tr></thead><tbody>'+config.branches.map((b,i)=>'<tr><td><strong>'+b.name+'</strong></td><td>'+mobile('Código')+b.code+'</td><td>'+mobile('Punto de venta')+b.pos+'</td><td class="wide mono">'+mobile('Último consecutivo')+'Factura '+(i?3:12)+' · Tiquete '+(i?7:44)+' · Nota de crédito '+(i?0:2)+'</td></tr>').join('')+'</tbody></table></section>';
+ if(get('prod'))get('prod').onclick=()=>{main.innerHTML=heading('Activar producción','Desde ahora los comprobantes tendrán validez fiscal.','','Configuración')+'<section class="panel"><p>Antes de activar, confirma con tu contador que los datos del emisor y los códigos CABYS están correctos. Los comprobantes de prueba no se reenvían a producción.</p><div class="actions" style="margin-top:12px"><button id="no">Volver</button><button class="primary" id="yes">Activar producción</button></div></section>';get('no').onclick=()=>billing();get('yes').onclick=()=>{config.environment='PROD';billing('Producción activada.');};};
+ if(get('test'))get('test').onclick=()=>billing('Conexión correcta con el ambiente '+(config.environment==='TEST'?'de pruebas':'de producción')+'. La llave es válida.');
+ if(get('replace'))get('replace').onclick=()=>{get('cred').hidden=false;};
+ get('cancel-cred').onclick=()=>{if(config.credentials)get('cred').hidden=true;};
+ get('cred').onsubmit=e=>{e.preventDefault();billing('Credenciales guardadas y conexión probada.');};
+ get('save-em').onclick=()=>billing('Datos del emisor guardados.');
+}
+render();
+</script>
+</body>
+</html>

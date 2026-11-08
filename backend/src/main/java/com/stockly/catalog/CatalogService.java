@@ -116,8 +116,12 @@ public class CatalogService {
                     jdbc.update("UPDATE catalog_items SET variant_name=? WHERE company_id=? AND id=?", variant, company, simple.id());
                 } else {
                     var original = creating && value.equals(variants.getFirst()) ? input.item() : null;
+                    // Las variantes nuevas heredan la unidad y los datos fiscales del artículo existente.
+                    Item base = items.isEmpty() ? null : items.getFirst();
                     insertItem(actor, id, variant, original == null ? new ItemInput(null, null,
-                        !items.isEmpty() ? items.getFirst().unit() : input.item() == null ? null : input.item().unit(), null, false) : original, canPrice);
+                        base != null ? base.unit() : input.item() == null ? null : input.item().unit(), null, false,
+                        base != null ? base.cabys() : input.item() == null ? null : input.item().cabys(),
+                        base != null ? base.taxRate() : input.item() == null ? null : input.item().taxRate()) : original, canPrice);
                 }
             }
         } else if (creating) {
@@ -173,9 +177,10 @@ public class CatalogService {
         BigDecimal price = authorizedPrice(input, null, canPrice);
         try {
             jdbc.update("""
-                INSERT INTO catalog_items(company_id,id,product_id,variant_name,sku,barcode,unit,price)
-                VALUES (?,?,?,?,?,?,?,?)
-                """, company, id, product, variant, sku, clean(input.barcode(), 80), unit(input.unit()), price);
+                INSERT INTO catalog_items(company_id,id,product_id,variant_name,sku,barcode,unit,price,cabys_code,tax_rate_code)
+                VALUES (?,?,?,?,?,?,?,?,?,?)
+                """, company, id, product, variant, sku, clean(input.barcode(), 80), unit(input.unit()), price,
+                cabys(input.cabys(), null), taxRate(input.taxRate(), null));
         } catch (DuplicateKeyException e) {
             throw conflict("El código de barras o la combinación ya existe.");
         }
@@ -201,8 +206,9 @@ public class CatalogService {
                 """, company, item.id(), actor.accountId(), item.sku(), sku);
         }
         try {
-            jdbc.update("UPDATE catalog_items SET sku=?,barcode=?,unit=?,price=? WHERE company_id=? AND id=?",
-                sku, clean(input.barcode(), 80), unit, price, company, item.id());
+            jdbc.update("UPDATE catalog_items SET sku=?,barcode=?,unit=?,price=?,cabys_code=?,tax_rate_code=? WHERE company_id=? AND id=?",
+                sku, clean(input.barcode(), 80), unit, price, cabys(input.cabys(), item.cabys()), taxRate(input.taxRate(), item.taxRate()),
+                company, item.id());
         } catch (DuplicateKeyException e) {
             throw conflict("Ese código de barras ya está asignado.");
         }
@@ -245,7 +251,7 @@ public class CatalogService {
     private static Item item(ResultSet rs) throws SQLException {
         return new Item(rs.getString("id"), rs.getString("variant_name"), rs.getString("sku"),
             rs.getString("barcode"), rs.getString("unit"), rs.getBigDecimal("price"),
-            rs.getBoolean("active"), rs.getBoolean("has_movements"));
+            rs.getBoolean("active"), rs.getBoolean("has_movements"), rs.getString("cabys_code"), rs.getString("tax_rate_code"));
     }
 
     private static String company(StocklyPrincipal actor) {
@@ -271,6 +277,24 @@ public class CatalogService {
         if (input == null) return "unidad";
         if (!UNITS.contains(input)) throw invalid("Selecciona una unidad base válida.");
         return input;
+    }
+
+    private static final Set<String> TAX_RATES = Set.of("01", "02", "03", "04", "08", "09", "10", "11");
+
+    private static String cabys(String input, String previous) {
+        if (input == null) return previous;
+        String value = input.strip();
+        if (value.isEmpty()) return null;
+        if (!value.matches("[0-9]{13}")) throw invalid("El código CABYS debe tener 13 dígitos.");
+        return value;
+    }
+
+    private static String taxRate(String input, String previous) {
+        if (input == null) return previous;
+        String value = input.strip();
+        if (value.isEmpty()) return null;
+        if (!TAX_RATES.contains(value)) throw invalid("Selecciona una tarifa de IVA válida.");
+        return value;
     }
 
     private static BigDecimal authorizedPrice(ItemInput input, BigDecimal previous, boolean allowed) {
@@ -316,9 +340,14 @@ public class CatalogService {
 
     public record ProductInput(String name, String category, String description, ItemInput item,
                                List<String> variants, String keepVariant, String image, Boolean removeImage) {}
-    public record ItemInput(String sku, String barcode, String unit, BigDecimal price, Boolean setPrice) {}
+    /** cabys y taxRate (STK-013): null conserva el valor; texto vacío lo borra. */
+    public record ItemInput(String sku, String barcode, String unit, BigDecimal price, Boolean setPrice, String cabys, String taxRate) {
+        public ItemInput(String sku, String barcode, String unit, BigDecimal price, Boolean setPrice) {
+            this(sku, barcode, unit, price, setPrice, null, null);
+        }
+    }
     public record Item(String id, String variantName, String sku, String barcode, String unit,
-                       BigDecimal price, boolean active, boolean hasMovements) {}
+                       BigDecimal price, boolean active, boolean hasMovements, String cabys, String taxRate) {}
     public record Product(String id, String name, String category, String description,
                           boolean active, boolean hasImage, List<Item> items) {}
     public record Page(List<Product> products, List<String> categories, boolean hasMore) {}

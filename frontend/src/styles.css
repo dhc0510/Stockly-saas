@@ -92,7 +92,9 @@ svg {
   flex-direction: column;
 }
 .brand {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 27px;
   font-weight: 700;
   letter-spacing: -1.2px;
@@ -1494,4 +1496,16 @@ h1 {
     flex: none;
   }
   .company-sidebar-links { overscroll-behavior: contain; }
+}
+
+/* Caja del logotipo en vector (SVG transparente, aprobado por el propietario) junto a la marca. */
+.brand-mark { flex: none; width: 30px; height: 30px; }
+.topbar-title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.topbar-mark { display: none; flex: none; width: 26px; height: 26px; }
+@media (max-width: 640px) {
+  .topbar-mark { display: block; }
+}
+.topbar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 400px) {
+  .topbar-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }

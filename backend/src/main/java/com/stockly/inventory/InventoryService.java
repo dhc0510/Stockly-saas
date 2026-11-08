@@ -22,10 +22,12 @@ public class InventoryService {
     private final JdbcTemplate jdbc;
 
     private final InventoryLedger ledger;
+    private final com.stockly.billing.FiscalDocumentService fiscal;
 
-    public InventoryService(JdbcTemplate jdbc, InventoryLedger ledger) {
+    public InventoryService(JdbcTemplate jdbc, InventoryLedger ledger, com.stockly.billing.FiscalDocumentService fiscal) {
         this.jdbc = jdbc;
         this.ledger = ledger;
+        this.fiscal = fiscal;
     }
 
     public record LocationSetup(List<Branch> branches, boolean needsPrincipal, boolean pending) {}
@@ -98,6 +100,7 @@ public class InventoryService {
             jdbc.update("INSERT INTO inventory_branch_users(company_id,branch_id,user_id) VALUES(?,?,?)",
                 company, id, actor.accountId());
         } catch (DuplicateKeyException e) { throw conflict("Ya existe una sucursal con ese código."); }
+        fiscal.branchCode(company, id); // STK-013: código de establecimiento de Hacienda (001, 002…).
         return getBranch(company, id);
     }
 

@@ -1,0 +1,45 @@
+/* STK-013 · Facturación electrónica */
+.billing-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; align-items: start; }
+.billing-span { grid-column: 1 / -1; }
+.billing-page label small { display: block; color: var(--sales-muted); font-size: 12px; font-weight: 400; }
+.billing-page .billing-field-error { color: #b42318; font-weight: 600; }
+.billing-page input[aria-invalid=true], .billing-page select[aria-invalid=true] { border-color: #b42318; }
+.billing-steps { display: grid; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; font-size: 14px; }
+.billing-steps li { display: flex; align-items: center; gap: 8px; color: var(--sales-muted); }
+.billing-steps li.billing-done { color: #166534; }
+.billing-confirm { padding: 12px 14px; border: 1px solid #fdba74; border-radius: 10px; background: #fff7ed; }
+.billing-confirm p { margin: 0 0 10px; font-size: 14px; }
+.billing-secret { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px;
+  border-radius: 9px; background: #f4f4f5; }
+.billing-secret small { display: block; color: var(--sales-muted); font-size: 12px; overflow-wrap: anywhere; }
+.billing-branches { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.billing-branches li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 10px 12px;
+  border: 1px solid var(--sales-border); border-radius: 9px; }
+.billing-branches small { display: block; color: var(--sales-muted); font-size: 12px; }
+.billing-sequences { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--sales-muted); font-variant-numeric: tabular-nums; }
+.billing-sequences strong { color: var(--sales-ink); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@container catalog (max-width: 540px) {
+  .billing-grid { grid-template-columns: minmax(0, 1fr); }
+}
+.billing-continue { width: 100%; font-size: 13px; }
+.billing-continue summary { cursor: pointer; color: var(--sales-accent-ink); }
+.billing-continue-form { display: grid; gap: 8px; margin-top: 8px; }
+.billing-help { margin: 0; color: var(--sales-muted); font-size: 13px; line-height: 1.5; }
+.billing-continue-fields { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+.billing-continue-fields label { flex: 1 1 12rem; }
+.billing-next { color: #166534; font-size: 13px; }
+.billing-continue-form > small { display: block; justify-self: start; text-align: left; }
+.billing-continue-fields > button { flex: none; }
+.billing-continue-fields label { flex: 1 1 14rem; min-width: 0; }
+.billing-branches li > .billing-continue { flex: 1 1 100%; }
+.billing-toast { position: fixed; z-index: 50; right: 24px; bottom: 24px; display: flex; align-items: center; gap: 12px; max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 14px; border-radius: 10px; background: #14532d; color: #fff; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.18); animation: billing-toast-in .16s ease-out; }
+.billing-toast-error { background: #991b1b; }
+.billing-toast-close { min-height: 0; padding: 0 4px; border: 0; background: transparent; color: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
+@keyframes billing-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .billing-toast { animation: none; } }
+@media (max-width: 640px) { .billing-toast { right: 16px; left: 16px; bottom: 16px; max-width: none; } }
+.billing-page .billing-toast-close, .billing-page .billing-toast-close:hover { flex: none; width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0;
+  border: 0; border-radius: 6px; background: transparent; color: #fff; box-shadow: none; font-size: 22px; }
+.billing-page .billing-toast-close:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }

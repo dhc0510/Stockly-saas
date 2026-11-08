@@ -43,6 +43,22 @@ stockly:
   deletion-journal-directory: ${STOCKLY_DELETION_JOURNAL_DIRECTORY:}
   public-base-url: ${STOCKLY_PUBLIC_BASE_URL:http://localhost:5173}
   mail-from: ${STOCKLY_MAIL_FROM:no-reply@stockly.local}
+  # STK-013 · Facturación electrónica. Sin STOCKLY_BILLING_KEY la facturación queda deshabilitada (ADR-007).
+  # Las URL de pruebas y del IdP se confirman con la documentación vigente de Hacienda/TRIBU-CR.
+  billing:
+    key: ${STOCKLY_BILLING_KEY:}
+    system-provider-id: ${STOCKLY_HACIENDA_PROVIDER_ID:}
+    dispatch-delay-ms: ${STOCKLY_BILLING_DISPATCH_DELAY_MS:15000}
+    alert-after-minutes: ${STOCKLY_BILLING_ALERT_AFTER_MINUTES:60}
+    # Pruebas: valores de uso común, autorizados por el propietario el 2026-11-08 (la guía oficial del IdP no estaba disponible).
+    test:
+      api-url: ${STOCKLY_HACIENDA_TEST_API_URL:https://api-sandbox.comprobanteselectronicos.go.cr/recepcion/v1/}
+      token-url: ${STOCKLY_HACIENDA_TEST_TOKEN_URL:https://idp.comprobanteselectronicos.go.cr/auth/realms/rut-stag/protocol/openid-connect/token}
+      client-id: ${STOCKLY_HACIENDA_TEST_CLIENT_ID:api-stag}
+    prod:
+      api-url: ${STOCKLY_HACIENDA_PROD_API_URL:https://api.comprobanteselectronicos.go.cr/recepcion/v1/}
+      token-url: ${STOCKLY_HACIENDA_PROD_TOKEN_URL:}
+      client-id: ${STOCKLY_HACIENDA_PROD_CLIENT_ID:}
   bootstrap:
     saas-admin:
       enabled: ${STOCKLY_BOOTSTRAP_SAAS_ADMIN:false}
