@@ -1,0 +1,30 @@
+.sales-return-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+.sales-return-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+.sales-return-actions a, .sales-return-reason .sales-actions a { text-decoration:none; }
+.sales-return-history { list-style:none; padding:0; margin:0; }
+.sales-return-history + .sales-return-history { margin-top:12px; border-top:1px solid var(--sales-border); }
+.sales-return-history li { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1fr); align-items:center; gap:8px 16px; padding:10px 0; }
+.sales-return-history li + li { border-top:1px solid var(--sales-border); }
+.sales-return-history small, .sales-return-history-link time, .sales-return-item small { display:block; color:var(--sales-muted); }
+.sales-return-history-link { width:fit-content; padding:4px 0; }
+.sales-return-history-link time { font-size:12px; }
+.sales-return-items { display:grid; gap:8px; }
+.sales-return-item { display:grid; grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr)); align-items:start; gap:8px 12px; border:1px solid var(--sales-border); border-radius:9px; padding:12px; }
+.sales-return-item p { grid-column:1/-1; color:#b91c1c; }
+.sales-return-payment { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr) auto; align-items:end; gap:8px 12px; margin-bottom:8px; }
+.sales-return-payment button { grid-column:-2; }
+.sales-return-reason { display:grid; gap:10px; }
+.sales-return-note { color:var(--sales-muted); margin:12px 0; }
+.sales-return-fiscal small { display:block; margin-top:3px; overflow-wrap:anywhere; }
+.sales-return-fiscal .sales-status, .sales-status.sales-return-state { white-space:normal; }
+.sales-status.sales-return-issue { color:#9f1239; background:#ffe4e6; }
+.sales-status.sales-return-state { color:#9a3412; background:#fff1e6; }
+@container catalog (max-width: 560px) {
+  .sales-return-item, .sales-return-payment { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .sales-return-item > div { grid-column:1/-1; }
+  .sales-return-history li { grid-template-columns:minmax(0,1fr) auto; }
+  .sales-return-history li > :last-child { grid-column:1/-1; }
+  .sales-return-payment button { justify-self:end; }
+  .sales-return-actions { width:100%; }
+  .sales-return-actions > * { flex:1; }
+}

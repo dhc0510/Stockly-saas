@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import type { SessionUser } from "../auth/api";
+import { useAuth } from "../auth/AuthContext";
 import { Difference } from "../movements/MovementEditor";
 import { amount, failureMessage, receiptDate } from "../receipts/receiptApi";
 import "../receipts/receipts.css";
@@ -202,6 +203,9 @@ function ItemHistory({ id }: { id: string }) {
 }
 
 function MovementView({ id }: { id: string }) {
+  const { user } = useAuth();
+  const canSeeSales = user?.role === "COMPANY_ADMIN" ||
+    user?.modules.some(module => module.moduleKey === "SALES" && module.accessLevel !== "NONE");
   const [document, setDocument] = useState<MovementDocument>();
   const [error, setError] = useState("");
   useEffect(() => {
@@ -224,7 +228,11 @@ function MovementView({ id }: { id: string }) {
         <div className="receipt-date"><dt>Fecha y hora</dt><dd><time dateTime={movement.date}>{receiptDate(movement.date)}</time></dd></div>
         <div><dt>Responsable</dt><dd>{movement.actor}</dd></div>
         <div><dt>Motivo</dt><dd>{movement.reason}</dd></div>
-        <div><dt>Referencia</dt><dd>{movement.reference || "—"}</dd></div>
+        <div><dt>Referencia</dt><dd>{movement.kind === "RETURN" && movement.reference && canSeeSales
+          ? <Link to={"/sales/" + encodeURIComponent(movement.reference) + "/returns/" + encodeURIComponent(movement.folio)}>
+            {movement.reference} · Ver devolución
+          </Link>
+          : movement.reference || "—"}</dd></div>
       </dl>
       {movement.voidId && <p className="receipt-note"><strong>Anulación:</strong> {movement.voidReason}{" "}<Link className="receipt-link" to={base + "/movements/" + movement.voidId}>Ver {movement.voidFolio}</Link></p>}
       {movement.originalId && <p className="receipt-note">Anula <Link className="receipt-link" to={base + "/movements/" + movement.originalId}>{movement.originalFolio}</Link></p>}

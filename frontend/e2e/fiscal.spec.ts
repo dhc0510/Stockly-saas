@@ -30,6 +30,7 @@ test("shows the electronic receipt lifecycle, corrects a rejection and configure
         fiscal: [...(sale.fiscal as object[]), doc({ id: "fe2", consecutive: "00100001010000000013", status: "PROCESSING", replacesId: "fe1", mailStatus: "NONE" })] };
       return route.fulfill({ json: sale });
     }
+    if (url.pathname === "/api/sales/VTA-0004/returns") return route.fulfill({ json: { lines: [], returns: [] } });
     if (url.pathname === "/api/sales/VTA-0004") return route.fulfill({ json: sale });
     if (url.pathname === "/api/sales") return route.fulfill({ json: { hasMore: false, entries: [
       { id: "4", folio: "VTA-0004", date: base.movement.date, branchName: "Central", customer: "María Rojas", total: 7600, voided: false,

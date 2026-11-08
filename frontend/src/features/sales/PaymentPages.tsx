@@ -60,7 +60,7 @@ export function PaymentSummaryPage() {
           <PanelHeading icon={BarChart3} title="Totales del período" description={shortDay(summary.from) + " al " + shortDay(summary.to)} />
           <dl className="sales-flow">
             <div><dt>Entró</dt><dd>{money(total("collected"))}</dd><small>{summary.sales} {summary.sales === 1 ? "venta cobrada" : "ventas cobradas"}</small></div>
-            <div><dt>Salió (devoluciones)</dt><dd>{money(total("refunded"))}</dd><small>{summary.refunds} {summary.refunds === 1 ? "venta anulada" : "ventas anuladas"}</small></div>
+            <div><dt>Salió (devoluciones)</dt><dd>{money(total("refunded"))}</dd><small>{summary.refunds} {summary.refunds === 1 ? "reintegro registrado" : "reintegros registrados"}</small></div>
             <div className="sales-flow-result"><dt>Quedó</dt><dd>{money(total("net"))}</dd><small>Entró menos salió</small></div>
           </dl>
           <div className="sales-method-table" role="table" aria-label="Dinero por medio de pago">

@@ -61,7 +61,7 @@ public class SaleService {
     public SalePage list(StocklyPrincipal actor, String search, String status, String payment, String fiscal, String fiscalType,
                          String branchId, int page) {
         String company = company(actor);
-        if (page < 0 || !Set.of("", "confirmed", "voided").contains(status) || !Set.of("", "paid", "voided", "none").contains(payment)
+        if (page < 0 || !Set.of("", "confirmed", "voided", "partial", "complete").contains(status) || !Set.of("", "paid", "voided", "none").contains(payment)
             || !Set.of("", "PENDING", "PROCESSING", "ACCEPTED", "REJECTED", "CANCELLED", "NONE").contains(fiscal)
             || !Set.of("", "01", "04").contains(fiscalType))
             throw RULES.invalid("Revisa el estado y la página.");
@@ -75,7 +75,15 @@ public class SaleService {
                    WHEN r.id IS NOT NULL THEN 'voided' ELSE 'paid' END AS payment,
               f.doc_type AS fiscal_type, COALESCE(f.status,'NONE') AS fiscal_status,
               (SELECT c.status FROM fiscal_documents c WHERE c.company_id=f.company_id AND c.reference_id=f.id ORDER BY c.created_at DESC LIMIT 1) AS credit_status,
-              s.customer_id_number
+              s.customer_id_number,
+              CASE WHEN NOT EXISTS(SELECT 1 FROM sale_returns sr WHERE sr.company_id=s.company_id AND sr.sale_id=s.id) THEN NULL
+                   WHEN EXISTS(
+                     SELECT 1 FROM inventory_movement_lines sl WHERE sl.company_id=s.company_id AND sl.movement_id=s.id
+                       AND -sl.quantity > COALESCE((
+                         SELECT SUM(rl.quantity) FROM sale_return_lines rl
+                         WHERE rl.company_id=s.company_id AND rl.sale_id=s.id AND rl.item_id=sl.item_id
+                       ),0)
+                   ) THEN 'partial' ELSE 'complete' END AS return_status
             FROM sales s JOIN inventory_movements m ON m.company_id=s.company_id AND m.id=s.id
             LEFT JOIN inventory_movements r ON r.company_id=m.company_id AND r.reversed_id=m.id
             LEFT JOIN fiscal_documents f ON f.company_id=s.company_id AND f.id=(
@@ -86,14 +94,16 @@ public class SaleService {
             AND (?='' OR s.branch_id=?)
             AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(s.customer_name,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!'
               OR COALESCE(s.customer_id_number,'') LIKE ? ESCAPE '!')
-            AND (?='' OR (?='confirmed' AND r.id IS NULL) OR (?='voided' AND r.id IS NOT NULL))
-            ) sale WHERE (?='' OR sale.payment=?) AND (?='' OR sale.fiscal_status=?) AND (?='' OR sale.fiscal_type=?)
+
+            ) sale WHERE (?='' OR (?='confirmed' AND NOT sale.voided AND sale.return_status IS NULL)
+              OR (?='voided' AND sale.voided) OR sale.return_status=?)
+              AND (?='' OR sale.payment=?) AND (?='' OR sale.fiscal_status=?) AND (?='' OR sale.fiscal_type=?)
             ORDER BY sale.created_at DESC,sale.id DESC LIMIT ? OFFSET ?
             """, (rs, row) -> new SaleRow(rs.getString(1), rs.getString(2), rs.getTimestamp(3).toInstant(),
             rs.getString(4), rs.getString(5), rs.getBigDecimal(6), rs.getBoolean(7), rs.getString(8), rs.getString(9), rs.getString(10),
-            rs.getString(11), rs.getString(12)),
+            rs.getString(11), rs.getString(12), rs.getString(13)),
             company, InventoryScope.administrator(actor), actor.accountId(), branchId, branchId, term, term, term, status, status,
-            status, payment, payment, fiscal, fiscal, fiscalType, fiscalType, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
+            status, status, payment, payment, fiscal, fiscal, fiscalType, fiscalType, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
         return new SalePage(rows.stream().limit(PAGE_SIZE).toList(), rows.size() > PAGE_SIZE);
     }
 
@@ -248,6 +258,9 @@ public class SaleService {
         Sale original = get(actor, id);
         if (original.movement().voidId() != null) throw RULES.conflict("Esta venta ya fue anulada.");
         String originalId = original.movement().id();
+        if (Boolean.TRUE.equals(jdbc.queryForObject(
+            "SELECT EXISTS(SELECT 1 FROM sale_returns WHERE company_id=? AND sale_id=?)", Boolean.class, company, originalId)))
+            throw RULES.conflict("Esta venta tiene devoluciones. Usa Devolver lo restante.");
         var movement = ledger.document(company, originalId, "m.kind='SALE'").orElseThrow(SaleService::missing);
         String reversal = ledger.reverse(actor, originalId, movement.lines(), reason, RULES);
         payments.refund(company, originalId, reversal, refunds);
@@ -300,7 +313,7 @@ public class SaleService {
     public record SaleArticle(Article article, BigDecimal price) {}
     public record SaleRow(String id, String folio, java.time.Instant date, String branchName, String customer,
                           BigDecimal total, boolean voided, String payment, String fiscalType, String fiscalStatus,
-                          String creditStatus, String customerIdNumber) {}
+                          String creditStatus, String customerIdNumber, String returnStatus) {}
     public record SalePage(List<SaleRow> entries, boolean hasMore) {}
     public record SaleInput(String requestKey, String branchId, String customer, String customerPhone,
                             String customerEmail, List<LineInput> lines, List<SalePaymentService.PaymentInput> payments,

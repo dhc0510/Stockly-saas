@@ -75,6 +75,21 @@ public class FiscalDocumentService {
         create(company, sale(company, saleId), customer.number() == null ? TICKET : INVOICE, null, doc.id());
     }
 
+    /** Registra una nota pendiente por devolución aceptada para despacho asíncrono. */
+    @Transactional
+    public void issueForReturn(String company, String returnId) {
+        var ids = jdbc.queryForList("SELECT sale_id FROM sale_returns WHERE company_id=? AND id=? FOR UPDATE",
+            String.class, company, returnId);
+        if (ids.isEmpty()) return;
+        boolean alreadyIssued = Boolean.TRUE.equals(jdbc.queryForObject("""
+            SELECT EXISTS(SELECT 1 FROM fiscal_documents WHERE company_id=? AND sale_return_id=?)
+            """, Boolean.class, company, returnId));
+        if (alreadyIssued) return;
+        String saleId = ids.getFirst();
+        current(company, saleId).filter(doc -> "ACCEPTED".equals(doc.status())).ifPresent(doc ->
+            create(company, sale(company, saleId), CREDIT_NOTE, doc.id(), null, returnId, doc.environment()));
+    }
+
     /** Pide un nuevo intento inmediato de un comprobante pendiente. */
     @Transactional
     public void retryNow(String company, String saleId) {
@@ -112,19 +127,19 @@ public class FiscalDocumentService {
 
     public record Document(String id, String docType, String environment, String consecutive, String key, Instant issuedAt,
                            String status, String reason, int attempts, Instant sentAt, Instant resolvedAt, String referenceId,
-                           String replacesId, String mailStatus, String branchCode) {}
+                           String replacesId, String mailStatus, String branchCode, String saleReturnId) {}
 
     /** Todos los comprobantes de la venta, del más antiguo al más reciente. */
     @Transactional(readOnly = true)
     public List<Document> documents(String company, String saleId) {
         return jdbc.query("""
             SELECT d.id,d.doc_type,d.environment,d.consecutive,d.numeric_key,d.issued_at,d.status,d.status_reason,d.attempts,
-              d.sent_at,d.resolved_at,d.reference_id,d.replaces_id,d.mail_status,b.fiscal_code
+              d.sent_at,d.resolved_at,d.reference_id,d.replaces_id,d.mail_status,b.fiscal_code,d.sale_return_id
             FROM fiscal_documents d JOIN inventory_branches b ON b.company_id=d.company_id AND b.id=d.branch_id
             WHERE d.company_id=? AND d.sale_id=? ORDER BY d.created_at,d.id
             """, (rs, n) -> new Document(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
             rs.getTimestamp(6).toInstant(), rs.getString(7), rs.getString(8), rs.getInt(9), instant(rs.getTimestamp(10)),
-            instant(rs.getTimestamp(11)), rs.getString(12), rs.getString(13), rs.getString(14), rs.getString(15)), company, saleId);
+            instant(rs.getTimestamp(11)), rs.getString(12), rs.getString(13), rs.getString(14), rs.getString(15), rs.getString(16)), company, saleId);
     }
 
     /** Comprobante vigente de la venta: el último que no es nota de crédito. */
@@ -147,7 +162,12 @@ public class FiscalDocumentService {
     }
 
     private void create(String company, Sale sale, String docType, String referenceId, String replacesId) {
-        String environment = jdbc.query("SELECT environment FROM billing_settings WHERE company_id=?",
+        create(company, sale, docType, referenceId, replacesId, null, null);
+    }
+
+    private void create(String company, Sale sale, String docType, String referenceId, String replacesId,
+                        String returnId, String originalEnvironment) {
+        String environment = originalEnvironment != null ? originalEnvironment : jdbc.query("SELECT environment FROM billing_settings WHERE company_id=?",
             (rs, n) -> rs.getString(1), company).stream().findFirst().orElse("TEST");
         String branchCode = branchCode(company, sale.branchId());
         jdbc.update("""
@@ -165,10 +185,10 @@ public class FiscalDocumentService {
         String key = FiscalNumbers.key(issuedAt, issuerNumber, consecutive, '1', FiscalNumbers.securityCode());
         jdbc.update("""
             INSERT INTO fiscal_documents(company_id,id,sale_id,doc_type,environment,branch_id,consecutive,numeric_key,issued_at,
-              reference_id,replaces_id,status,next_attempt_at,created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,'PENDING',?,?)
+              reference_id,replaces_id,sale_return_id,status,next_attempt_at,created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'PENDING',?,?)
             """, company, UUID.randomUUID().toString(), sale.id(), docType, environment, sale.branchId(), consecutive, key,
-            Timestamp.from(issuedAt), referenceId, replacesId, Timestamp.from(issuedAt), Timestamp.from(issuedAt));
+            Timestamp.from(issuedAt), referenceId, replacesId, returnId, Timestamp.from(issuedAt), Timestamp.from(issuedAt));
     }
 
     /** Asigna el siguiente código de establecimiento (001, 002…) si la sucursal aún no tiene, bajo bloqueo de la empresa. */

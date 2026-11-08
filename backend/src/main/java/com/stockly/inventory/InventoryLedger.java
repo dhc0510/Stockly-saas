@@ -38,7 +38,7 @@ public class InventoryLedger {
 
     enum Series {
         RECEIPT("receipt_sequence", "ENT-"), VOID("void_sequence", "ANU-"),
-        OUT("out_sequence", "SAL-"), ADJUST("adjust_sequence", "AJU-"), SALE("sale_sequence", "VTA-");
+        OUT("out_sequence", "SAL-"), ADJUST("adjust_sequence", "AJU-"), SALE("sale_sequence", "VTA-"), RETURN("return_sequence", "DEV-");
         final String column, prefix;
         Series(String column, String prefix) { this.column = column; this.prefix = prefix; }
     }
@@ -139,7 +139,13 @@ public class InventoryLedger {
     void record(StocklyPrincipal actor, String location, String id, String kind, Series series, String reason,
                 String reference, String key, String hash, List<Line> lines) {
         String company = actor.companyId();
-        insertMovement(actor, location, id, kind, nextFolio(company, series), reason, reference, key, hash, null);
+        record(actor, location, id, kind, nextFolio(company, series), reason, reference, key, hash, lines);
+    }
+
+    void record(StocklyPrincipal actor, String location, String id, String kind, String folio, String reason,
+                String reference, String key, String hash, List<Line> lines) {
+        String company = actor.companyId();
+        insertMovement(actor, location, id, kind, folio, reason, reference, key, hash, null);
         for (Line line : lines) {
             writeLine(company, location, id, line);
             jdbc.update("UPDATE catalog_items SET has_movements=TRUE WHERE company_id=? AND id=?", company, line.itemId());

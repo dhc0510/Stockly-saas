@@ -30,6 +30,8 @@ class SalePaymentLocalIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired SaleService sales;
     @Autowired SalePaymentService payments;
+    @Autowired SaleReturnService returns;
+    @Autowired InventoryHistoryService history;
     @Autowired JdbcTemplate jdbc;
     private String item;
 
@@ -180,6 +182,106 @@ class SalePaymentLocalIntegrationTest {
                 jdbc.update("DELETE FROM companies WHERE id=?", id);
             }
         }
+    }
+
+    @Test void returnsPartiallyRestocksAndReusesTheFolioWithoutDuplicatingTheRefund() throws Exception {
+        String company = id(), foreign = id(), owner = id(), worker = id(), outsider = id(), branch = id(), product = id();
+        item = id();
+        company(company, "Prueba STK-015");
+        company(foreign, "Otra STK-015");
+        try {
+            user(owner, company, "COMPANY_ADMIN");
+            user(worker, company, "WORKER");
+            user(outsider, foreign, "COMPANY_ADMIN");
+            jdbc.update("INSERT INTO inventory_locations(company_id,id,name) VALUES (?,'principal','Principal')", company);
+            jdbc.update("""
+                INSERT INTO inventory_branches(company_id,id,name,code,address,phone,contact_email,manager_name,location_id,created_at,updated_at)
+                VALUES (?,?,'Centro','CENTRO','','','','','principal',NOW(),NOW())
+                """, company, branch);
+            jdbc.update("INSERT INTO catalog_products(company_id,id,name) VALUES (?,?,'Guantes')", company, product);
+            jdbc.update("INSERT INTO catalog_items(company_id,id,product_id,sku,unit,price) VALUES (?,?,?,'GUA-1','unidad',1000)",
+                company, item, product);
+            jdbc.update("INSERT INTO inventory_branch_items(company_id,branch_id,item_id,created_at,updated_at) VALUES (?,?,?,NOW(),NOW())",
+                company, branch, item);
+            jdbc.update("INSERT INTO inventory_balances(company_id,location_id,item_id,quantity) VALUES (?,'principal',?,20)", company, item);
+            var admin = new StocklyPrincipal(owner, company, 0, 0, "COMPANY_ADMIN", false);
+            var seller = new StocklyPrincipal(worker, company, 0, 0, "WORKER", false);
+            var foreignAdmin = new StocklyPrincipal(outsider, foreign, 0, 0, "COMPANY_ADMIN", false);
+            var sale = sales.confirm(admin, sale(id(), branch, 4, List.of(pay("CARD", "2000", "compra"), pay("CASH", "2000", null))));
+            String saleId = sale.movement().id();
+            var selection = new SaleReturnService.LineInput(item, new BigDecimal("3"), new BigDecimal("2"));
+            var first = new SaleReturnService.Confirmation(id(), "Producto dañado", null, List.of(selection), new BigDecimal("3000"),
+                List.of(refund("CARD", "2000", "reintegro"), refund("CASH", "1000", null)));
+            assertCode(() -> returns.context(seller, saleId), "SALE_NOT_FOUND");
+            assertCode(() -> returns.context(foreignAdmin, saleId), "SALE_NOT_FOUND");
+            jdbc.update("INSERT INTO inventory_branch_users(company_id,branch_id,user_id) VALUES (?,?,?)", company, branch, worker);
+            var reader = new UsernamePasswordAuthenticationToken(seller, null, List.of(new SimpleGrantedAuthority("MODULE_SALES_READ")));
+            mvc.perform(post("/api/sales/" + saleId + "/returns").with(authentication(reader)).with(csrf())
+                .contentType("application/json").content("{}")).andExpect(status().isForbidden());
+
+            jdbc.update("UPDATE catalog_items SET price=1100 WHERE company_id=? AND id=?", company, item);
+            assertThat(returns.preview(admin, saleId, new SaleReturnService.Selection(List.of(selection))).refund()).isEqualByComparingTo("3000");
+            assertCode(() -> returns.confirm(admin, saleId, new SaleReturnService.Confirmation(id(), "Producto dañado", null,
+                List.of(selection), new BigDecimal("3000"), List.of(refund("CASH", "1", null)))), "SALE_PAYMENT_INVALID");
+            assertThat(balance(company, "principal", item)).isEqualByComparingTo("16");
+
+            var receipt = returns.confirm(admin, saleId, first);
+            assertThat(receipt.folio()).isEqualTo("DEV-0001");
+            assertThat(returns.confirm(admin, saleId, first)).isEqualTo(receipt);
+            assertCode(() -> returns.confirm(admin, saleId, new SaleReturnService.Confirmation(first.requestKey(), "Producto incorrecto",
+                null, first.lines(), first.expectedRefund(), first.refunds())), "RETURN_KEY_CONFLICT");
+            assertThat(balance(company, "principal", item)).isEqualByComparingTo("18");
+            var historyRows = history.list(admin, "DEV-0001", item, "RETURN", "", "", "", 0).rows();
+            assertThat(historyRows).hasSize(1);
+            assertThat(historyRows.getFirst().quantity()).isEqualByComparingTo("2");
+            assertThat(sales.list(admin, "", "partial", "", 0).entries()).extracting(SaleService.SaleRow::folio)
+                .containsExactly(sale.movement().folio());
+            assertCode(() -> sales.reverse(admin, saleId, "No repetir"), "SALE_CONFLICT");
+
+            var last = new SaleReturnService.LineInput(item, BigDecimal.ONE, BigDecimal.ZERO);
+            var refund = List.of(refund("CASH", "1000", null));
+            var attempt = new SaleReturnService.Confirmation(id(), "Producto incorrecto", null, List.of(last), new BigDecimal("1000"), refund);
+            var competitor = new SaleReturnService.Confirmation(id(), attempt.reason(), null, attempt.lines(), attempt.expectedRefund(), refund);
+            try (var workers = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+                var a = workers.submit(() -> returnResult(admin, saleId, attempt));
+                var b = workers.submit(() -> returnResult(admin, saleId, competitor));
+                assertThat(List.of(a.get(10, java.util.concurrent.TimeUnit.SECONDS), b.get(10, java.util.concurrent.TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder("DEV-0002", "RETURN_LINES");
+            }
+            assertThat(returns.get(admin, saleId, "DEV-0002").movementId()).isNull();
+            assertThat(balance(company, "principal", item)).isEqualByComparingTo("18");
+            assertThat(sales.list(admin, "", "complete", "", 0).entries()).extracting(SaleService.SaleRow::folio)
+                .containsExactly(sale.movement().folio());
+            assertThat(payments.summary(admin, branch, "", "").refunds()).isEqualTo(2);
+            assertThat(net(payments.summary(admin, branch, "", ""), "CARD")).isEqualByComparingTo("0");
+            assertThat(net(payments.summary(admin, branch, "", ""), "CASH")).isEqualByComparingTo("0");
+
+            jdbc.update("UPDATE catalog_items SET unit='kg',price=0.01 WHERE company_id=? AND id=?", company, item);
+            var fractionSale = sales.confirm(admin, new SaleService.SaleInput(id(), branch, null, null, null,
+                List.of(new SaleService.LineInput(item, new BigDecimal("1.5"), new BigDecimal("0.01"))),
+                List.of(pay("CASH", "0.02", null))));
+            jdbc.update("DELETE FROM sale_payments WHERE company_id=? AND sale_id=?", company, fractionSale.movement().id());
+            var fractional = new SaleReturnService.LineInput(item, new BigDecimal("0.5"), BigDecimal.ZERO);
+            var amounts = new java.util.ArrayList<BigDecimal>();
+            for (int i = 0; i < 3; i++) {
+                var result = returns.confirm(admin, fractionSale.movement().id(), new SaleReturnService.Confirmation(id(),
+                    "El cliente cambió de opinión", null, List.of(fractional), BigDecimal.ZERO, List.of()));
+                assertThat(result.refunds()).isEmpty();
+                amounts.add(result.amount());
+            }
+            assertThat(amounts).containsExactly(new BigDecimal("0.01"), new BigDecimal("0.00"), new BigDecimal("0.01"));
+        } finally {
+            for (String ownerCompany : List.of(company, foreign)) {
+                jdbc.update("DELETE FROM users WHERE company_id=?", ownerCompany);
+                jdbc.update("DELETE FROM company_roles WHERE company_id=?", ownerCompany);
+                jdbc.update("DELETE FROM companies WHERE id=?", ownerCompany);
+            }
+        }
+    }
+
+    private String returnResult(StocklyPrincipal actor, String saleId, SaleReturnService.Confirmation input) {
+        try { return returns.confirm(actor, saleId, input).folio(); }
+        catch (IdentityFailure failure) { return failure.code; }
     }
 
     private void company(String id, String name) {

@@ -40,6 +40,7 @@ test("restores a branch sale draft and retries with the same confirmation key", 
       expect(route.request().postDataJSON().refunds).toEqual([{ method: "CASH", amount: "154.31", reference: null }]);
       voided = true;
     }
+    if (path === "/api/sales/VTA-0001/returns") return route.fulfill({ json: { lines: [], returns: [] } });
     if (path.startsWith("/api/sales/VTA-0001")) return route.fulfill({ json: voided ? {
       ...document, movement: { ...document.movement, voidId: "void", voidReason: "Error en la venta", voidFolio: "ANU-0001" },
       refund: { date: "2026-11-08T01:10:00Z", actor: "Revisión", lines: [{ method: "CASH", amount: 154.31, reference: null }] },

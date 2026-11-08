@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Devoluciones · Stockly · STK-015</title>
+<style>
+:root{color-scheme:light;--ink:#18181b;--muted:#52525b;--edge:#e4e4e7;--orange:#f97316;--rust:#9a3412;--warm:#fff4ea;--paper:#fff;--back:#f7f6f4;--green:#166534;--red:#b91c1c;font:14px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:var(--back)}
+*{box-sizing:border-box}body{margin:0}button,select,input,textarea{font:inherit;color:inherit}button,select,input,textarea{min-height:44px;border:1px solid #d4d4d8;border-radius:8px;background:#fff;padding:8px 12px}button{font-weight:650;cursor:pointer}button:hover{background:#faf7f3}button:disabled{opacity:.55;cursor:default}.primary{background:var(--orange);border-color:var(--orange)}.primary:hover{background:#fb923c}.quiet{border-color:transparent;background:transparent;color:var(--rust)}:focus-visible{outline:2px solid var(--rust);outline-offset:3px}[hidden]{display:none!important}
+h1,h2,h3,p,dl,dd{margin:0}h1{font-size:clamp(25px,4cqi,34px);line-height:1.15;letter-spacing:-.035em}h2{font-size:18px;letter-spacing:-.015em}h3{font-size:14px}.muted,small{color:var(--muted)}small{font-size:12px}.money,.quantity,time{font-variant-numeric:tabular-nums}.money{white-space:nowrap}
+.preview{max-width:1440px;margin:auto;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.preview-title{font-weight:750}.preview-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.preview-controls button[aria-pressed=true]{border-color:#eaa875;background:var(--warm);color:var(--rust)}
+.frame{max-width:1440px;margin:0 auto 28px;container:stockly/inline-size;border:1px solid #ece3dc;border-radius:15px;background:#fffcf9;overflow:clip}.frame[data-size=mobile]{max-width:375px}
+.shell{min-height:630px;display:grid;grid-template-columns:195px minmax(0,1fr)}.sidebar{padding:23px 16px;border-right:1px solid #eee7e1;background:#fff}.brand{display:flex;align-items:center;gap:8px;font-size:25px;font-weight:800;letter-spacing:-.05em}.brand img{width:24px;height:24px}.brand em{font-style:normal;color:var(--orange)}.nav-label,.eyebrow{font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--rust)}.nav-label{color:#686168;margin:30px 0 9px}.nav-item{padding:10px 11px;border-radius:8px;color:var(--muted)}.nav-item.current{background:var(--warm);color:var(--rust);font-weight:700}
+.workspace{min-width:0}.topbar{padding:14px 24px;border-bottom:1px solid #eee7e1;background:#fff;display:flex;justify-content:space-between;gap:12px;align-items:center}.topbar .brand{display:none}.topbar > span{font-size:12px;color:var(--muted)}main{padding:clamp(16px,3cqi,36px);max-width:1160px;margin:auto}
+.hero{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;border:1px solid #f0d7c5;border-radius:12px;background:linear-gradient(115deg,#fff 25%,#fff2e6);padding:clamp(16px,3cqi,26px);margin:12px 0 16px}.hero .eyebrow{margin-bottom:6px}.hero .muted{margin-top:6px}.back{padding-inline:0}
+.panel{background:#fff;border:1px solid var(--edge);border-radius:12px;padding:16px}.panel+.panel{margin-top:12px}.panel-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}.panel-heading p{margin-top:3px}.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,300px);gap:14px;align-items:start}.side-summary{position:sticky;top:12px}.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.facts dt,.stats dt{font-size:12px;color:var(--muted)}.facts dd,.stats dd{font-weight:650;overflow-wrap:anywhere}.stats{display:grid;gap:8px}.stats div{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.stats .total{border-top:1px solid var(--edge);margin-top:4px;padding-top:10px}.stats .total dd{font-size:20px}
+.badge{display:inline-flex;align-items:center;align-self:start;width:fit-content;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:750;background:var(--warm);color:var(--rust)}.badge.done{background:#dcfce7;color:var(--green)}.badge.alert{background:#fef2f2;color:var(--red)}
+.action-row{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}.summary-actions button:last-child{flex:1}.return-lines{display:grid;gap:8px}.item{display:grid;grid-template-columns:minmax(130px,1.6fr) repeat(2,minmax(90px,1fr));gap:10px;align-items:start;border:1px solid var(--edge);border-radius:9px;padding:12px}.item-head{display:grid;gap:2px}.item-note{grid-column:1/-1;font-size:12px;color:var(--muted)}.item input{width:100%;font-variant-numeric:tabular-nums}label{display:grid;gap:5px;font-size:13px;font-weight:650;min-width:0}label select,label textarea,label input{width:100%;min-width:0;font-weight:500}textarea{resize:vertical}.fields{display:grid;gap:9px}.receipt-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--edge)}.receipt-row:first-child{border-top:0}.receipt-row small{display:block}.receipt-row strong{overflow-wrap:anywhere}.refund-line{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto;gap:8px;align-items:end}.refund-line+.refund-line{margin-top:8px}.refund-line button{min-width:44px}.callout{margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--warm);color:var(--rust)}.callout.ok{background:#edf9ef;color:var(--green)}.error{padding:9px 11px;border-radius:8px;background:#fef2f2;color:var(--red);margin:0 0 12px}.error:empty{display:none}.status-copy{margin-top:10px;font-size:13px;color:var(--muted)}.history-entry{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left}.history-entry+.history-entry{margin-top:8px}.line-summary{display:grid;gap:4px}.line-summary small{display:block}
+@container stockly (max-width:1000px){.shell{grid-template-columns:160px minmax(0,1fr)}.layout{grid-template-columns:minmax(0,1fr)}.side-summary{position:static}}
+@container stockly (max-width:680px){.shell{display:block;min-height:0}.sidebar{display:none}.topbar{padding:12px 14px}.topbar .brand{display:flex;font-size:21px}.topbar .brand img{width:19px;height:19px}.topbar strong{display:none}.facts{grid-template-columns:1fr 1fr}.item{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.item-head{grid-column:1/-1}.hero .primary{width:100%}.hero .action-row{width:100%;margin-top:0}.hero .action-row button{flex:1}.action-row.summary-actions{flex-wrap:wrap}.summary-actions button{flex:1}.receipt-row{align-items:start}.refund-line{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto}.item input,label select,label textarea{font-size:16px}}
+@media(max-width:480px){.frame{border-radius:0;margin-bottom:0}.preview{padding:10px 12px}.preview-controls button{font-size:12px;padding-inline:9px}}
+</style>
+</head>
+<body>
+<header class="preview">
+  <div><span class="preview-title">Mockup STK-015</span> <small>· Datos ficticios</small></div>
+  <div class="preview-controls">
+    <button type="button" data-size="desktop" aria-pressed="true">Escritorio</button>
+    <button type="button" data-size="mobile" aria-pressed="false">Celular</button>
+    <label>Escenario<select id="scenario">
+      <option value="accepted">Comprobante aceptado</option>
+      <option value="pending">Comprobante pendiente</option>
+      <option value="rejected">Comprobante rechazado</option>
+      <option value="unpaid">Sin cobro ni comprobante</option>
+    </select></label>
+  </div>
+</header>
+<div class="frame" id="frame" data-size="desktop">
+  <div class="shell">
+    <aside class="sidebar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div>
+      <p class="nav-label">Inventario</p><div class="nav-item">Existencias</div><div class="nav-item">Historial</div>
+      <p class="nav-label">Operación comercial</p><div class="nav-item current">Ventas</div><div class="nav-item">Cobros</div>
+    </aside>
+    <div class="workspace"><div class="topbar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div>
+      <strong>Mi empresa</strong><span>Sucursal Centro</span></div><main id="app"></main></div>
+  </div>
+</div>
+<script>
+const app = document.getElementById("app");
+const frame = document.getElementById("frame");
+const currency = new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC" });
+const number = new Intl.NumberFormat("es-CR", { maximumFractionDigits: 3 });
+const money = cents => currency.format(cents / 100);
+const esc = value => String(value).replace(/[&<>"']/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[character]));
+const reasons = ["Producto dañado", "Producto incorrecto", "El cliente cambió de opinión", "Otro"];
+const methods = ["Efectivo", "Tarjeta", "SINPE Móvil", "Transferencia"];
+const items = [
+  { name: "Guantes de trabajo", sku: "GUA-001", sold: 10, price: 350000, unit: "unidad", plural: "unidades", scale: 0 },
+  { name: "Clavos a granel", sku: "CLV-001", sold: 2.5, price: 120000, unit: "kg", plural: "kg", scale: 3 }
+];
+const qty = (value, item) => number.format(value) + " " + (value === 1 ? item.unit : item.plural);
+const rounded = value => Math.round(value * 1000) / 1000;
+const decimal = raw => /^\d+(?:[.,]\d+)?$/.test(raw.trim()) ? Number(raw.trim().replace(",", ".")) : NaN;
+const rawQty = value => String(value).replace(".", ",");
+let scenario = "accepted";
+let view = "sale";
+let records = [];
+let activeRecord;
+let draft;
+
+function reset() {
+  records = [{ folio: "DEV-0001", lines: [{index:0, returned:3, restocked:2, amount:1050000}],
+    reason: "Producto dañado", detail: "", payments: scenario === "unpaid" ? [] : [{method:"Tarjeta", amount:1050000}], date: "8 nov 2026, 10:12 a. m." }];
+  view = "sale";
+  draft = undefined;
+  render();
+}
+function go(next) {
+  view = next;
+  render();
+  app.querySelector("h1")?.focus();
+}
+const returned = index => records.reduce((sum, record) => sum + (record.lines.find(line => line.index === index)?.returned ?? 0), 0);
+const remaining = index => rounded(items[index].sold - returned(index));
+function fiscal() {
+  if (scenario === "accepted") return { label: "Nota de crédito en proceso", message: "Vinculada al comprobante electrónico original.", style: "" };
+  if (scenario === "pending") return { label: "Esperando comprobante original", message: "La nota se generará cuando Hacienda acepte el original.", style: "" };
+  if (scenario === "rejected") return { label: "Revisión fiscal requerida", message: "Hacienda rechazó el original. Motivo de ejemplo: identificación del receptor inválida.", style: "alert" };
+  return { label: "Sin comprobante electrónico", message: "", style: "" };
+}
+function badge(label, style = "") { return '<span class="badge ' + style + '">' + label + '</span>'; }
+function button(action, label, style = "") { return '<button type="button" class="' + style + '" data-action="' + action + '">' + label + '</button>'; }
+function header(title, subtitle, actions = "") {
+  return '<div class="hero"><div><p class="eyebrow">Ventas / Devoluciones</p><h1 tabindex="-1">' + title +
+    '</h1><p class="muted">' + subtitle + '</p></div>' + actions + '</div>';
+}
+function showSale() {
+  const complete = items.every((_, index) => remaining(index) === 0);
+  const status = complete ? "Devuelta por completo" : "Devuelta parcialmente";
+  const actions = complete ? "" : '<div class="action-row">' + button("all", "Devolver lo restante") + button("new", "Registrar devolución", "primary") + '</div>';
+  return header("Venta VTA-0042", "Venta original · Sucursal Centro", actions) +
+    '<section class="panel"><div class="panel-heading"><h2>Comprobante original</h2>' + badge(status, complete ? "done" : "") + '</div>' +
+    '<dl class="facts"><div><dt>Cliente</dt><dd>Público general</dd></div><div><dt>Fecha</dt><dd>8 nov 2026, 9:42 a. m.</dd></div><div><dt>Total de la venta</dt><dd class="money">' + money(3800000) + '</dd></div></dl></section>' +
+    '<section class="panel"><div class="panel-heading"><h2>Artículos y cantidades pendientes</h2></div>' +
+    items.map((item,index) => '<div class="receipt-row"><div><strong>' + item.name + '</strong><small>' + item.sku + ' · Vendido ' + qty(item.sold,item) + ' · Devuelto ' + qty(returned(index),item) +
+      '</small></div><div><strong>' + qty(remaining(index),item) + '</strong><small>Pendiente</small></div></div>').join("") +
+    '</section><section class="panel"><div class="panel-heading"><h2>Devoluciones</h2></div>' +
+    records.map((record,index) => '<button type="button" class="history-entry" data-record="' + index + '"><span>' + record.folio + '<small style="display:block">' + record.date +
+      '</small></span><span class="money">' + money(record.lines.reduce((sum,line)=>sum+line.amount,0)) + ' ›</span></button>').join("") + '</section>';
+}
+function newDraft(all) {
+  draft = { lines:items.map((_,index)=>({returned:all ? rawQty(remaining(index)) : "", restocked:"0"})),
+    reason:"", detail:"", payments:[{method:"Tarjeta", amount:""}], error:"" };
+  go("edit");
+}
+function draftLines() {
+  return draft.lines.flatMap((line,index) => {
+    const count = decimal(line.returned);
+    if (!(count > 0)) return [];
+    return [{ index, returned:count, restocked:decimal(line.restocked) || 0, amount:Math.round(count * items[index].price) }];
+  });
+}
+const draftTotal = () => draftLines().reduce((sum,line)=>sum+line.amount,0);
+function displayCounts(lines, key) {
+  const totals = {};
+  for (const line of lines) {
+    const unit = items[line.index].plural;
+    totals[unit] = rounded((totals[unit] ?? 0) + line[key]);
+  }
+  return Object.entries(totals).filter(([,value]) => value > 0).map(([unit,value])=>number.format(value)+" "+(unit === "unidades" && value === 1 ? "unidad" : unit)).join(" + ") || "0";
+}
+function summary(lines) {
+  const fiscalState = fiscal();
+  return '<section class="panel side-summary"><div class="panel-heading"><h2>Resumen</h2></div>' +
+    '<dl class="stats"><div><dt>Se devuelve</dt><dd id="count-out">' + displayCounts(lines,"returned") +
+    '</dd></div><div><dt>Vuelve a existencias</dt><dd id="count-in">' + displayCounts(lines,"restocked") +
+    '</dd></div><div class="total"><dt>' + (scenario === "unpaid" ? "Valor devuelto" : "Importe a reintegrar") +
+    '</dt><dd id="total" class="money">' + money(draftTotal()) + '</dd></div></dl>' +
+    '<p class="status-copy">Sucursal de reposición <strong>Centro</strong></p><p class="status-copy">' + badge(fiscalState.label,fiscalState.style) +
+    '</p><div class="action-row summary-actions">' + (view === "edit" ? button("sale","Cancelar") + button("review","Revisar devolución","primary") :
+      button("edit","Volver a editar") + button("confirm","Confirmar devolución","primary")) + '</div></section>';
+}
+function showEdit() {
+  return button("sale","← Volver a la venta","quiet back") + header("Registrar devolución","Venta VTA-0042 · Sucursal Centro") +
+    '<p id="form-error" class="error" role="alert">' + esc(draft.error) + '</p><div class="layout"><div>' +
+    '<section class="panel"><div class="panel-heading"><div><h2>Artículos de la venta</h2><p class="muted">Indica cuánto recibiste y cuánto está apto para vender.</p></div>' +
+    button("restock","Reponer todo") + '</div><div class="return-lines">' + items.map((item,index) =>
+      '<article class="item"><div class="item-head"><h3>' + item.name + '</h3><small>' + item.sku + ' · ' + money(item.price) +
+      ' por ' + item.unit + '</small><small>Pendiente ' + qty(remaining(index),item) + '</small></div>' +
+      '<label>Devuelve (' + item.unit + ')<input type="text" inputmode="' + (item.scale ? "decimal" : "numeric") + '" aria-label="Devuelve ' + item.name +
+      '" data-field="returned" data-index="' + index + '" value="' + esc(draft.lines[index].returned) + '" placeholder="0"' + (remaining(index) === 0 ? ' disabled' : '') + '></label>' +
+      '<label>Repone (' + item.unit + ')<input type="text" inputmode="' + (item.scale ? "decimal" : "numeric") + '" aria-label="Repone ' + item.name +
+      '" data-field="restocked" data-index="' + index + '" value="' + esc(draft.lines[index].restocked) + '"' + (remaining(index) === 0 ? ' disabled' : '') + '></label></article>').join("") +
+    '</div></section><section class="panel fields"><h2>Motivo de la devolución</h2><label>Motivo<select data-field="reason"><option value="">Selecciona un motivo</option>' +
+      reasons.map(reason => '<option' + (reason === draft.reason ? ' selected' : '') + '>' + reason + '</option>').join("") + '</select></label>' +
+    (draft.reason === "Otro" ? '<label>Detalle<textarea data-field="detail" rows="2" maxlength="150">' + esc(draft.detail) + '</textarea></label>' : '') +
+    '</section></div>' + summary(draftLines()) + '</div>';
+}
+function lineReview(lines) {
+  return lines.map(line => {
+    const item = items[line.index];
+    return '<div class="receipt-row"><div class="line-summary"><strong>' + item.name + '</strong><small>Devuelto ' + qty(line.returned,item) +
+      ' · Repone ' + qty(line.restocked,item) + ' · No apto ' + qty(rounded(line.returned - line.restocked),item) +
+      '</small></div><strong class="money">' + money(line.amount) + '</strong></div>';
+  }).join("");
+}
+function showReview() {
+  return button("edit","← Volver a editar","quiet back") + header("Revisar devolución","Venta VTA-0042 · Sucursal Centro") +
+    '<p id="form-error" class="error" role="alert">' + esc(draft.error) + '</p><div class="layout"><div><section class="panel"><div class="panel-heading"><h2>Artículos y reposición</h2></div>' +
+    lineReview(draftLines()) + '<p class="callout"><strong>Motivo</strong><br>' + esc(draft.reason + (draft.reason === "Otro" ? " · " + draft.detail : "")) + '</p></section>' +
+    '<section class="panel"><div class="panel-heading"><div><h2>Reintegro</h2><p class="muted">' +
+    (scenario === "unpaid" ? "Esta venta no tiene un cobro registrado." : "Medio original sugerido. Registra cómo devolviste el dinero.") +
+    '</p></div>' + (scenario === "unpaid" ? "" : button("add-payment","Añadir medio")) + '</div>' +
+    (scenario === "unpaid" ? "" : draft.payments.map((payment,index) => '<div class="refund-line"><label>Medio<select data-field="method" data-index="' + index + '">' +
+      methods.map(method => '<option' + (method === payment.method ? " selected" : "") + '>' + method + '</option>').join("") +
+      '</select></label><label>Monto (₡)<input type="text" inputmode="decimal" data-field="payment" data-index="' + index + '" value="' + esc(payment.amount) +
+      '"></label>' + (draft.payments.length > 1 ? '<button type="button" data-remove="' + index + '" aria-label="Quitar medio">×</button>' : '<span></span>') + '</div>').join("")) +
+    '</section></div>' + summary(draftLines()) + '</div>';
+}
+function showReceipt() {
+  const record = activeRecord;
+  const fiscalState = fiscal();
+  return button("sale","← Volver a la venta","quiet back") + header("Devolución " + record.folio,"Venta VTA-0042 · Sucursal Centro",badge("Confirmada","done")) +
+    '<section class="panel"><div class="panel-heading"><h2>Detalle de la devolución</h2></div><dl class="facts">' +
+    '<div><dt>Fecha</dt><dd>' + record.date + '</dd></div><div><dt>Responsable</dt><dd>Administración de empresa</dd></div>' +
+    '<div><dt>Motivo</dt><dd>' + esc(record.reason + (record.detail ? " · " + record.detail : "")) + '</dd></div></dl></section>' +
+    '<section class="panel"><div class="panel-heading"><h2>Artículos devueltos</h2></div>' + lineReview(record.lines) + '</section>' +
+    '<section class="panel"><div class="panel-heading"><h2>Reintegro y comprobante</h2>' + badge(fiscalState.label,fiscalState.style) + '</div>' +
+    (record.payments.length ? record.payments.map(payment=>'<div class="receipt-row"><span>' + payment.method + '</span><strong class="money">' + money(payment.amount) + '</strong></div>').join("") :
+      '<p class="muted">Sin reintegro registrado.</p>') + (fiscalState.message ? '<p class="status-copy">' + fiscalState.message + '</p>' : '') + '</section>';
+}
+function render() {
+  app.innerHTML = view === "sale" ? showSale() : view === "edit" ? showEdit() : view === "review" ? showReview() : showReceipt();
+}
+function error(message, input) {
+  draft.error = message;
+  document.getElementById("form-error").textContent = message;
+  input?.focus();
+}
+function review() {
+  for (const [index, line] of draft.lines.entries()) {
+    const item = items[index];
+    const count = line.returned.trim() ? decimal(line.returned) : 0;
+    const restocked = line.restocked.trim() ? decimal(line.restocked) : 0;
+    const permitted = value => Number.isFinite(value) && (item.scale ? rounded(value) === value : Number.isInteger(value));
+    if (!permitted(count) || count > remaining(index)) return error("Revisa la cantidad devuelta de " + item.name + ".",app.querySelector('[data-field="returned"][data-index="' + index + '"]'));
+    if (!permitted(restocked) || restocked > count) return error("La cantidad a reponer no puede superar lo devuelto de " + item.name + ".",app.querySelector('[data-field="restocked"][data-index="' + index + '"]'));
+  }
+  if (!draftLines().length) return error("Indica al menos una cantidad para devolver.",app.querySelector('[data-field="returned"]:not([disabled])'));
+  if (!draft.reason) return error("Selecciona el motivo de la devolución.",app.querySelector('[data-field="reason"]'));
+  if (draft.reason === "Otro" && !draft.detail.trim()) return error("Escribe el detalle del motivo.",app.querySelector('[data-field="detail"]'));
+  draft.error = "";
+  if (draft.payments.length === 1) draft.payments[0].amount = rawQty(draftTotal() / 100);
+  go("review");
+}
+function confirm() {
+  const payments = scenario === "unpaid" ? [] : draft.payments.map(payment => ({method:payment.method, amount:Math.round(decimal(payment.amount)*100)}));
+  if (scenario !== "unpaid" && (payments.some(payment=>!(payment.amount > 0)) || payments.reduce((sum,payment)=>sum+payment.amount,0)!==draftTotal()))
+    return error("Los medios de reintegro deben sumar " + money(draftTotal()) + ".", app.querySelector('[data-field="payment"]'));
+  activeRecord = { folio:"DEV-" + String(records.length + 1).padStart(4,"0"), lines:draftLines(),
+    reason:draft.reason, detail:draft.reason === "Otro" ? draft.detail : "", payments, date:"8 nov 2026, 11:20 a. m." };
+  records.push(activeRecord);
+  go("receipt");
+}
+app.addEventListener("input",event => {
+  const { field, index } = event.target.dataset;
+  if (field === "returned" || field === "restocked") {
+    draft.lines[index][field] = event.target.value;
+    const lines = draftLines();
+    document.getElementById("count-out").textContent = displayCounts(lines,"returned");
+    document.getElementById("count-in").textContent = displayCounts(lines,"restocked");
+    document.getElementById("total").textContent = money(draftTotal());
+  } else if (field === "detail") draft.detail = event.target.value;
+  else if (field === "payment") draft.payments[index].amount = event.target.value;
+});
+app.addEventListener("change",event => {
+  const { field, index } = event.target.dataset;
+  if (field === "method") draft.payments[index].method = event.target.value;
+  if (field === "reason") { draft.reason = event.target.value; draft.error = ""; render(); app.querySelector('[data-field="reason"]').focus(); }
+});
+app.addEventListener("click",event => {
+  const control = event.target.closest("button");
+  if (!control) return;
+  const { action, record, remove } = control.dataset;
+  if (record !== undefined) { activeRecord = records[Number(record)]; go("receipt"); return; }
+  if (remove !== undefined) { draft.payments.splice(Number(remove),1); render(); return; }
+  if (action === "new" || action === "all") newDraft(action === "all");
+  if (action === "sale" || action === "edit") go(action);
+  if (action === "review") review();
+  if (action === "confirm") confirm();
+  if (action === "restock") {
+    draft.lines.forEach(line => { line.restocked = decimal(line.returned) > 0 ? line.returned : "0"; });
+    render();
+    app.querySelector('[data-action="restock"]').focus();
+  }
+  if (action === "add-payment") { draft.payments.push({method:"Efectivo",amount:""}); render(); app.querySelector('[data-field="payment"][data-index="' + (draft.payments.length-1) + '"]').focus(); }
+});
+document.querySelectorAll(".preview button[data-size]").forEach(button => button.addEventListener("click",() => {
+  frame.dataset.size = button.dataset.size;
+  document.querySelectorAll(".preview button[data-size]").forEach(control=>control.setAttribute("aria-pressed",String(control===button)));
+}));
+document.getElementById("scenario").addEventListener("change",event => { scenario = event.target.value; reset(); });
+reset();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { request } from "../../lib/http";
 
-export type MovementKind = "RECEIPT" | "OUT" | "ADJUST" | "SALE" | "VOID";
+export type MovementKind = "RECEIPT" | "OUT" | "ADJUST" | "SALE" | "RETURN" | "VOID";
 export type HistoryRow = {
   movementId: string; kind: MovementKind; folio: string; date: string; actor: string; reason: string; reference: string | null;
   voidFolio: string | null; originalFolio: string | null; itemId: string; itemName: string; sku: string; unit: string;
@@ -32,7 +32,7 @@ export const historyApi = {
   movement: (id: string, signal?: AbortSignal) => request<MovementDocument>(base + "/movements/" + encodeURIComponent(id), { signal }),
 };
 
-export const kindLabels: Record<MovementKind, string> = { RECEIPT: "Entrada", OUT: "Salida", ADJUST: "Ajuste", SALE: "Venta", VOID: "Anulación" };
+export const kindLabels: Record<MovementKind, string> = { RECEIPT: "Entrada", OUT: "Salida", ADJUST: "Ajuste", SALE: "Venta", RETURN: "Devolución", VOID: "Anulación" };
 
 const dayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Costa_Rica" });
 /** Día de Costa Rica en formato AAAA-MM-DD. */
