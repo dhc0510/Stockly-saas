@@ -1,0 +1,23 @@
+.sales-page { min-width: 0; }
+.sales-page .receipt-panel { margin-bottom: 1rem; }
+.sales-page label { display: grid; gap: .35rem; }
+.sales-page input, .sales-page select, .sales-page textarea { width: 100%; min-width: 0; }
+.sales-filters, .sales-details { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
+.sales-details dd { margin: .2rem 0 0; }
+.sales-details dt, .sales-lines small { color: var(--muted, #596270); font-size: .875rem; }
+.sales-lines, .sales-list, .sales-results { padding: 0; list-style: none; }
+.sales-list a, .sales-lines li { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; padding: .75rem 0; border-bottom: 1px solid #e5e7eb; }
+.sales-list a { color: inherit; }
+.sales-lines li > div { flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
+.sales-lines li > label { flex: 0 1 8rem; }
+.sales-lines small { display: block; }
+.sales-results button { width: 100%; justify-content: start; text-align: left; margin-top: .3rem; }
+.sales-date { white-space: nowrap; }
+.sales-actions, .sales-total { display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.sales-total { margin-block: 1rem; }
+.sales-line-note { flex-basis: 100%; margin: 0; }
+.sales-page input[aria-invalid=true] { border-color: #b42318; }
+@media (max-width: 600px) {
+  .sales-list a { align-items: start; flex-direction: column; }
+  .sales-page .catalog-heading { flex-wrap: wrap; }
+}

@@ -17,8 +17,9 @@ public class ReceiptService {
     private static final String SCOPE = "(m.kind='RECEIPT' OR (m.kind='VOID' AND o.kind='RECEIPT'))";
     private final JdbcTemplate jdbc;
     private final InventoryLedger ledger;
+    private final InventoryScope scope;
 
-    ReceiptService(JdbcTemplate jdbc, InventoryLedger ledger) { this.jdbc = jdbc; this.ledger = ledger; }
+    ReceiptService(JdbcTemplate jdbc, InventoryLedger ledger, InventoryScope scope) { this.jdbc = jdbc; this.ledger = ledger; this.scope = scope; }
 
     @Transactional(readOnly = true)
     public Page list(StocklyPrincipal actor, String search, String status, int page) {
@@ -26,21 +27,27 @@ public class ReceiptService {
         if (!Set.of("", "confirmed", "voided").contains(status) || page < 0)
             throw RULES.invalid("Revisa el estado y la página.");
         String filter = RULES.term(search);
-        var entries = jdbc.query(MOVEMENTS + """
+        var entries = jdbc.query(MOVEMENTS + " AND " + InventoryScope.VISIBLE_MOVEMENT + """
             AND m.kind='RECEIPT'
             AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(m.reference,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')
             AND (?='' OR (?='voided' AND r.id IS NOT NULL) OR (?='confirmed' AND r.id IS NULL))
             ORDER BY m.created_at DESC,m.id DESC LIMIT ? OFFSET ?
-            """, (rs, row) -> summary(rs), company, filter, filter, status, status, status, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
+            """, (rs, row) -> summary(rs), company, InventoryScope.administrator(actor), actor.accountId(), filter, filter, status, status, status, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
         return new Page(entries.stream().limit(PAGE_SIZE).toList(), entries.size() > PAGE_SIZE);
     }
 
-    public List<Article> items(StocklyPrincipal actor, String search, boolean barcode) {
-        return ledger.items(company(actor), search, barcode, RULES);
+    public List<Article> items(StocklyPrincipal actor, String search, boolean barcode, String branchId) {
+        String company = company(actor);
+        return ledger.items(company, scope.location(actor, branchId), scope.isLegacy(company), search, barcode, RULES);
+    }
+
+    public InventoryScope.Choices branches(StocklyPrincipal actor) {
+        company(actor);
+        return scope.choices(actor);
     }
 
     @Transactional(readOnly = true)
-    public Document get(StocklyPrincipal actor, String id) { return receipt(company(actor), id); }
+    public Document get(StocklyPrincipal actor, String id) { return receipt(actor, id); }
 
     @Transactional
     public Document confirm(StocklyPrincipal actor, ReceiptInput input) {
@@ -56,22 +63,25 @@ public class ReceiptService {
         var quantities = validateLines(input.lines());
         String hash = InventoryLedger.hash(actor.accountId(), reason, reference == null ? "" : reference, quantities.toString());
         ledger.lockLocation(company);
+        if (input.branchId() != null) hash = InventoryLedger.hash(hash, input.branchId());
         var existing = ledger.registered(company, key, hash, RULES);
-        if (existing.isPresent()) return receipt(company, existing.get());
+        if (existing.isPresent()) return receipt(actor, existing.get());
+        String location = scope.location(actor, input.branchId());
 
         var lines = new ArrayList<Line>();
         for (var entry : quantities.entrySet()) {
+            scope.requireAssigned(company, location, entry.getKey());
             Article article = ledger.lockedArticle(company, entry.getKey(), RULES);
             BigDecimal quantity = entry.getValue();
             if (article.unit().equals("unidad") && quantity.scale() > 0)
                 throw RULES.invalid(article.name() + ": para unidad solo se aceptan números enteros.");
-            BigDecimal balance = ledger.balance(company, article.id()).add(quantity);
+            BigDecimal balance = ledger.balance(company, location, article.id()).add(quantity);
             if (balance.compareTo(MAX_BALANCE) > 0) throw RULES.conflict("La entrada excede la existencia máxima permitida.");
             lines.add(new Line(article.id(), article.name(), article.sku(), article.unit(), quantity, balance));
         }
         String id = UUID.randomUUID().toString();
-        ledger.record(actor, id, "RECEIPT", Series.RECEIPT, reason, reference, key, hash, lines);
-        return receipt(company, id);
+        ledger.record(actor, location, id, "RECEIPT", Series.RECEIPT, reason, reference, key, hash, lines);
+        return receipt(actor, id);
     }
 
     @Transactional
@@ -79,15 +89,15 @@ public class ReceiptService {
         String company = company(actor);
         String reason = RULES.required(input, 150, "Escribe el motivo de la anulación.");
         ledger.lockLocation(company);
-        Document original = receipt(company, id);
+        Document original = receipt(actor, id);
         if (!original.movement().kind().equals("RECEIPT")) throw RULES.invalid("Solo se puede anular una entrada.");
         if (original.movement().voidId() != null) throw RULES.conflict("Esta entrada ya fue anulada.");
         ledger.reverse(actor, id, original.lines(), reason, RULES);
-        return receipt(company, id);
+        return receipt(actor, id);
     }
 
-    private Document receipt(String company, String id) {
-        return ledger.document(company, id, SCOPE)
+    private Document receipt(StocklyPrincipal actor, String id) {
+        return ledger.document(company(actor), id, SCOPE + " AND " + InventoryScope.VISIBLE_MOVEMENT, InventoryScope.administrator(actor), actor.accountId())
             .orElseThrow(() -> new IdentityFailure(404, "RECEIPT_NOT_FOUND", "No se encontró el movimiento."));
     }
 
@@ -112,6 +122,6 @@ public class ReceiptService {
         return actor.companyId();
     }
 
-    public record ReceiptInput(String requestKey, String reason, String detail, String reference, List<LineInput> lines) {}
+    public record ReceiptInput(String requestKey, String branchId, String reason, String detail, String reference, List<LineInput> lines) {}
     public record LineInput(String itemId, BigDecimal quantity) {}
 }

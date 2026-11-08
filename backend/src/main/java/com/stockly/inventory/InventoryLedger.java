@@ -24,11 +24,12 @@ public class InventoryLedger {
     static final BigDecimal MAX_QUANTITY = new BigDecimal("1000000");
     static final BigDecimal MAX_BALANCE = new BigDecimal("999999999999999.999");
     static final String MOVEMENTS = """
-        SELECT m.id,m.kind,m.folio,COALESCE(actor.full_name,m.actor_name) AS actor_name,m.reason,m.reference,m.created_at,l.name AS location,
+        SELECT m.id,m.kind,m.folio,COALESCE(actor.full_name,m.actor_name) AS actor_name,m.reason,m.reference,m.created_at,COALESCE(branch.name,l.name) AS location,
                r.id AS void_id,r.folio AS void_folio,r.reason AS void_reason,
                o.id AS original_id,o.folio AS original_folio
         FROM inventory_movements m
         JOIN inventory_locations l ON l.company_id=m.company_id AND l.id=m.location_id
+        LEFT JOIN inventory_branches branch ON branch.company_id=l.company_id AND branch.location_id=l.id
         LEFT JOIN users actor ON actor.company_id=m.company_id AND actor.id=m.actor_id
         LEFT JOIN inventory_movements r ON r.company_id=m.company_id AND r.reversed_id=m.id
         LEFT JOIN inventory_movements o ON o.company_id=m.company_id AND o.id=m.reversed_id
@@ -37,7 +38,7 @@ public class InventoryLedger {
 
     enum Series {
         RECEIPT("receipt_sequence", "ENT-"), VOID("void_sequence", "ANU-"),
-        OUT("out_sequence", "SAL-"), ADJUST("adjust_sequence", "AJU-");
+        OUT("out_sequence", "SAL-"), ADJUST("adjust_sequence", "AJU-"), SALE("sale_sequence", "VTA-");
         final String column, prefix;
         Series(String column, String prefix) { this.column = column; this.prefix = prefix; }
     }
@@ -46,7 +47,7 @@ public class InventoryLedger {
 
     InventoryLedger(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    List<Article> items(String company, String search, boolean barcode, Rules rules) {
+    List<Article> items(String company, String location, boolean legacy, String search, boolean barcode, Rules rules) {
         String value = rules.optional(search, 160);
         if (value == null) return List.of();
         String filter = rules.term(value);
@@ -54,12 +55,16 @@ public class InventoryLedger {
             (p.name COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR i.variant_name COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!'
              OR i.sku COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR i.barcode COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')
             """;
-        Object[] params = barcode ? new Object[]{company, value} : new Object[]{company, filter, filter, filter, filter};
+        Object[] params = barcode ? new Object[]{location, company, legacy, location, value} : new Object[]{location, company, legacy, location, filter, filter, filter, filter};
         return jdbc.query("""
             SELECT i.id,i.sku,i.barcode,i.unit,p.name,i.variant_name,COALESCE(b.quantity,0) AS balance
             FROM catalog_items i JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id
-            LEFT JOIN inventory_balances b ON b.company_id=i.company_id AND b.item_id=i.id AND b.location_id='principal'
-            WHERE i.company_id=? AND i.active AND p.active AND
+            LEFT JOIN inventory_balances b ON b.company_id=i.company_id AND b.item_id=i.id AND b.location_id=?
+            WHERE i.company_id=? AND i.active AND p.active AND (? OR EXISTS (
+                SELECT 1 FROM inventory_branch_items bi JOIN inventory_branches br
+                  ON br.company_id=bi.company_id AND br.id=bi.branch_id
+                WHERE bi.company_id=i.company_id AND bi.item_id=i.id AND br.location_id=?
+            )) AND
             """ + condition + " ORDER BY p.name,i.variant_name,i.id LIMIT 12", (rs,row) -> article(rs), params);
     }
 
@@ -97,13 +102,13 @@ public class InventoryLedger {
             .orElseThrow(() -> rules.invalid("Un artículo ya no está activo o disponible en esta empresa."));
     }
 
-    BigDecimal balance(String company, String item) {
+    BigDecimal balance(String company, String location, String item) {
         return jdbc.queryForList("""
             SELECT quantity FROM inventory_balances WHERE company_id=? AND location_id=? AND item_id=? FOR UPDATE
-            """, BigDecimal.class, company, PRINCIPAL, item).stream().findFirst().orElse(BigDecimal.ZERO);
+            """, BigDecimal.class, company, location, item).stream().findFirst().orElse(BigDecimal.ZERO);
     }
 
-    void insertMovement(StocklyPrincipal actor, String id, String kind, String folio, String reason,
+    private void insertMovement(StocklyPrincipal actor, String location, String id, String kind, String folio, String reason,
                         String reference, String key, String hash, String reversedId) {
         String company = actor.companyId();
         String actorName = jdbc.queryForObject("SELECT full_name FROM users WHERE company_id=? AND id=?",
@@ -111,14 +116,14 @@ public class InventoryLedger {
         jdbc.update("""
             INSERT INTO inventory_movements(company_id,id,location_id,kind,folio,actor_id,actor_name,reason,reference,request_key,request_hash,reversed_id)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-            """, company, id, PRINCIPAL, kind, folio, actor.accountId(), actorName, reason, reference, key, hash, reversedId);
+            """, company, id, location, kind, folio, actor.accountId(), actorName, reason, reference, key, hash, reversedId);
     }
 
-    void writeLine(String company, String movement, Line line) {
+    private void writeLine(String company, String location, String movement, Line line) {
         jdbc.update("""
             INSERT INTO inventory_balances(company_id,location_id,item_id,quantity) VALUES (?,?,?,?) AS updated
             ON DUPLICATE KEY UPDATE quantity=updated.quantity
-            """, company, PRINCIPAL, line.itemId(), line.balanceAfter());
+            """, company, location, line.itemId(), line.balanceAfter());
         jdbc.update("""
             INSERT INTO inventory_movement_lines(company_id,movement_id,item_id,item_name,sku,unit,quantity,balance_after)
             VALUES (?,?,?,?,?,?,?,?)
@@ -128,10 +133,15 @@ public class InventoryLedger {
     /** Registra una operación confirmada: movimiento, líneas, saldos y primer movimiento de cada artículo. */
     void record(StocklyPrincipal actor, String id, String kind, Series series, String reason, String reference,
                 String key, String hash, List<Line> lines) {
+        record(actor, PRINCIPAL, id, kind, series, reason, reference, key, hash, lines);
+    }
+
+    void record(StocklyPrincipal actor, String location, String id, String kind, Series series, String reason,
+                String reference, String key, String hash, List<Line> lines) {
         String company = actor.companyId();
-        insertMovement(actor, id, kind, nextFolio(company, series), reason, reference, key, hash, null);
+        insertMovement(actor, location, id, kind, nextFolio(company, series), reason, reference, key, hash, null);
         for (Line line : lines) {
-            writeLine(company, id, line);
+            writeLine(company, location, id, line);
             jdbc.update("UPDATE catalog_items SET has_movements=TRUE WHERE company_id=? AND id=?", company, line.itemId());
         }
     }
@@ -139,21 +149,26 @@ public class InventoryLedger {
     /** Aplica el inverso de cada línea; si alguna quedaría negativa, rechaza toda la anulación. */
     void reverse(StocklyPrincipal actor, String originalId, List<Line> original, String reason, Rules rules) {
         String company = actor.companyId();
+        String location = jdbc.queryForObject("""
+            SELECT location_id FROM inventory_movements WHERE company_id=? AND id=?
+            """, String.class, company, originalId);
         var lines = new ArrayList<Line>();
         for (Line previous : original) {
-            BigDecimal after = balance(company, previous.itemId()).subtract(previous.quantity());
+            BigDecimal after = balance(company, location, previous.itemId()).subtract(previous.quantity());
             if (after.signum() < 0) throw rules.conflict("La anulación dejaría existencias negativas para " + previous.name() + ".");
             if (after.compareTo(MAX_BALANCE) > 0) throw rules.conflict("La anulación excede la existencia máxima permitida.");
             lines.add(new Line(previous.itemId(), previous.name(), previous.sku(), previous.unit(), previous.quantity().negate(), after));
         }
         String reversal = UUID.randomUUID().toString();
-        insertMovement(actor, reversal, "VOID", nextFolio(company, Series.VOID), reason, null, null, null, originalId);
-        for (Line line : lines) writeLine(company, reversal, line);
+        insertMovement(actor, location, reversal, "VOID", nextFolio(company, Series.VOID), reason, null, null, null, originalId);
+        for (Line line : lines) writeLine(company, location, reversal, line);
     }
 
     /** Lee un movimiento dentro del alcance indicado; scope es SQL fijo de cada módulo, nunca datos del usuario. */
-    Optional<Document> document(String company, String id, String scope) {
-        var movement = jdbc.query(MOVEMENTS + " AND m.id=? AND " + scope, (rs,row) -> summary(rs), company, id);
+    Optional<Document> document(String company, String id, String scope, Object... access) {
+        var parameters = new ArrayList<Object>(List.of(company, id));
+        parameters.addAll(Arrays.asList(access));
+        var movement = jdbc.query(MOVEMENTS + " AND m.id=? AND " + scope, (rs,row) -> summary(rs), parameters.toArray());
         if (movement.isEmpty()) return Optional.empty();
         List<Line> lines = jdbc.query("""
             SELECT item_id,item_name,sku,unit,quantity,balance_after FROM inventory_movement_lines

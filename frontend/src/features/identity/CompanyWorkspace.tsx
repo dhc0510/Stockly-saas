@@ -1,6 +1,7 @@
+import { SalesPage } from "../sales/SalesPage";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin } from "lucide-react";
+import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart } from "lucide-react";
 import { CatalogPage, catalogAccess } from "../catalog/CatalogPage";
 import { ReceiptsPage, receiptAccess } from "../receipts/ReceiptsPage";
 import { MovementsPage, movementAccess } from "../movements/MovementsPage";
@@ -29,7 +30,10 @@ export function CompanyWorkspace() {
   const movements=movementAccess(user);
   const canMovements=movements.read && import.meta.env.MODE !== "stk005-demo";
   const canHistory=historyAccess(user) && import.meta.env.MODE !== "stk005-demo";
-  const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":canInventory?"/inventory":canReceipts?"/inventory/receipts":canMovements?"/inventory/movements":canHistory?"/inventory/history":"/account";
+  const salesLevel = user.modules.find(module => module.moduleKey === "SALES")?.accessLevel;
+  const canSales = import.meta.env.MODE !== "stk005-demo" && import.meta.env.MODE !== "stk007-demo" &&
+    (user.role === "COMPANY_ADMIN" || !!salesLevel && salesLevel !== "NONE");
+  const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":canInventory?"/inventory":canReceipts?"/inventory/receipts":canMovements?"/inventory/movements":canHistory?"/inventory/history":canSales?"/sales":"/account";
   const closeMenu=()=>setMenuOpen(false);
   return <div className={`app-shell${import.meta.env.MODE === "stk005-demo" ? " stk005-demo-shell" : ""}`}>
     <aside className={`sidebar company-sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación de empresa"><Link className="brand" to="/" onClick={closeMenu}>Stockly<span className="brand-dot">.</span></Link><nav className="company-sidebar-links" aria-label="Secciones de empresa"><div className="nav-caption">MI EMPRESA</div>
@@ -44,6 +48,7 @@ export function CompanyWorkspace() {
       {canReceipts&&<NavLink className="identity-nav" to="/inventory/receipts" onClick={closeMenu}><PackagePlus size={18}/> Entradas de inventario</NavLink>}
       {canMovements&&<NavLink className="identity-nav" to="/inventory/movements" onClick={closeMenu}><PackageMinus size={18}/> Salidas y ajustes</NavLink>}
       {canHistory&&<NavLink className="identity-nav" to="/inventory/history" onClick={closeMenu}><History size={18}/> Historial</NavLink>}
+      {canSales && <><div className="nav-caption inventory-caption">OPERACIÓN COMERCIAL</div><NavLink className="identity-nav" to="/sales" onClick={closeMenu}><ShoppingCart size={18}/> Ventas</NavLink></>}
       </nav>
       <div className="sidebar-footer"><span className="avatar"><UserRound size={18}/></span><span><strong>{user.fullName}</strong><br/><small>{user.role === "COMPANY_ADMIN" ? "Administración de empresa" : user.email}</small></span></div>
     </aside>
@@ -60,6 +65,7 @@ export function CompanyWorkspace() {
         {canReceipts&&<Route path="/inventory/receipts/*" element={<ReceiptsPage user={user} access={receipts}/>}/>}
         {canMovements&&<Route path="/inventory/movements/*" element={<MovementsPage user={user} access={movements}/>}/>}
         {canHistory&&<Route path="/inventory/history/*" element={<HistoryPage/>}/>}
+        {canSales && <Route path="/sales/*" element={<SalesPage />} />}
         <Route path="/account" element={<AccountPage/>}/>
         <Route path="*" element={<Navigate to={defaultPath} replace/>}/>
       </Routes></main>

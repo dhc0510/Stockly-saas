@@ -24,8 +24,14 @@ public class StockMovementController {
 
     @GetMapping("/items")
     java.util.List<InventoryLedger.Article> items(@AuthenticationPrincipal StocklyPrincipal actor,
-                                                 @RequestParam String search, @RequestParam(defaultValue = "false") boolean barcode) {
-        return service.items(actor, search, barcode);
+                                                 @RequestParam String search, @RequestParam(defaultValue = "false") boolean barcode,
+                                                 @RequestParam(required = false) String branchId) {
+        return service.items(actor, search, barcode, branchId);
+    }
+
+    @GetMapping("/branches")
+    InventoryScope.Choices branches(@AuthenticationPrincipal StocklyPrincipal actor) {
+        return service.branches(actor);
     }
 
     @GetMapping("/{id}")

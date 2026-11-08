@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ventas · Stockly · STK-011</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f4f5;color:#18181b;font:15px/1.5 Inter,system-ui,sans-serif}button,input,select{font:inherit;color:inherit;min-height:44px;border:1px solid #a1a1aa;border-radius:8px;background:white;padding:8px 12px}button{cursor:pointer;font-weight:650}button:disabled{opacity:.55;cursor:default}button:hover:not(:disabled){background:#fff2e5}.primary,.primary:hover:not(:disabled){background:#f97316;border-color:#f97316}.danger,.danger:hover:not(:disabled){background:#b91c1c;color:white;border-color:#b91c1c}input,select{min-width:0;width:100%}label{display:grid;gap:4px;font-weight:650;min-width:0}:focus-visible{outline:2px solid #9a3412;outline-offset:2px}h1,h2,p{margin:0}h1{font-size:30px;line-height:1.15}h2{font-size:20px}.muted,small{color:#52525b}.shell{display:grid;grid-template-columns:216px minmax(0,1fr);max-width:1520px;margin:auto;min-height:100dvh;background:white}aside{padding:22px 14px;background:#fafafa;border-right:1px solid #e4e4e7}aside strong{font-size:22px;padding:0 8px}aside small{display:block;margin:32px 8px 8px}.nav{display:block;padding:10px;border-radius:8px;color:#9a3412;background:#fff2e5;font-weight:650}header{display:flex;justify-content:space-between;gap:8px;padding:14px 26px;border-bottom:1px solid #e4e4e7}main{max-width:1140px;margin:auto;padding:28px}.heading,.actions,.total,.panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.heading{margin-bottom:20px}.heading p{margin-top:4px}.eyebrow{color:#9a3412;font-size:12px;font-weight:700}.panel{border:1px solid #e4e4e7;border-radius:12px;padding:16px;margin-bottom:14px}.panel h2{margin-bottom:10px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.filters{grid-template-columns:2fr 1fr 1fr}.actions{justify-content:flex-end}.notice{padding:10px 12px;border-radius:8px;margin:10px 0;background:#fff7ed;color:#7c2d12}.error{background:#fef2f2;color:#991b1b}.success{background:#dcfce7;color:#166534}table{width:100%;border-collapse:collapse;text-align:left;margin-top:12px}th,td{border-top:1px solid #e4e4e7;padding:9px;overflow-wrap:anywhere}th{background:#f4f4f5;font-size:13px}td small{display:block}td input{max-width:110px}.money,time{white-space:nowrap;font-variant-numeric:tabular-nums}.badge{display:inline-block;width:max-content;padding:3px 8px;border-radius:7px;background:#dcfce7;color:#166534;font-size:13px}.badge.voided{background:#f4f4f5;color:#52525b}.row-link{border:0;color:#9a3412;padding:4px 0}.results{display:grid;gap:4px;margin-top:6px}.results button{text-align:left}.results small{display:block}.selected{padding:8px 0}.selected small{display:block}.add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}.total{padding:12px;border-radius:8px;background:#f4f4f5;margin-top:12px}.total strong{font-size:20px}.line-error{background:#fef2f2}.line-error small{color:#991b1b}.meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:8px 0}.meta dt{font-size:13px;color:#52525b}.meta dd{margin:0;font-weight:650;overflow-wrap:anywhere}.simulate{padding:12px;border:1px dashed #a1a1aa;border-radius:8px;margin-top:20px}.simulate summary{cursor:pointer;color:#52525b}.simulate .actions{justify-content:flex-start;margin-top:8px}.mobile-label{display:none}[hidden]{display:none!important}
+@media(max-width:760px){.shell{display:block}aside{display:none}header{padding:12px 16px}main{padding:16px}h1{font-size:23px}.heading{display:grid}.heading>button{justify-self:start}.panel{padding:12px}.grid,.filters{grid-template-columns:minmax(0,1fr)}.meta{grid-template-columns:repeat(2,minmax(0,1fr))}.meta .date{grid-column:1/-1}thead{display:none}table,tbody{display:block}tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 8px;padding:8px;border:1px solid #e4e4e7;border-radius:8px;margin:6px 0}td{border:0;padding:0}td:first-child{grid-column:1/-1}td.date{grid-column:1/-1}.mobile-label{display:block;color:#52525b;font-size:12px}input,select{font-size:16px}.actions>*{flex:1}.money{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="shell"><aside><strong>Stockly</strong><small>OPERACIÓN COMERCIAL</small><span class="nav">Ventas</span></aside>
+<div><header><strong>Mi empresa</strong><small>STK-011 · Datos simulados</small></header><main id="main"></main></div></div>
+<script>
+const main = document.querySelector('#main');
+const branches = [{id:'central', name:'Central'}, {id:'norte', name:'Sucursal Norte'}];
+const articles = [
+  {id:'CAF-250', name:'Café molido 250 g', unit:'unidad', cents:380000, stock:{central:18,norte:5}},
+  {id:'CAM-M-A', name:'Camiseta básica · M / Azul', unit:'unidad', cents:650000, stock:{central:7,norte:0}},
+  {id:'HAR-001', name:'Harina a granel', unit:'kg', cents:123450, stock:{central:12.5,norte:3.125}},
+  {id:'VAS-012', name:'Vaso térmico', unit:'unidad', cents:null, stock:{central:4,norte:2}}
+];
+const sales = [
+  {folio:'VTA-0002',branch:'central',customer:'María Rojas',date:'2026-11-07T16:14:00Z',actor:'Ana Mora',lines:[{id:'CAF-250',name:'Café molido 250 g',unit:'unidad',qty:2,cents:380000}],total:760000},
+  {folio:'VTA-0001',branch:'norte',customer:'',date:'2026-11-07T15:25:00Z',actor:'Ana Mora',lines:[{id:'HAR-001',name:'Harina a granel',unit:'kg',qty:0.125,cents:123450}],total:15431,void:{id:'MOV-001',reason:'Venta duplicada',date:'2026-11-07T15:31:00Z',actor:'Ana Mora'}}
+];
+const key = 'stockly-stk011-mockup:empresa-demo:ana';
+const fresh = () => ({branch:'',customer:'',lines:[]});
+function loadDraft(){
+  try { return {...fresh(), ...JSON.parse(localStorage.getItem(key) || '{}')}; }
+  catch { return fresh(); }
+}
+let draft = loadDraft(), selected = '', search = '', issues = [], notice = '', filters = {text:'',branch:'',status:''};
+let pendingSale;
+const get = id => document.getElementById(id);
+const article = id => articles.find(item => item.id === id);
+const branchName = id => branches.find(branch => branch.id === id)?.name || 'Elige una sucursal';
+const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const normalize = value => String(value).trim().toLocaleLowerCase('es-CR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const currency = new Intl.NumberFormat('es-CR',{style:'currency',currency:'CRC',minimumFractionDigits:2,maximumFractionDigits:2});
+const money = cents => cents == null ? 'Sin precio' : currency.format(cents / 100);
+const number = new Intl.NumberFormat('es-CR',{maximumFractionDigits:3});
+const quantity = (value, unit) => number.format(value)+' '+(unit==='unidad'&&value!==1?'unidades':unit);
+const date = value => new Intl.DateTimeFormat('es-CR',{timeZone:'America/Costa_Rica',dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
+const lineTotal = line => line.cents == null ? 0 : Math.round(Math.round(line.qty*1000)*line.cents/1000);
+const total = lines => lines.reduce((sum,line)=>sum+lineTotal(line),0);
+const status = sale => sale.void ? 'Anulada' : 'Confirmada';
+const badge = sale => '<span class="badge '+(sale.void?'voided':'')+'">'+status(sale)+'</span>';
+const mobile = label => '<span class="mobile-label">'+label+'</span>';
+const branchOptions = value => '<option value="">'+(value==='all'?'Todas':'Selecciona una sucursal')+'</option>'+branches.map(branch=>'<option value="'+branch.id+'">'+branch.name+'</option>').join('');
+function persist(){
+  try { localStorage.setItem(key,JSON.stringify(draft)); } catch {}
+}
+function clearDraft(){
+  draft=fresh();selected='';search='';issues=[];
+  try { localStorage.removeItem(key); } catch {}
+}
+function heading(name,description,action=''){
+  return '<div class="heading"><div><p class="eyebrow">Operación comercial / Ventas</p><h1>'+name+'</h1><p class="muted">'+description+'</p></div>'+action+'</div>';
+}
+function list(){
+  const active = draft.branch || draft.customer.trim() || draft.lines.length;
+  main.innerHTML=heading('Ventas','Consulta y registra ventas por sucursal.','<button class="primary" id="new">+ Nueva venta</button>')+
+    (active?'<section class="panel"><strong>Tienes una venta sin confirmar</strong><div class="actions"><button id="continue">Continuar</button><button id="discard">Descartar</button></div></section>':'')+
+    '<section class="panel"><div class="grid filters"><label>Buscar venta<input id="find" type="search" placeholder="Folio o cliente" value="'+esc(filters.text)+'"></label><label>Sucursal<select id="filter-branch">'+branchOptions('all')+'</select></label><label>Estado<select id="filter-status"><option value="">Todos</option><option>Confirmada</option><option>Anulada</option></select></label></div>'+
+    '<table><thead><tr><th>Folio</th><th>Sucursal y fecha</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead><tbody id="rows"></tbody></table><p id="empty" class="muted" hidden>Sin ventas con estos filtros.</p></section>';
+  get('filter-branch').value=filters.branch;get('filter-status').value=filters.status;
+  function filter(){
+    filters={text:get('find').value,branch:get('filter-branch').value,status:get('filter-status').value};
+    const matching=sales.filter(sale=>(!filters.branch||filters.branch===sale.branch)&&(!filters.status||filters.status===status(sale))&&
+      (!filters.text.trim()||[sale.folio,sale.customer].some(value=>normalize(value).includes(normalize(filters.text)))));
+    get('rows').innerHTML=matching.map(sale=>'<tr><td><button class="row-link" data-open="'+sale.folio+'">'+sale.folio+'</button></td><td class="date">'+branchName(sale.branch)+'<small><time>'+date(sale.date)+'</time></small></td><td>'+mobile('Cliente')+esc(sale.customer||'Público general')+'</td><td class="money">'+mobile('Total')+money(sale.total)+'</td><td>'+badge(sale)+'</td></tr>').join('');
+    get('empty').hidden=!!matching.length;
+    main.querySelectorAll('[data-open]').forEach(button=>button.onclick=()=>receipt(sales.find(sale=>sale.folio===button.dataset.open)));
+  }
+  get('new').onclick=edit;
+  if(active){get('continue').onclick=edit;get('discard').onclick=discard;}
+  get('find').oninput=filter;get('filter-branch').onchange=filter;get('filter-status').onchange=filter;filter();
+}
+function discard(){
+  main.innerHTML=heading('Descartar venta','Se borrará el borrador de este navegador.')+
+    '<div class="actions"><button id="back">Volver</button><button id="confirm-discard" class="danger">Descartar venta</button></div>';
+  get('back').onclick=edit;get('confirm-discard').onclick=()=>{clearDraft();list();};
+}
+function renderLines(lines, editable){
+  return '<table><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th>Importe</th>'+(editable?'<th>Acción</th>':'')+
+    '</tr></thead><tbody>'+lines.map(line=>{
+      const warnings=issues.filter(issue=>issue.id===line.id);
+      return '<tr '+(warnings.length?'class="line-error"':'')+'><td><strong>'+esc(line.name)+'</strong><small>'+line.id+'</small>'+
+        warnings.map(issue=>'<small>'+esc(issue.text)+'</small>').join('')+'</td><td>'+mobile('Cantidad')+
+        (editable?'<input aria-label="Cantidad '+line.id+'" data-qty="'+line.id+'" inputmode="decimal" value="'+String(line.qty).replace('.',',')+'"><small>'+line.unit+'</small>':quantity(line.qty,line.unit))+
+        '</td><td class="money">'+mobile('Precio unitario')+money(line.cents)+'</td><td class="money" data-amount="'+line.id+'">'+mobile('Importe')+(line.cents==null?'—':money(lineTotal(line)))+
+        '</td>'+(editable?'<td><button data-remove="'+line.id+'" aria-label="Quitar '+line.id+'">Quitar</button></td>':'')+'</tr>';
+    }).join('')+'</tbody></table>';
+}
+function parse(raw,unit){
+  if(!/^\d+(?:[.,]\d{1,3})?$/.test(String(raw).trim())) return NaN;
+  const qty=Number(String(raw).replace(',','.'));
+  return qty>0&&(unit!=='unidad'||Number.isInteger(qty))?qty:NaN;
+}
+function edit(){
+  main.innerHTML=heading('Nueva venta','Elige la sucursal y agrega los artículos de la venta.','<button id="back">Volver al listado</button>')+
+    '<section class="panel grid"><label>Sucursal<select id="branch">'+branchOptions('choose')+'</select></label><label>Nombre del cliente · Opcional<input id="customer" maxlength="120" placeholder="Público general" value="'+esc(draft.customer)+'"></label></section>'+
+    '<section class="panel"><h2>Artículos</h2><label>Buscar por nombre o SKU<input type="search" id="search" autocomplete="off" value="'+esc(search)+'" placeholder="Ej. Café o CAF-250"></label><div class="results" id="results"></div>'+
+    '<div class="selected" id="selected" hidden></div><div class="add" id="add-form" hidden><label>Cantidad<input id="qty" inputmode="decimal" value="1"></label><button id="add">Agregar línea</button></div>'+
+    '<p id="notice" class="notice error" role="alert" '+(notice?'':'hidden')+'>'+esc(notice)+'</p>'+
+    (draft.lines.length?renderLines(draft.lines,true):'<p class="muted">Todavía no agregaste artículos.</p>')+
+    '<div class="total"><span>Total estimado</span><strong id="estimate" class="money">'+money(total(draft.lines))+'</strong></div></section>'+
+    '<div class="actions"><button id="discard">Descartar</button><button id="review" class="primary" '+(draft.lines.length?'':'disabled')+'>Revisar venta</button></div>';
+  get('branch').value=draft.branch;
+  get('branch').onchange=()=>{draft.branch=get('branch').value;issues=[];notice='';persist();edit();};
+  get('customer').oninput=event=>{draft.customer=event.target.value;persist();};
+  get('back').onclick=list;get('discard').onclick=discard;get('review').onclick=()=>review(false);
+  function showNotice(text){notice=text;get('notice').textContent=text;get('notice').hidden=!text;}
+  function select(item){
+    selected=item.id;get('results').hidden=true;get('selected').hidden=false;get('add-form').hidden=false;
+    get('selected').innerHTML='<strong>'+item.name+'</strong><small>'+item.id+' · '+money(item.cents)+' · Disponible en '+branchName(draft.branch)+': '+quantity(item.stock[draft.branch]||0,item.unit)+'</small>';
+    get('qty').focus();
+  }
+  function results(){
+    const term=normalize(search);
+    const matches=term?articles.filter(item=>[item.id,item.name].some(value=>normalize(value).includes(term))):[];
+    get('results').hidden=!term;
+    get('results').innerHTML=matches.length?matches.map(item=>'<button data-item="'+item.id+'"><strong>'+item.name+'</strong><small>'+item.id+' · '+money(item.cents)+'</small></button>').join(''):'<p class="muted">Sin artículos con esa búsqueda.</p>';
+    get('results').querySelectorAll('[data-item]').forEach(button=>button.onclick=()=>select(article(button.dataset.item)));
+  }
+  get('search').oninput=event=>{search=event.target.value;selected='';get('selected').hidden=true;get('add-form').hidden=true;showNotice('');results();};
+  get('search').onkeydown=event=>{if(event.key==='Enter'){const match=get('results').querySelector('button');if(match){event.preventDefault();match.click();}}};
+  get('add').onclick=()=>{
+    const item=article(selected);
+    if(!draft.branch){showNotice('Selecciona la sucursal de la venta.');get('branch').focus();return;}
+    const qty=parse(get('qty').value,item.unit);
+    if(!Number.isFinite(qty)){showNotice(item.unit==='unidad'?'Para unidad solo se aceptan cantidades enteras y positivas.':'Ingresa una cantidad positiva de hasta tres decimales.');get('qty').focus();return;}
+    const existing=draft.lines.find(line=>line.id===item.id);
+    if(existing) existing.qty=Math.round((existing.qty+qty)*1000)/1000;
+    else draft.lines.push({id:item.id,name:item.name,unit:item.unit,qty,cents:item.cents});
+    selected='';search='';issues=[];notice='';persist();edit();get('search').focus();
+  };
+  main.querySelectorAll('[data-remove]').forEach(button=>button.onclick=()=>{draft.lines=draft.lines.filter(line=>line.id!==button.dataset.remove);issues=[];notice='';persist();edit();});
+  main.querySelectorAll('[data-qty]').forEach(input=>input.onchange=()=>{
+    const line=draft.lines.find(value=>value.id===input.dataset.qty);
+    const qty=parse(input.value,line.unit);
+    if(!Number.isFinite(qty)){input.value=String(line.qty).replace('.',',');showNotice(line.unit==='unidad'?'Para unidad solo se aceptan cantidades enteras y positivas.':'Ingresa una cantidad positiva de hasta tres decimales.');return;}
+    line.qty=qty;issues=[];showNotice('');persist();
+    input.closest('tr').classList.remove('line-error');
+    input.closest('tr').querySelector('[data-amount]').innerHTML=mobile('Importe')+(line.cents==null?'—':money(lineTotal(line)));
+    get('estimate').textContent=money(total(draft.lines));
+  });
+  if(selected) select(article(selected));else results();
+}
+function review(confirming, loseResponse=false){
+  if(!draft.branch){notice='Selecciona la sucursal de la venta.';edit();return;}
+  if(selected){notice='Agrega o limpia el artículo seleccionado antes de revisar.';edit();return;}
+  issues=[];
+  const changed=[];
+  for(const line of draft.lines){
+    const item=article(line.id);
+    const stock=item.stock[draft.branch];
+    if(line.qty>stock) issues.push({id:line.id,text:'Stock insuficiente. Disponible: '+quantity(stock,line.unit)+'.'});
+    if(item.cents==null) issues.push({id:line.id,text:'Configura el precio en el catálogo antes de confirmar.'});
+    if(item.cents!==line.cents && item.cents!=null){
+      changed.push(item.name+': '+money(line.cents)+' → '+money(item.cents));
+      line.cents=item.cents;
+    }
+  }
+  persist();
+  if(confirming && !issues.length && !changed.length){
+    if(loseResponse){pendingSale=register(false);retry();}else register();
+    return;
+  }
+  main.innerHTML=heading('Revisar venta','Verifica cantidades, precios y sucursal antes de confirmar.','<button id="edit">Volver a editar</button>')+
+    (issues.length?'<p class="notice error" role="alert">Corrige las líneas marcadas para poder confirmar.</p>':'')+
+    (changed.length?'<section class="notice" role="status"><strong>Cambió el precio del catálogo. Revisa el nuevo total antes de confirmar.</strong><ul>'+changed.map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul></section>':'')+
+    '<section class="panel"><h2>'+branchName(draft.branch)+'</h2><p class="muted">'+esc(draft.customer||'Público general')+'</p>'+renderLines(draft.lines,false)+
+    '<div class="total"><span>Total de la venta</span><strong class="money">'+money(total(draft.lines))+'</strong></div></section>'+
+    '<div class="actions"><button class="primary" id="confirm" '+(issues.length?'disabled':'')+'>Confirmar venta</button></div>'+
+    '<details class="simulate"><summary>Simular cambios durante la venta</summary><div class="actions"><button id="price-change">Cambiar precio</button><button id="stock-change">Reducir stock</button><button id="lost">Perder respuesta al confirmar</button></div></details>';
+  get('edit').onclick=()=>{notice='';edit();};get('confirm').onclick=()=>review(true);
+  get('price-change').onclick=()=>{const item=article(draft.lines[0].id);item.cents=(item.cents??100)+5000;review(true);};
+  get('stock-change').onclick=()=>{article(draft.lines[0].id).stock[draft.branch]=0;review(true);};
+  get('lost').disabled=!!issues.length;
+  get('lost').onclick=()=>review(true,true);
+}
+function register(show=true){
+  const sale={folio:'VTA-'+String(sales.length+1).padStart(4,'0'),branch:draft.branch,customer:draft.customer.trim(),date:new Date().toISOString(),actor:'Ana Mora',lines:draft.lines.map(line=>({...line})),total:total(draft.lines)};
+  sale.lines.forEach(line=>{const item=article(line.id);item.stock[sale.branch]=Math.round((item.stock[sale.branch]-line.qty)*1000)/1000;});
+  sales.unshift(sale);
+  if(show){clearDraft();receipt(sale,'Venta confirmada.');}
+  return sale;
+}
+function retry(){
+  main.innerHTML=heading('Confirmación pendiente','Se perdió la respuesta al confirmar. La venta queda disponible para volver a consultar.')+
+    '<p class="notice" role="status">Comprueba el resultado antes de volver a registrar la venta.</p><div class="actions"><button id="retry" class="primary">Reintentar confirmación</button></div>';
+  get('retry').onclick=()=>{const sale=pendingSale;pendingSale=undefined;clearDraft();receipt(sale,'Venta recuperada con el folio original.');};
+}
+function receipt(sale,message=''){
+  const detail=[['Sucursal',branchName(sale.branch)],['Fecha y hora','<time>'+date(sale.date)+'</time>'],['Responsable',esc(sale.actor)],['Cliente',esc(sale.customer||'Público general')]];
+  main.innerHTML=heading('Comprobante '+sale.folio,'Registro interno de la venta.','<button id="back">Volver al listado</button>')+
+    (message?'<p class="notice success" role="status">'+esc(message)+'</p>':'')+
+    '<section class="panel"><div class="panel-title"><h2>Detalle de la venta</h2>'+badge(sale)+'</div><dl class="meta">'+detail.map(([name,value])=>'<div '+(name==='Fecha y hora'?'class="date"':'')+'><dt>'+name+'</dt><dd>'+value+'</dd></div>').join('')+'</dl>'+
+    (sale.void?'<p class="notice"><strong>Motivo de anulación</strong><br>'+esc(sale.void.reason)+'</p><button id="inverse">Ver movimiento inverso '+sale.void.id+'</button>':'')+
+    renderLines(sale.lines,false)+'<div class="total"><span>Total registrado</span><strong class="money">'+money(sale.total)+'</strong></div></section>'+
+    (!sale.void?'<div class="actions"><button id="void">Anular venta</button></div>':'');
+  get('back').onclick=list;
+  if(sale.void){get('inverse').onclick=()=>inverse(sale);return;}
+  get('void').onclick=()=>voidSale(sale);
+}
+function voidSale(sale){
+  main.innerHTML=heading('Anular '+sale.folio,'Las cantidades volverán a '+branchName(sale.branch)+' y se conservará la venta original.')+
+    '<form id="void-form" class="panel"><label>Motivo obligatorio<input id="reason" maxlength="150" autocomplete="off"></label><p id="void-error" class="notice error" role="alert" hidden>Escribe el motivo de la anulación.</p><div class="actions" style="margin-top:12px"><button type="button" id="back">Volver</button><button class="danger">Confirmar anulación</button></div></form>';
+  get('back').onclick=()=>receipt(sale);get('reason').focus();
+  get('void-form').onsubmit=event=>{
+    event.preventDefault();const reason=get('reason').value.trim();
+    if(!reason){get('void-error').hidden=false;get('reason').focus();return;}
+    sale.lines.forEach(line=>{const item=article(line.id);item.stock[sale.branch]=Math.round((item.stock[sale.branch]+line.qty)*1000)/1000;});
+    sale.void={id:'MOV-'+String(sales.filter(value=>value.void).length+1).padStart(3,'0'),reason,date:new Date().toISOString(),actor:'Ana Mora'};
+    receipt(sale,'Venta anulada. Las cantidades volvieron a la sucursal.');
+  };
+}
+function inverse(sale){
+  main.innerHTML=heading('Movimiento inverso '+sale.void.id,'Venta vinculada '+sale.folio,'<button id="back">Volver al comprobante</button>')+
+    '<section class="panel"><h2>'+branchName(sale.branch)+'</h2><p><time>'+date(sale.void.date)+'</time> · '+esc(sale.void.actor)+'</p><p>'+esc(sale.void.reason)+'</p><ul>'+
+    sale.lines.map(line=>'<li>'+esc(line.name)+' · +'+quantity(line.qty,line.unit)+'</li>').join('')+'</ul></section>';
+  get('back').onclick=()=>receipt(sale);
+}
+list();
+</script>
+</body>
+</html>

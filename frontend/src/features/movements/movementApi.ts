@@ -9,7 +9,7 @@ export type Movement = {
   originalId: string | null; originalFolio: string | null;
 };
 export type MovementDocument = { movement: Movement; lines: Line[] };
-type Common = { requestKey: string; reason: string; detail: string; reference: string };
+type Common = { requestKey: string; branchId?: string; reason: string; detail: string; reference: string };
 export type OutflowInput = Common & { lines: { itemId: string; quantity: number }[] };
 export type AdjustmentInput = Common & { lines: { itemId: string; countedQuantity: number; expectedBalance: number }[] };
 
@@ -17,8 +17,8 @@ const base = "/api/inventory/movements";
 export const movementApi = {
   list: (search: string, type: string, status: string, page: number, signal: AbortSignal) =>
     request<{ entries: Movement[]; hasMore: boolean }>(base + "?" + new URLSearchParams({ search, type, status, page: String(page) }), { signal }),
-  items: (search: string, barcode: boolean, signal?: AbortSignal) =>
-    request<Article[]>(base + "/items?" + new URLSearchParams({ search, barcode: String(barcode) }), { signal }),
+  items: (search: string, barcode: boolean, signal?: AbortSignal, branchId?: string) =>
+    request<Article[]>(base + "/items?" + new URLSearchParams({ search, barcode: String(barcode), ...(branchId ? { branchId } : {}) }), { signal }),
   get: (id: string, signal?: AbortSignal) => request<MovementDocument>(base + "/" + encodeURIComponent(id), { signal }),
   outflow: (input: OutflowInput) => request<MovementDocument>(base + "/outflows", { method: "POST", body: JSON.stringify(input) }),
   adjustment: (input: AdjustmentInput) => request<MovementDocument>(base + "/adjustments", { method: "POST", body: JSON.stringify(input) }),

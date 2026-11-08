@@ -185,7 +185,7 @@ function ItemHistory({ id }: { id: string }) {
     <Heading title={summary?.item.name ?? "Historia del artículo"} text="Toda la historia de este artículo, de lo más reciente a lo más antiguo." back />
     {error && <p className="notice error" role="alert">{error} <button onClick={() => setVersion(value => value + 1)}>Reintentar</button></p>}
     {summary && <div className="catalog-panel receipt-panel"><dl className="receipt-metadata history-facts">
-      <div><dt>Saldo actual en Principal</dt><dd className="history-balance">{amount(summary.balance, summary.item.unit)}</dd></div>
+      <div><dt>Saldo actual en ubicaciones autorizadas</dt><dd className="history-balance">{amount(summary.balance, summary.item.unit)}</dd></div>
       <div><dt>SKU</dt><dd>{summary.item.sku}</dd></div>
       <div><dt>Unidad</dt><dd>{summary.item.unit}</dd></div>
       <div><dt>Estado en catálogo</dt><dd>{summary.item.active ? "Activo" : <span className="catalog-badge history-inactive">Inactivo</span>}</dd></div>

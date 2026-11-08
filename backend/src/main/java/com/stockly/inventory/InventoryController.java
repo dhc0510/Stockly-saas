@@ -17,6 +17,21 @@ public class InventoryController {
     private final InventoryService inventory;
     public InventoryController(InventoryService inventory) { this.inventory = inventory; }
 
+    @GetMapping("/location-setup")
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    InventoryService.LocationSetup locationSetup(Authentication auth) {
+        return inventory.locationSetup(principal(auth));
+    }
+
+    @PostMapping("/location-setup")
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    InventoryService.LocationSetup configureLocations(Authentication auth, @RequestBody LocationInput input) {
+        return inventory.configureLocations(principal(auth), input.branchId());
+    }
+
+    record LocationInput(String branchId) {}
+
+
     @GetMapping("/branches")
     @PreAuthorize("hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')")
     List<Branch> branches(Authentication auth,@RequestParam(defaultValue="false") boolean includeInactive) {

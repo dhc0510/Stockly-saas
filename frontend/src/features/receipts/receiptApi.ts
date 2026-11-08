@@ -8,14 +8,14 @@ export type Movement = {
   originalId: string | null; originalFolio: string | null;
 };
 export type Receipt = { movement: Movement; lines: Line[] };
-export type ReceiptInput = { requestKey: string; reason: string; detail: string; reference: string; lines: { itemId: string; quantity: number }[] };
+export type ReceiptInput = { requestKey: string; branchId?: string; reason: string; detail: string; reference: string; lines: { itemId: string; quantity: number }[] };
 
 const base = "/api/inventory/receipts";
 export const receiptApi = {
   list: (search: string, status: string, page: number, signal: AbortSignal) =>
     request<{ entries: Movement[]; hasMore: boolean }>(base + "?" + new URLSearchParams({ search, status, page: String(page) }), { signal }),
-  items: (search: string, barcode: boolean, signal?: AbortSignal) =>
-    request<Article[]>(base + "/items?" + new URLSearchParams({ search, barcode: String(barcode) }), { signal }),
+  items: (search: string, barcode: boolean, signal?: AbortSignal, branchId?: string) =>
+    request<Article[]>(base + "/items?" + new URLSearchParams({ search, barcode: String(barcode), ...(branchId ? { branchId } : {}) }), { signal }),
   get: (id: string, signal?: AbortSignal) => request<Receipt>(base + "/" + encodeURIComponent(id), { signal }),
   confirm: (input: ReceiptInput) => request<Receipt>(base, { method: "POST", body: JSON.stringify(input) }),
   reverse: (id: string, reason: string) =>

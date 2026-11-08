@@ -17,8 +17,9 @@ public class StockMovementService {
     private static final String SCOPE = "(m.kind IN ('OUT','ADJUST') OR (m.kind='VOID' AND o.kind IN ('OUT','ADJUST')))";
     private final JdbcTemplate jdbc;
     private final InventoryLedger ledger;
+    private final InventoryScope scope;
 
-    StockMovementService(JdbcTemplate jdbc, InventoryLedger ledger) { this.jdbc = jdbc; this.ledger = ledger; }
+    StockMovementService(JdbcTemplate jdbc, InventoryLedger ledger, InventoryScope scope) { this.jdbc = jdbc; this.ledger = ledger; this.scope = scope; }
 
     @Transactional(readOnly = true)
     public Page list(StocklyPrincipal actor, String search, String type, String status, int page) {
@@ -26,22 +27,28 @@ public class StockMovementService {
         if (!Set.of("", "OUT", "ADJUST").contains(type) || !Set.of("", "confirmed", "voided").contains(status) || page < 0)
             throw RULES.invalid("Revisa el tipo, el estado y la página.");
         String filter = RULES.term(search);
-        var entries = jdbc.query(MOVEMENTS + """
+        var entries = jdbc.query(MOVEMENTS + " AND " + InventoryScope.VISIBLE_MOVEMENT + """
             AND m.kind IN ('OUT','ADJUST')
             AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(m.reference,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')
             AND (?='' OR m.kind=?)
             AND (?='' OR (?='voided' AND r.id IS NOT NULL) OR (?='confirmed' AND r.id IS NULL))
             ORDER BY m.created_at DESC,m.id DESC LIMIT ? OFFSET ?
-            """, (rs, row) -> summary(rs), company, filter, filter, type, type, status, status, status, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
+            """, (rs, row) -> summary(rs), company, InventoryScope.administrator(actor), actor.accountId(), filter, filter, type, type, status, status, status, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
         return new Page(entries.stream().limit(PAGE_SIZE).toList(), entries.size() > PAGE_SIZE);
     }
 
-    public List<Article> items(StocklyPrincipal actor, String search, boolean barcode) {
-        return ledger.items(company(actor), search, barcode, RULES);
+    public List<Article> items(StocklyPrincipal actor, String search, boolean barcode, String branchId) {
+        String company = company(actor);
+        return ledger.items(company, scope.location(actor, branchId), scope.isLegacy(company), search, barcode, RULES);
+    }
+
+    public InventoryScope.Choices branches(StocklyPrincipal actor) {
+        company(actor);
+        return scope.choices(actor);
     }
 
     @Transactional(readOnly = true)
-    public Document get(StocklyPrincipal actor, String id) { return movement(company(actor), id); }
+    public Document get(StocklyPrincipal actor, String id) { return movement(actor, id); }
 
     @Transactional
     public Document outflow(StocklyPrincipal actor, OutflowInput input) {
@@ -67,15 +74,18 @@ public class StockMovementService {
         }
         String hash = InventoryLedger.hash("OUT", actor.accountId(), reason, reference == null ? "" : reference, quantities.toString());
         ledger.lockLocation(company);
+        if (input.branchId() != null) hash = InventoryLedger.hash(hash, input.branchId());
         var existing = ledger.registered(company, key, hash, RULES);
-        if (existing.isPresent()) return movement(company, existing.get());
+        if (existing.isPresent()) return movement(actor, existing.get());
+        String location = scope.location(actor, input.branchId());
 
         var result = new ArrayList<Line>();
         var fields = new LinkedHashMap<String,String>();
         var names = new ArrayList<String>();
         for (var entry : quantities.entrySet()) {
+            scope.requireAssigned(company, location, entry.getKey());
             Article article = checked(company, entry.getKey(), entry.getValue());
-            BigDecimal balance = ledger.balance(company, article.id());
+            BigDecimal balance = ledger.balance(company, location, article.id());
             BigDecimal after = balance.subtract(entry.getValue());
             if (after.signum() < 0) {
                 fields.put(article.id(), balance.toPlainString());
@@ -86,8 +96,8 @@ public class StockMovementService {
         if (!fields.isEmpty()) throw new IdentityFailure(409, "INSUFFICIENT_BALANCE",
             "No se registró la salida porque dejaría existencias negativas: " + String.join(", ", names) + ".", fields);
         String id = UUID.randomUUID().toString();
-        ledger.record(actor, id, "OUT", Series.OUT, reason, reference, key, hash, result);
-        return movement(company, id);
+        ledger.record(actor, location, id, "OUT", Series.OUT, reason, reference, key, hash, result);
+        return movement(actor, id);
     }
 
     @Transactional
@@ -115,22 +125,25 @@ public class StockMovementService {
         }
         String hash = InventoryLedger.hash("ADJUST", actor.accountId(), reason, reference == null ? "" : reference, counted.toString(), expected.toString());
         ledger.lockLocation(company);
+        if (input.branchId() != null) hash = InventoryLedger.hash(hash, input.branchId());
         var existing = ledger.registered(company, key, hash, RULES);
-        if (existing.isPresent()) return movement(company, existing.get());
+        if (existing.isPresent()) return movement(actor, existing.get());
+        String location = scope.location(actor, input.branchId());
 
         var result = new ArrayList<Line>();
         var fields = new LinkedHashMap<String,String>();
         for (var entry : counted.entrySet()) {
+            scope.requireAssigned(company, location, entry.getKey());
             Article article = checked(company, entry.getKey(), entry.getValue());
-            BigDecimal balance = ledger.balance(company, article.id());
+            BigDecimal balance = ledger.balance(company, location, article.id());
             if (balance.compareTo(expected.get(article.id())) != 0) fields.put(article.id(), balance.toPlainString());
             result.add(new Line(article.id(), article.name(), article.sku(), article.unit(), entry.getValue().subtract(balance), entry.getValue()));
         }
         if (!fields.isEmpty()) throw new IdentityFailure(409, "BALANCE_CHANGED",
             "El saldo cambió y no se aplicó el ajuste. Revisa la nueva diferencia y confirma otra vez.", fields);
         String id = UUID.randomUUID().toString();
-        ledger.record(actor, id, "ADJUST", Series.ADJUST, reason, reference, key, hash, result);
-        return movement(company, id);
+        ledger.record(actor, location, id, "ADJUST", Series.ADJUST, reason, reference, key, hash, result);
+        return movement(actor, id);
     }
 
     @Transactional
@@ -138,11 +151,11 @@ public class StockMovementService {
         String company = company(actor);
         String reason = RULES.required(input, 150, "Escribe el motivo de la anulación.");
         ledger.lockLocation(company);
-        Document original = movement(company, id);
+        Document original = movement(actor, id);
         if (original.movement().kind().equals("VOID")) throw RULES.invalid("Solo se puede anular una salida o un ajuste.");
         if (original.movement().voidId() != null) throw RULES.conflict("Este movimiento ya fue anulado.");
         ledger.reverse(actor, id, original.lines(), reason, RULES);
-        return movement(company, id);
+        return movement(actor, id);
     }
 
     private Article checked(String company, String id, BigDecimal quantity) {
@@ -152,8 +165,8 @@ public class StockMovementService {
         return article;
     }
 
-    private Document movement(String company, String id) {
-        return ledger.document(company, id, SCOPE)
+    private Document movement(StocklyPrincipal actor, String id) {
+        return ledger.document(company(actor), id, SCOPE + " AND " + InventoryScope.VISIBLE_MOVEMENT, InventoryScope.administrator(actor), actor.accountId())
             .orElseThrow(() -> new IdentityFailure(404, "MOVEMENT_NOT_FOUND", "No se encontró el movimiento."));
     }
 
@@ -174,8 +187,8 @@ public class StockMovementService {
         return actor.companyId();
     }
 
-    public record OutflowInput(String requestKey, String reason, String detail, String reference, List<OutflowLine> lines) {}
+    public record OutflowInput(String requestKey, String branchId, String reason, String detail, String reference, List<OutflowLine> lines) {}
     public record OutflowLine(String itemId, BigDecimal quantity) {}
-    public record AdjustmentInput(String requestKey, String reason, String detail, String reference, List<AdjustmentLine> lines) {}
+    public record AdjustmentInput(String requestKey, String branchId, String reason, String detail, String reference, List<AdjustmentLine> lines) {}
     public record AdjustmentLine(String itemId, BigDecimal countedQuantity, BigDecimal expectedBalance) {}
 }

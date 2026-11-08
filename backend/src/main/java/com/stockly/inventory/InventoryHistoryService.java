@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InventoryHistoryService {
     private static final Rules RULES = new Rules("HISTORY_INVALID", "HISTORY_CONFLICT");
     private static final ZoneId COSTA_RICA = ZoneId.of("America/Costa_Rica");
-    private static final Set<String> KINDS = Set.of("RECEIPT", "OUT", "ADJUST", "VOID");
+    private static final Set<String> KINDS = Set.of("RECEIPT", "OUT", "ADJUST", "SALE", "VOID");
     private static final String ROWS = """
         SELECT m.id,m.kind,m.folio,m.created_at,COALESCE(actor.full_name,m.actor_name) AS actor_name,m.reason,m.reference,
                r.folio AS void_folio,o.folio AS original_folio,
@@ -52,8 +52,8 @@ public class InventoryHistoryService {
         if (start != null && end != null && start.isAfter(end))
             throw RULES.invalid("La fecha inicial no puede ser posterior a la final.");
 
-        var sql = new StringBuilder(ROWS);
-        var params = new ArrayList<Object>(List.of(company));
+        var sql = new StringBuilder(ROWS).append(" AND ").append(InventoryScope.VISIBLE_MOVEMENT);
+        var params = new ArrayList<Object>(List.of(company, InventoryScope.administrator(actor), actor.accountId()));
         String term = RULES.optional(search, 160);
         if (term != null) {
             String filter = RULES.term(term);
@@ -101,8 +101,10 @@ public class InventoryHistoryService {
         return jdbc.query("""
             SELECT m.actor_id,MAX(COALESCE(u.full_name,m.actor_name)) AS actor_name
             FROM inventory_movements m LEFT JOIN users u ON u.company_id=m.company_id AND u.id=m.actor_id
-            WHERE m.company_id=? GROUP BY m.actor_id ORDER BY actor_name,m.actor_id
-            """, (rs, row) -> new ActorOption(rs.getString(1), rs.getString(2)), company(actor));
+            WHERE m.company_id=? AND
+            """ + InventoryScope.VISIBLE_MOVEMENT + """
+            GROUP BY m.actor_id ORDER BY actor_name,m.actor_id
+            """, (rs, row) -> new ActorOption(rs.getString(1), rs.getString(2)), company(actor), InventoryScope.administrator(actor), actor.accountId());
     }
 
     @Transactional(readOnly = true)
@@ -115,14 +117,17 @@ public class InventoryHistoryService {
             WHERE i.company_id=? AND i.id=?
             """, (rs, row) -> option(rs), company, item).stream().findFirst().orElseThrow(StockMissing::item);
         BigDecimal balance = jdbc.queryForList("""
-            SELECT quantity FROM inventory_balances WHERE company_id=? AND location_id=? AND item_id=?
-            """, BigDecimal.class, company, PRINCIPAL, item).stream().findFirst().orElse(BigDecimal.ZERO);
+            SELECT COALESCE(SUM(m.quantity),0) FROM inventory_balances m WHERE m.company_id=? AND m.item_id=? AND
+            """ + InventoryScope.VISIBLE_MOVEMENT + """
+
+            """, BigDecimal.class, company, item, InventoryScope.administrator(actor), actor.accountId()).stream().findFirst().orElse(BigDecimal.ZERO);
         return new ItemSummary(option, balance);
     }
 
     @Transactional(readOnly = true)
     public Document movement(StocklyPrincipal actor, String id) {
-        return ledger.document(company(actor), RULES.uuid(id, "Identificador de movimiento inválido."), "TRUE")
+        return ledger.document(company(actor), RULES.uuid(id, "Identificador de movimiento inválido."),
+            InventoryScope.VISIBLE_MOVEMENT, InventoryScope.administrator(actor), actor.accountId())
             .orElseThrow(StockMissing::movement);
     }
 
