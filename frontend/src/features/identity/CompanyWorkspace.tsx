@@ -1,7 +1,8 @@
 import { SalesPage } from "../sales/SalesPage";
+import { PaymentMethodsPage, PaymentSummaryPage } from "../sales/PaymentPages";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart } from "lucide-react";
+import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart, BarChart3, Wallet } from "lucide-react";
 import { CatalogPage, catalogAccess } from "../catalog/CatalogPage";
 import { ReceiptsPage, receiptAccess } from "../receipts/ReceiptsPage";
 import { MovementsPage, movementAccess } from "../movements/MovementsPage";
@@ -88,7 +89,7 @@ export function CompanyWorkspace() {
       {canReceipts&&<NavLink className="identity-nav" to="/inventory/receipts" onClick={closeMenu}><PackagePlus size={18}/> Entradas de inventario</NavLink>}
       {canMovements&&<NavLink className="identity-nav" to="/inventory/movements" onClick={closeMenu}><PackageMinus size={18}/> Salidas y ajustes</NavLink>}
       {canHistory&&<NavLink className="identity-nav" to="/inventory/history" onClick={closeMenu}><History size={18}/> Historial</NavLink>}
-      {canSales && <><div className="nav-caption inventory-caption">OPERACIÓN COMERCIAL</div><NavLink className="identity-nav" to="/sales" onClick={closeMenu}><ShoppingCart size={18}/> Ventas</NavLink></>}
+      {canSales && <><div className="nav-caption inventory-caption">OPERACIÓN COMERCIAL</div><NavLink className="identity-nav" to="/sales" onClick={closeMenu}><ShoppingCart size={18}/> Ventas</NavLink><NavLink className="identity-nav" to="/payments" end onClick={closeMenu}><BarChart3 size={18}/> Resumen de cobros</NavLink>{user.role === "COMPANY_ADMIN" && <NavLink className="identity-nav" to="/payments/methods" onClick={closeMenu}><Wallet size={18}/> Medios de pago</NavLink>}</>}
       </nav>
       <div className="sidebar-footer"><span className="avatar"><UserRound size={18}/></span><span><strong>{user.fullName}</strong><br/><small>{user.role === "COMPANY_ADMIN" ? "Administración de empresa" : user.email}</small></span></div>
     </aside>
@@ -106,6 +107,8 @@ export function CompanyWorkspace() {
         {canMovements&&<Route path="/inventory/movements/*" element={<MovementsPage user={user} access={movements}/>}/>}
         {canHistory&&<Route path="/inventory/history/*" element={<HistoryPage/>}/>}
         {canSales && <Route path="/sales/*" element={<SalesPage />} />}
+        {canSales && <Route path="/payments" element={<PaymentSummaryPage />} />}
+        {canSales && user.role === "COMPANY_ADMIN" && <Route path="/payments/methods" element={<PaymentMethodsPage />} />}
         <Route path="/account" element={<AccountPage/>}/>
         <Route path="*" element={<Navigate to={defaultPath} replace/>}/>
       </Routes></main>
@@ -180,7 +183,7 @@ function AuditPageView() {
   const date=(value:string)=>new Intl.DateTimeFormat("es-CR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"America/Costa_Rica"}).format(new Date(value));
   return <><div className="page-heading"><div><p className="eyebrow">SEGURIDAD DE LA EMPRESA</p><h1>Actividad</h1><p className="subtitle">Registro de cambios de usuarios, roles y sesiones.</p></div></div>
     <section className="panel list-panel audit-panel">
-      <label className="field audit-filter"><span>Filtrar por acción</span><select value={action} onChange={e=>{setAction(e.target.value);setPage(0);}}><option value="">Todas las acciones</option><option value="USER_CREATED">Trabajador creado</option><option value="USER_DEACTIVATED">Trabajador desactivado</option><option value="USER_ROLE_ASSIGNED">Rol de trabajador actualizado</option><option value="TEMP_PASSWORD_ISSUED">Contraseña temporal emitida</option><option value="ROLE_CREATED">Rol creado</option><option value="ROLE_UPDATED">Rol o permisos actualizados</option><option value="ROLE_DELETED">Rol eliminado</option><option value="SESSION_POLICY_UPDATED">Política de sesión actualizada</option></select></label>
+      <label className="field audit-filter"><span>Filtrar por acción</span><select value={action} onChange={e=>{setAction(e.target.value);setPage(0);}}><option value="">Todas las acciones</option><option value="USER_CREATED">Trabajador creado</option><option value="USER_DEACTIVATED">Trabajador desactivado</option><option value="USER_ROLE_ASSIGNED">Rol de trabajador actualizado</option><option value="TEMP_PASSWORD_ISSUED">Contraseña temporal emitida</option><option value="ROLE_CREATED">Rol creado</option><option value="ROLE_UPDATED">Rol o permisos actualizados</option><option value="ROLE_DELETED">Rol eliminado</option><option value="SESSION_POLICY_UPDATED">Política de sesión actualizada</option><option value="PAYMENT_METHODS_UPDATED">Medios de pago actualizados</option></select></label>
       <Failure error={error}/>{loading?<Busy/>:!data?.items.length?<div className="empty-state"><h2>Sin actividad para mostrar</h2><p>Los cambios de usuarios, roles y sesiones aparecerán aquí.</p></div>:<>
         <div className="identity-table-wrap audit-desktop"><table className="company-table audit-table"><thead><tr><th>Fecha y hora</th><th>Persona</th><th>Acción</th><th>Objetivo</th></tr></thead><tbody>{data.items.map(e=><tr key={e.id}><td>{date(e.occurredAt)}</td><td>{e.actorName||"Cuenta administradora"}</td><td>{e.actionLabel}</td><td>{e.targetLabel}</td></tr>)}</tbody></table></div>
         <div className="audit-mobile-list">{data.items.map(e=><article className="audit-card" key={e.id}><small>{date(e.occurredAt)}</small><strong>{e.actionLabel}</strong><span>{e.actorName||"Cuenta administradora"} · {e.targetLabel}</span></article>)}</div>

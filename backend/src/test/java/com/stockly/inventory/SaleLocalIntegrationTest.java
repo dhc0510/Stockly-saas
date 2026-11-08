@@ -122,7 +122,8 @@ class SaleLocalIntegrationTest {
             assertThat(sales.confirm(actor, input)).isEqualTo(sale);
             assertThat(balance(company, branch, item)).isEqualByComparingTo("1.125");
 
-            var reversed = sales.reverse(actor, sale.movement().id(), "Error al cobrar");
+            var reversed = sales.reverse(actor, sale.movement().id(), "Error al cobrar",
+                List.of(new SalePaymentService.RefundInput("CASH", new BigDecimal("154.31"), null)));
             assertThat(reversed.movement().voidReason()).isEqualTo("Error al cobrar");
             assertThat(balance(company, InventoryLedger.PRINCIPAL, item)).isEqualByComparingTo("10");
             assertThat(balance(company, branch, item)).isEqualByComparingTo("1.250");
@@ -148,7 +149,8 @@ class SaleLocalIntegrationTest {
     private String confirmLastUnit(StocklyPrincipal actor, String branch, String item) {
         var line = new SaleService.LineInput(item, BigDecimal.ONE, new BigDecimal("1500"));
         try {
-            return sales.confirm(actor, new SaleService.SaleInput(id(), branch, null, null, null, List.of(line))).movement().folio();
+            return sales.confirm(actor, new SaleService.SaleInput(id(), branch, null, null, null, List.of(line),
+                List.of(new SalePaymentService.PaymentInput("CASH", new BigDecimal("1500"), null)))).movement().folio();
         } catch (IdentityFailure failure) {
             return failure.code;
         }
@@ -157,7 +159,8 @@ class SaleLocalIntegrationTest {
 
     private static SaleService.SaleInput input(String key, String branch, String item, String price) {
         var line = new SaleService.LineInput(item, new BigDecimal("0.125"), new BigDecimal(price));
-        return new SaleService.SaleInput(key, branch, null, "+506 2222 2222", "ana@example.invalid", List.of(line));
+        return new SaleService.SaleInput(key, branch, null, "+506 2222 2222", "ana@example.invalid", List.of(line),
+            List.of(new SalePaymentService.PaymentInput("CASH", new BigDecimal("200"), null)));
     }
 
     private BigDecimal balance(String company, String branch, String item) {

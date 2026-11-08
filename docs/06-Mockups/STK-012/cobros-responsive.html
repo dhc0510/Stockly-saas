@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cobros y medios de pago · Stockly · STK-012</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f4f5;color:#18181b;font:15px/1.5 Inter,system-ui,sans-serif}button,input,select{font:inherit;color:inherit;min-height:44px;border:1px solid #a1a1aa;border-radius:8px;background:white;padding:8px 12px}button{cursor:pointer;font-weight:650}button:disabled{opacity:.55;cursor:default}button:hover:not(:disabled){background:#fff2e5}.primary,.primary:hover:not(:disabled){background:#f97316;border-color:#f97316}.danger,.danger:hover:not(:disabled){background:#b91c1c;color:white;border-color:#b91c1c}input,select{min-width:0;width:100%}label{display:grid;gap:4px;font-weight:650;min-width:0}:focus-visible{outline:2px solid #9a3412;outline-offset:2px}h1,h2,p{margin:0}h1{font-size:30px;line-height:1.15}h2{font-size:20px}.muted,small{color:#52525b}
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);max-width:1520px;margin:auto;min-height:100dvh;background:white}aside{padding:22px 14px;background:#fafafa;border-right:1px solid #e4e4e7}aside strong{font-size:22px;padding:0 8px}aside small{display:block;margin:32px 8px 8px}.nav{display:block;width:100%;text-align:left;border:0;background:none;padding:10px;border-radius:8px;color:#3f3f46;font-weight:600;min-height:40px;margin-bottom:2px}.nav[aria-current]{color:#9a3412;background:#fff2e5}.tabs{display:none}
+header{display:flex;justify-content:space-between;gap:8px;padding:14px 26px;border-bottom:1px solid #e4e4e7}main{max-width:1140px;margin:auto;padding:28px}.heading,.actions,.total,.panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.heading{margin-bottom:20px}.heading p{margin-top:4px}.eyebrow{color:#9a3412;font-size:12px;font-weight:700}.panel{border:1px solid #e4e4e7;border-radius:12px;padding:16px;margin-bottom:14px}.panel h2{margin-bottom:10px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.filters{grid-template-columns:2fr 1fr 1fr 1fr}.sum-filters{grid-template-columns:repeat(3,minmax(0,1fr))}.actions{justify-content:flex-end}
+.notice{padding:10px 12px;border-radius:8px;margin:10px 0;background:#fff7ed;color:#7c2d12}.error{background:#fef2f2;color:#991b1b}.success{background:#dcfce7;color:#166534}.info{background:#f4f4f5;color:#3f3f46}
+table{width:100%;border-collapse:collapse;text-align:left;margin-top:12px}th,td{border-top:1px solid #e4e4e7;padding:9px;overflow-wrap:anywhere}th{background:#f4f4f5;font-size:13px}td small{display:block}.money,time{white-space:nowrap;font-variant-numeric:tabular-nums}.num{text-align:right}
+.badge{display:inline-block;width:max-content;padding:3px 8px;border-radius:7px;background:#dcfce7;color:#166534;font-size:13px}.badge.voided{background:#f4f4f5;color:#52525b}.badge.none{background:#fff7ed;color:#7c2d12}.row-link{border:0;color:#9a3412;padding:4px 0;white-space:nowrap}[data-void]{white-space:nowrap}
+.total{padding:12px;border-radius:8px;background:#f4f4f5;margin-top:12px}.total strong{font-size:20px}.meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:8px 0}.meta dt{font-size:13px;color:#52525b}.meta dd{margin:0;font-weight:650;overflow-wrap:anywhere}
+.methods{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.methods button{flex:1 1 120px}.methods button[aria-pressed=true]{border-color:#f97316;background:#fff2e5;color:#9a3412}
+.pay-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:10px;align-items:end}.pay-form.cash{grid-template-columns:minmax(0,1fr) auto auto}
+.balance{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.balance div{padding:10px 12px;border-radius:8px;background:#f4f4f5}.balance dt{font-size:13px;color:#52525b}.balance dd{margin:0;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}.balance .due{background:#fff7ed}.balance .due dd{color:#9a3412}.balance .change{background:#dcfce7}.balance .change dd{color:#166534}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #e4e4e7}.toggle:first-of-type{border-top:0}.toggle input{width:22px;min-height:22px;height:22px;accent-color:#c2410c}.toggle span{display:grid}.toggle span small{font-weight:400}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:4px}.kpi{border:1px solid #e4e4e7;border-radius:10px;padding:12px}.kpi small{display:block}.kpi strong{font-size:20px;font-variant-numeric:tabular-nums}.kpi.all{background:#fff7ed;border-color:#fdba74}.kpi .detail{font-size:12px;margin-top:2px}.refund-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr) auto;gap:10px;align-items:end;padding:10px 0;border-top:1px solid #e4e4e7}.refund-row:first-child{border-top:0}.balance .due dd{color:#9a3412}
+.simulate{padding:12px;border:1px dashed #a1a1aa;border-radius:8px;margin-top:20px}.simulate summary{cursor:pointer;color:#52525b}.simulate .actions{justify-content:flex-start;margin-top:8px}.mobile-label{display:none}[hidden]{display:none!important}
+@media(max-width:760px){.shell{display:block}aside{display:none}.tabs{display:flex;gap:6px;overflow-x:auto;padding:8px 16px;border-bottom:1px solid #e4e4e7}.tabs .nav{width:auto;white-space:nowrap;margin:0}header{padding:12px 16px}main{padding:16px}h1{font-size:23px}.heading{display:grid}.heading>button{justify-self:start}.panel{padding:12px}.grid,.filters,.sum-filters{grid-template-columns:minmax(0,1fr)}.meta{grid-template-columns:repeat(2,minmax(0,1fr))}.meta .date{grid-column:1/-1}
+thead{display:none}table,tbody{display:block}tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 8px;padding:8px;border:1px solid #e4e4e7;border-radius:8px;margin:6px 0}td{border:0;padding:0}td:first-child{grid-column:1/-1}td.date,td.wide{grid-column:1/-1}.num{text-align:left}.mobile-label{display:block;color:#52525b;font-size:12px}input,select{font-size:16px}.actions>*{flex:1}.money{font-size:14px}
+.pay-form,.pay-form.cash,.refund-row{grid-template-columns:minmax(0,1fr)}.refund-row>span{display:none}.balance{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi.all{grid-column:1/-1}.methods button{flex:1 1 40%}}
+</style>
+</head>
+<body>
+<div class="shell"><aside><strong>Stockly</strong><small>OPERACIÓN COMERCIAL</small><nav id="side"></nav></aside>
+<div><header><strong>Mi empresa</strong><small>STK-012 · Datos simulados</small></header><nav class="tabs" id="tabs"></nav><main id="main"></main></div></div>
+<script>
+const main=document.querySelector('#main');
+const METHODS=[{id:'CASH',name:'Efectivo',hint:'Calcula el vuelto con el monto recibido.'},{id:'CARD',name:'Tarjeta',hint:'Cobrada en un datáfono externo. Stockly no guarda datos de la tarjeta.'},{id:'SINPE',name:'SINPE Móvil',hint:'Pago de celular a celular.'},{id:'TRANSFER',name:'Transferencia',hint:'Transferencia bancaria.'}];
+const active={CASH:true,CARD:true,SINPE:true,TRANSFER:false};
+const branches=[{id:'central',name:'Central'},{id:'norte',name:'Sucursal Norte'}];
+const sales=[
+ {folio:'VTA-0004',branch:'central',customer:'María Rojas',date:'2026-11-07T16:14:00Z',actor:'Ana Mora',lines:[{name:'Café molido 250 g',sku:'CAF-250',qty:'2 unidades',cents:380000}],total:760000,payments:[{method:'CASH',cents:500000,received:1000000},{method:'SINPE',cents:260000,ref:'94821733'}]},
+ {folio:'VTA-0003',branch:'norte',customer:'',date:'2026-11-07T15:02:00Z',actor:'Luis Vargas',lines:[{name:'Camiseta básica · M / Azul',sku:'CAM-M-A',qty:'1 unidad',cents:650000}],total:650000,payments:[{method:'CARD',cents:650000,ref:'AUT 551902'}]},
+ {folio:'VTA-0002',branch:'central',customer:'Jorge Solano',date:'2026-11-06T19:40:00Z',actor:'Ana Mora',lines:[{name:'Harina a granel',sku:'HAR-001',qty:'2 kg',cents:123450}],total:246900,payments:[{method:'CASH',cents:246900,received:250000}],void:{reason:'Cliente desistió de la compra',date:'2026-11-06T19:52:00Z',actor:'Ana Mora',refunds:[{method:'CASH',cents:246900,ref:''}]}},
+ {folio:'VTA-0001',branch:'norte',customer:'',date:'2026-11-06T15:25:00Z',actor:'Ana Mora',lines:[{name:'Harina a granel',sku:'HAR-001',qty:'0,125 kg',cents:123450}],total:15431,payments:null}
+];
+const draftLines=[{name:'Café molido 250 g',sku:'CAF-250',qty:'3 unidades',cents:380000,amount:1140000},{name:'Harina a granel',sku:'HAR-001',qty:'1,5 kg',cents:123450,amount:185175}];
+let view='sales',payments=[],method='',pending=false,filters={text:'',branch:'',status:'',payment:''},sum={branch:'',from:'2026-11-06',to:'2026-11-07'};
+const get=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normalize=v=>String(v).trim().toLocaleLowerCase('es-CR').normalize('NFD').replace(/[̀-ͯ]/g,'');
+const currency=new Intl.NumberFormat('es-CR',{style:'currency',currency:'CRC',minimumFractionDigits:2,maximumFractionDigits:2});
+const money=c=>currency.format(c/100);
+const date=v=>new Intl.DateTimeFormat('es-CR',{timeZone:'America/Costa_Rica',dateStyle:'medium',timeStyle:'short'}).format(new Date(v));
+const day=v=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Costa_Rica'}).format(new Date(v));
+const shortDay=d=>d.split('-').reverse().join('/');
+const methodName=id=>METHODS.find(m=>m.id===id).name;
+const branchName=id=>branches.find(b=>b.id===id)?.name||'';
+const mobile=l=>'<span class="mobile-label">'+l+'</span>';
+const saleTotal=draftLines.reduce((s,l)=>s+l.amount,0);
+function parseMoney(raw){const t=String(raw).trim().replace(/\s/g,'');if(!/^\d+(?:[.,]\d{1,2})?$/.test(t))return NaN;const c=Math.round(Number(t.replace(',','.'))*100);return c>0?c:NaN;}
+function status(s){return s.void?'Anulada':'Confirmada'}
+function payState(s){return !s.payments?'Sin cobro registrado':s.void?'Cobro anulado':'Cobrada'}
+function payBadge(s){const t=payState(s);return '<span class="badge '+(t==='Cobrada'?'':t==='Cobro anulado'?'voided':'none')+'">'+t+'</span>'}
+function heading(name,desc,action='',crumb='Ventas'){return '<div class="heading"><div><p class="eyebrow">Operación comercial / '+crumb+'</p><h1>'+name+'</h1><p class="muted">'+desc+'</p></div>'+action+'</div>'}
+function nav(){const items=[['sales','Ventas'],['summary','Resumen de cobros'],['methods','Medios de pago']];const html=items.map(([id,n])=>'<button class="nav" data-view="'+id+'" '+(view===id?'aria-current="page"':'')+'>'+n+'</button>').join('');get('side').innerHTML=html;get('tabs').innerHTML=html;document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render();});}
+function render(){nav();({sales:list,summary:summary,methods:config})[view]();}
+/* ---------- Listado ---------- */
+function list(){
+ main.innerHTML=heading('Ventas','Consulta y registra ventas por sucursal.','<button class="primary" id="new">+ Nueva venta</button>')+
+ '<section class="panel"><div class="grid filters"><label>Buscar venta<input id="find" type="search" placeholder="Folio o cliente" value="'+esc(filters.text)+'"></label><label>Sucursal<select id="f-branch"><option value="">Todas</option>'+branches.map(b=>'<option value="'+b.id+'">'+b.name+'</option>').join('')+'</select></label><label>Estado<select id="f-status"><option value="">Todos</option><option>Confirmada</option><option>Anulada</option></select></label><label>Cobro<select id="f-pay"><option value="">Todos</option><option>Cobrada</option><option>Cobro anulado</option><option>Sin cobro registrado</option></select></label></div>'+
+ '<table><thead><tr><th>Folio</th><th>Sucursal y fecha</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Cobro</th><th>Acción</th></tr></thead><tbody id="rows"></tbody></table><p id="empty" class="muted" hidden>Sin ventas con estos filtros.</p></section>';
+ get('f-branch').value=filters.branch;get('f-status').value=filters.status;get('f-pay').value=filters.payment;
+ function filter(){
+  filters={text:get('find').value,branch:get('f-branch').value,status:get('f-status').value,payment:get('f-pay').value};
+  const rows=sales.filter(s=>(!filters.branch||s.branch===filters.branch)&&(!filters.status||status(s)===filters.status)&&(!filters.payment||payState(s)===filters.payment)&&(!filters.text.trim()||[s.folio,s.customer].some(v=>normalize(v).includes(normalize(filters.text)))));
+  get('rows').innerHTML=rows.map(s=>'<tr><td><button class="row-link" data-open="'+s.folio+'">'+s.folio+'</button></td><td class="date">'+branchName(s.branch)+'<small><time>'+date(s.date)+'</time></small></td><td>'+mobile('Cliente')+esc(s.customer||'Público general')+'</td><td class="money">'+mobile('Total')+money(s.total)+'</td><td><span class="badge '+(s.void?'voided':'')+'">'+status(s)+'</span></td><td>'+payBadge(s)+'</td><td class="wide">'+(s.void?'<span class="muted">—</span>':'<button data-void="'+s.folio+'" aria-label="Anular venta '+s.folio+'">Anular venta</button>')+'</td></tr>').join('');
+  get('empty').hidden=!!rows.length;
+  main.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>receipt(sales.find(s=>s.folio===b.dataset.open)));
+  main.querySelectorAll('[data-void]').forEach(b=>b.onclick=()=>voidSale(sales.find(s=>s.folio===b.dataset.void),true));
+ }
+ get('new').onclick=()=>{payments=[];method='';pending=false;checkout();};
+ ['find','f-branch','f-status','f-pay'].forEach(id=>get(id)[id==='find'?'oninput':'onchange']=filter);filter();
+}
+/* ---------- Cobro al confirmar ---------- */
+function totals(){const paid=payments.reduce((s,p)=>s+p.cents,0);const cash=payments.filter(p=>p.method==='CASH').reduce((s,p)=>s+p.cents,0);const change=Math.max(0,paid-saleTotal);return {paid,cash,change,due:Math.max(0,saleTotal-paid)};}
+function checkout(message=''){
+ const enabled=METHODS.filter(m=>active[m.id]);const t=totals();
+ if(method&&!active[method])method='';
+ const m=METHODS.find(x=>x.id===method);
+ main.innerHTML=heading('Revisar y cobrar','Verifica la venta y registra cómo pagó el cliente.','<button id="back">Volver al listado</button>')+
+ (message?'<p class="notice error" role="alert" id="msg">'+esc(message)+'</p>':'<p class="notice error" role="alert" id="msg" hidden></p>')+
+ '<section class="panel"><div class="panel-title"><h2>Central</h2><small>Edición de artículos igual que en STK-011</small></div><p class="muted">Público general</p>'+
+ '<table><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th class="num">Importe</th></tr></thead><tbody>'+draftLines.map(l=>'<tr><td><strong>'+esc(l.name)+'</strong><small>'+l.sku+'</small></td><td>'+mobile('Cantidad')+l.qty+'</td><td class="money">'+mobile('Precio unitario')+money(l.cents)+'</td><td class="money num">'+mobile('Importe')+money(l.amount)+'</td></tr>').join('')+'</tbody></table>'+
+ '<div class="total"><span>Total de la venta</span><strong class="money">'+money(saleTotal)+'</strong></div></section>'+
+ '<section class="panel"><h2>Cobro</h2>'+
+ (enabled.length?'<div class="methods" role="group" aria-label="Medio de pago">'+enabled.map(x=>'<button type="button" data-method="'+x.id+'" aria-pressed="'+(method===x.id)+'">'+x.name+'</button>').join('')+'</div>':'<p class="notice error">No hay medios de pago activos. Un administrador debe activar al menos uno.</p>')+
+ (m?'<p class="muted" style="margin-bottom:8px">'+m.hint+'</p><form id="pay" class="pay-form '+(m.id==='CASH'?'cash':'')+'" novalidate><label>'+(m.id==='CASH'?'Monto recibido':'Monto')+'<input id="amount" inputmode="decimal" autocomplete="off" value="'+(t.due?String(t.due/100).replace('.',','):'')+'"></label>'+
+  (m.id==='CASH'?'':'<label>Referencia · Opcional<input id="ref" maxlength="60" autocomplete="off" placeholder="N.º de comprobante o autorización"></label>')+
+  (m.id==='CASH'?'<button type="button" id="exact">Monto exacto</button>':'')+'<button class="primary" id="add-pay">Agregar pago</button></form>':(enabled.length?'<p class="muted">Elige un medio de pago para registrar el monto.</p>':''))+
+ (payments.length?'<table><thead><tr><th>Medio</th><th>Detalle</th><th class="num">Monto aplicado</th><th>Acción</th></tr></thead><tbody>'+payments.map((p,i)=>'<tr><td><strong>'+methodName(p.method)+'</strong></td><td class="wide">'+mobile('Detalle')+(p.method==='CASH'?'Recibido '+money(p.cents):esc(p.ref||'Sin referencia'))+'</td><td class="money num">'+mobile('Monto')+money(p.cents)+'</td><td><button data-remove="'+i+'" aria-label="Quitar pago '+(i+1)+'">Quitar</button></td></tr>').join('')+'</tbody></table>':'')+
+ '<dl class="balance"><div><dt>Total</dt><dd class="money">'+money(saleTotal)+'</dd></div><div><dt>Pagado</dt><dd class="money">'+money(t.paid)+'</dd></div><div class="'+(t.due?'due':'')+'"><dt>Pendiente</dt><dd class="money">'+money(t.due)+'</dd></div><div class="'+(t.change?'change':'')+'"><dt>Vuelto</dt><dd class="money">'+money(t.change)+'</dd></div></dl></section>'+
+ '<div class="actions"><button class="primary" id="confirm" '+(t.due?'disabled':'')+'>Confirmar venta y cobro</button></div>'+
+ (t.due?'<p class="muted" style="text-align:right;margin-top:6px">Registra el pendiente para poder confirmar.</p>':'')+
+ '<details class="simulate"><summary>Simular casos</summary><div class="actions"><button id="sim-off">Desactivar Tarjeta mientras cobras</button><button id="sim-lost">Perder respuesta al confirmar</button></div></details>';
+ get('back').onclick=list;
+ main.querySelectorAll('[data-method]').forEach(b=>b.onclick=()=>{method=b.dataset.method;checkout();get('amount').focus();});
+ main.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{payments.splice(+b.dataset.remove,1);checkout();});
+ const fail=text=>{get('msg').textContent=text;get('msg').hidden=false;get('amount')?.focus();};
+ if(m){
+  if(get('exact'))get('exact').onclick=()=>{get('amount').value=String(t.due/100).replace('.',',');};
+  get('pay').onsubmit=e=>{e.preventDefault();
+   const cents=parseMoney(get('amount').value);
+   if(!Number.isFinite(cents))return fail('Ingresa un monto positivo de hasta dos decimales.');
+   if(!t.due)return fail('La venta ya está cubierta. Quita un pago para cambiarlo.');
+   if(m.id!=='CASH'&&cents>t.due)return fail(m.name+' no puede superar el pendiente de '+money(t.due)+'. Solo el efectivo da vuelto.');
+   payments.push({method:m.id,cents,ref:get('ref')?.value.trim()||''});method='';checkout();};
+ }
+ get('confirm').onclick=()=>confirmSale(false);
+ get('sim-off').onclick=()=>{active.CARD=false;checkoutConfirmError('CARD');};
+ get('sim-lost').onclick=()=>{if(totals().due)return fail('Primero registra el cobro completo.');confirmSale(true);};
+}
+function checkoutConfirmError(id){
+ if(payments.some(p=>p.method===id)){checkout('Tarjeta fue desactivada por un administrador. Quita ese pago y elige otro medio.');}
+ else checkout('Tarjeta fue desactivada por un administrador y ya no aparece como opción.');
+}
+function confirmSale(lost){
+ const bad=payments.find(p=>!active[p.method]);
+ if(bad)return checkout(methodName(bad.method)+' ya no está activo. Quita ese pago y elige otro medio.');
+ const t=totals();
+ const recorded=[];let change=t.change;
+ // El vuelto se descuenta del efectivo: el monto aplicado nunca supera el total.
+ payments.forEach(p=>{if(p.method==='CASH'){const applied=p.cents-Math.min(change,p.cents);change-=p.cents-applied;recorded.push({method:'CASH',cents:applied,received:p.cents});}else recorded.push({...p});});
+ const sale={folio:'VTA-'+String(sales.length+1).padStart(4,'0'),branch:'central',customer:'',date:new Date().toISOString(),actor:'Ana Mora',lines:draftLines.map(l=>({...l})),total:saleTotal,payments:recorded};
+ sales.unshift(sale);payments=[];
+ if(lost){main.innerHTML=heading('Confirmación pendiente','Se perdió la respuesta al confirmar.')+'<p class="notice" role="status">La venta y su cobro se comprueban juntos. Reintentar no registra un segundo cobro.</p><div class="actions"><button id="retry" class="primary">Reintentar confirmación</button></div>';get('retry').onclick=()=>receipt(sale,'Venta y cobro recuperados con el folio original.');return;}
+ receipt(sale,'Venta y cobro confirmados.');
+}
+/* ---------- Comprobante ---------- */
+function paymentBlock(s){
+ if(!s.payments)return '<section class="panel"><h2>Cobro</h2><p class="notice info">Sin cobro registrado. Esta venta se registró antes de habilitar Cobros.</p></section>';
+ const received=s.payments.reduce((a,p)=>a+(p.received||p.cents),0);const change=received-s.total;
+ return '<section class="panel"><div class="panel-title"><h2>Cobro</h2>'+payBadge(s)+'</div>'+
+ (s.void&&s.void.refunds?'<div class="notice"><strong>Devolución registrada</strong> · <time>'+date(s.void.date)+'</time> · '+esc(s.void.actor)+'<ul style="margin:4px 0 0;padding-left:18px">'+s.void.refunds.map(r=>'<li>'+methodName(r.method)+' '+money(r.cents)+(r.ref?' · Ref. '+esc(r.ref):'')+'</li>').join('')+'</ul></div>':'')+
+ '<table><thead><tr><th>Medio</th><th>Detalle</th><th class="num">Monto aplicado</th></tr></thead><tbody>'+s.payments.map(p=>'<tr><td><strong>'+methodName(p.method)+'</strong></td><td class="wide">'+mobile('Detalle')+(p.method==='CASH'?'Recibido '+money(p.received||p.cents):esc(p.ref||'Sin referencia'))+'</td><td class="money num">'+mobile('Monto aplicado')+money(p.cents)+'</td></tr>').join('')+'</tbody></table>'+
+ '<dl class="balance"><div><dt>Total</dt><dd class="money">'+money(s.total)+'</dd></div><div><dt>Recibido</dt><dd class="money">'+money(received)+'</dd></div><div class="'+(change?'change':'')+'"><dt>Vuelto</dt><dd class="money">'+money(change)+'</dd></div><div><dt>Pagos</dt><dd>'+s.payments.length+'</dd></div></dl></section>';
+}
+function receipt(s,message=''){
+ view='sales';nav();
+ const detail=[['Sucursal',branchName(s.branch)],['Fecha y hora','<time>'+date(s.date)+'</time>'],['Responsable',esc(s.actor)],['Cliente',esc(s.customer||'Público general')]];
+ main.innerHTML=heading('Comprobante '+s.folio,'Registro interno de la venta.','<button id="back">Volver al listado</button>')+
+ (message?'<p class="notice success" role="status">'+esc(message)+'</p>':'')+
+ '<section class="panel"><div class="panel-title"><h2>Detalle de la venta</h2><span class="badge '+(s.void?'voided':'')+'">'+status(s)+'</span></div><dl class="meta">'+detail.map(([n,v])=>'<div '+(n==='Fecha y hora'?'class="date"':'')+'><dt>'+n+'</dt><dd>'+v+'</dd></div>').join('')+'</dl>'+
+ (s.void?'<p class="notice"><strong>Motivo de anulación</strong><br>'+esc(s.void.reason)+'</p>':'')+
+ '<table><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th class="num">Importe</th></tr></thead><tbody>'+s.lines.map(l=>'<tr><td><strong>'+esc(l.name)+'</strong><small>'+l.sku+'</small></td><td>'+mobile('Cantidad')+l.qty+'</td><td class="money">'+mobile('Precio unitario')+money(l.cents)+'</td><td class="money num">'+mobile('Importe')+money(l.amount??s.total)+'</td></tr>').join('')+'</tbody></table>'+
+ '<div class="total"><span>Total registrado</span><strong class="money">'+money(s.total)+'</strong></div></section>'+paymentBlock(s)+
+ (!s.void?'<div class="actions"><button id="void">Anular venta</button></div>':'');
+ get('back').onclick=list;
+ if(!s.void)get('void').onclick=()=>voidSale(s);
+}
+function refundOptions(s){return METHODS.filter(m=>active[m.id]||s.payments.some(p=>p.method===m.id));}
+function voidSale(s,fromList=false){
+ const paid=s.payments?s.payments.reduce((a,p)=>a+p.cents,0):0;
+ let refunds=s.payments?s.payments.map(p=>({method:p.method,cents:p.cents,ref:''})):[];
+ const opts=s.payments?refundOptions(s):[];
+ function refundRows(){return refunds.map((r,i)=>'<div class="refund-row"><label>Medio<select data-r-method="'+i+'">'+opts.map(m=>'<option value="'+m.id+'" '+(m.id===r.method?'selected':'')+'>'+m.name+'</option>').join('')+'</select></label><label>Monto<input data-r-amount="'+i+'" inputmode="decimal" value="'+(Number.isFinite(r.cents)?String(r.cents/100).replace('.',','):'')+'"></label>'+(r.method==='CASH'?'<span></span>':'<label>Referencia · Opcional<input data-r-ref="'+i+'" maxlength="60" value="'+esc(r.ref)+'" placeholder="N.º de transacción"></label>')+'<button type="button" data-r-remove="'+i+'" '+(refunds.length===1?'disabled':'')+' aria-label="Quitar devolución '+(i+1)+'">Quitar</button></div>').join('');}
+ function refundSum(){return refunds.reduce((a,r)=>a+(Number.isFinite(r.cents)?r.cents:0),0);}
+ main.innerHTML=heading('Anular '+s.folio,'Las cantidades vuelven a '+branchName(s.branch)+'. '+(s.payments?'Los cobros quedan anulados y se registra cómo se devolvió el dinero.':'La venta no tiene cobro registrado, así que no hay dinero que devolver.'))+
+ '<form id="vf" novalidate><section class="panel"><label>Motivo de la anulación · Obligatorio<input id="reason" maxlength="150" autocomplete="off" required placeholder="Ej. Cliente desistió de la compra"></label></section>'+
+ (s.payments?'<section class="panel"><h2>Devolución del dinero</h2><p class="muted">Indica cómo le devolviste el dinero al cliente. Stockly no mueve dinero: solo deja constancia. Viene sugerido con los mismos medios del cobro.</p>'+
+  '<p class="muted" style="margin-top:6px">Cobrado: '+s.payments.map(p=>methodName(p.method)+' '+money(p.cents)).join(' · ')+'</p><div id="refunds"></div>'+
+  '<button type="button" id="add-refund" style="margin-top:8px">+ Agregar otro medio</button>'+
+  '<dl class="balance"><div><dt>Cobrado</dt><dd class="money">'+money(paid)+'</dd></div><div><dt>A devolver</dt><dd class="money" id="r-sum"></dd></div><div id="r-diff-box"><dt>Diferencia</dt><dd class="money" id="r-diff"></dd></div></dl></section>':'')+
+ '<p id="ve" class="notice error" role="alert" hidden></p><div class="actions"><button type="button" id="back">Volver</button><button class="danger" id="do-void" disabled>Confirmar anulación</button></div></form>';
+ const state=()=>{
+  const reason=get('reason').value.trim();
+  let problem='';
+  if(s.payments){
+   if(refunds.some(r=>!Number.isFinite(r.cents)))problem='Revisa los montos: deben ser positivos y con hasta dos decimales.';
+   else if(refundSum()!==paid)problem='La devolución debe sumar exactamente lo cobrado ('+money(paid)+').';
+   const diff=paid-refundSum();get('r-sum').textContent=money(refundSum());get('r-diff').textContent=money(Math.abs(diff));get('r-diff-box').className=diff?'due':'';
+  }
+  get('do-void').disabled=!reason||!!problem;
+  return {reason,problem};
+ };
+ function draw(){if(!s.payments)return;get('refunds').innerHTML=refundRows();
+  main.querySelectorAll('[data-r-method]').forEach(x=>x.onchange=()=>{refunds[+x.dataset.rMethod].method=x.value;draw();});
+  main.querySelectorAll('[data-r-amount]').forEach(x=>x.oninput=()=>{refunds[+x.dataset.rAmount].cents=parseMoney(x.value);state();});
+  main.querySelectorAll('[data-r-ref]').forEach(x=>x.oninput=()=>{refunds[+x.dataset.rRef].ref=x.value;});
+  main.querySelectorAll('[data-r-remove]').forEach(x=>x.onclick=()=>{refunds.splice(+x.dataset.rRemove,1);draw();});
+  state();}
+ draw();
+ if(s.payments)get('add-refund').onclick=()=>{const left=paid-refundSum();refunds.push({method:opts[0].id,cents:left>0?left:NaN,ref:''});draw();};
+ get('back').onclick=()=>fromList?list():receipt(s);get('reason').focus();
+ get('reason').oninput=()=>{state();get('ve').hidden=true;};
+ get('vf').onsubmit=e=>{e.preventDefault();const {reason,problem}=state();
+  if(!reason||problem){get('ve').textContent=!reason?'Escribe el motivo de la anulación.':problem;get('ve').hidden=false;return;}
+  s.void={reason,date:new Date().toISOString(),actor:'Ana Mora',refunds:s.payments?refunds.map(r=>({...r,ref:r.method==='CASH'?'':r.ref.trim()})):null};
+  const msg=s.folio+' anulada. Motivo: '+reason+(s.payments?'. Devolución registrada: '+s.void.refunds.map(r=>methodName(r.method)+' '+money(r.cents)).join(' · ')+'.':'.');
+  fromList?(list(),main.insertAdjacentHTML('afterbegin','<p class="notice success" role="status">'+esc(msg)+'</p>')):receipt(s,msg);};
+}
+/* ---------- Medios de pago ---------- */
+function config(message='',error=false){
+ main.innerHTML=heading('Medios de pago','Elige qué medios ofrece tu empresa al cobrar. Solo administradores.','','Configuración')+
+ (message?'<p class="notice '+(error?'error':'success')+'" role="'+(error?'alert':'status')+'">'+esc(message)+'</p>':'')+
+ '<section class="panel">'+METHODS.map(m=>'<label class="toggle"><span>'+m.name+'<small>'+m.hint+'</small></span><input type="checkbox" data-toggle="'+m.id+'" '+(active[m.id]?'checked':'')+'></label>').join('')+'</section>'+
+ '<p class="muted">Desactivar un medio no cambia los cobros ya registrados. Se aplica a las ventas que se confirmen después.</p>';
+ main.querySelectorAll('[data-toggle]').forEach(c=>c.onchange=()=>{
+  const id=c.dataset.toggle;
+  if(!c.checked&&METHODS.filter(m=>active[m.id]).length===1){c.checked=true;return config('Debe quedar al menos un medio de pago activo.',true);}
+  active[id]=c.checked;config(methodName(id)+(c.checked?' activado.':' desactivado.'));
+ });
+}
+/* ---------- Resumen ---------- */
+function summary(error=''){
+ main.innerHTML=heading('Resumen de cobros','Cobrado, devuelto y neto por medio de pago y por día. No incluye apertura ni cierre de caja.','','Resumen de cobros')+
+ '<section class="panel"><div class="grid sum-filters"><label>Sucursal<select id="s-branch"><option value="">Todas</option>'+branches.map(b=>'<option value="'+b.id+'">'+b.name+'</option>').join('')+'</select></label><label>Desde<input type="date" id="s-from" value="'+sum.from+'"></label><label>Hasta<input type="date" id="s-to" value="'+sum.to+'"></label></div><p id="s-err" class="notice error" role="alert" '+(error?'':'hidden')+'>'+esc(error)+'</p></section><div id="s-body"></div>';
+ get('s-branch').value=sum.branch;
+ const apply=()=>{sum={branch:get('s-branch').value,from:get('s-from').value,to:get('s-to').value};
+  if(!sum.from||!sum.to)return summary('Elige las dos fechas del período.');
+  if(sum.from>sum.to)return summary('La fecha inicial no puede ser posterior a la final.');
+  summary();};
+ ['s-branch','s-from','s-to'].forEach(id=>get(id).onchange=apply);
+ if(error)return;
+ const inBranch=x=>!sum.branch||x.branch===sum.branch,inDay=d=>d>=sum.from&&d<=sum.to;
+ const got={},back={},days={};let count=0,refundCount=0;
+ const add=(d,m,c)=>{days[d]=days[d]||{};days[d][m]=(days[d][m]||0)+c;};
+ sales.filter(x=>x.payments&&inBranch(x)).forEach(x=>{
+  if(inDay(day(x.date))){count++;x.payments.forEach(p=>{got[p.method]=(got[p.method]||0)+p.cents;add(day(x.date),p.method,p.cents);});}
+  if(x.void&&x.void.refunds&&inDay(day(x.void.date))){refundCount++;x.void.refunds.forEach(r=>{back[r.method]=(back[r.method]||0)+r.cents;add(day(x.void.date),r.method,-r.cents);});}
+ });
+ const net=m=>(got[m]||0)-(back[m]||0);const total=o=>Object.values(o).reduce((a,b)=>a+b,0);
+ if(!count&&!refundCount){get('s-body').innerHTML='<section class="panel"><p class="muted">Sin cobros ni devoluciones en este período.</p></section>';return;}
+ get('s-body').innerHTML='<section class="panel"><h2>Totales del período</h2><div class="kpis">'+METHODS.map(m=>'<div class="kpi"><small>'+m.name+' · Neto</small><strong>'+money(net(m.id))+'</strong>'+(back[m.id]?'<small class="detail">Cobrado '+money(got[m.id]||0)+' · Devuelto '+money(back[m.id])+'</small>':'')+'</div>').join('')+'<div class="kpi all"><small>Total neto</small><strong>'+money(total(got)-total(back))+'</strong><small class="detail">Cobrado '+money(total(got))+' · Devuelto '+money(total(back))+'</small></div></div>'+
+ '<p class="muted" style="margin-top:10px">'+count+' ventas cobradas y '+refundCount+' devoluciones por anulación. El cobro cuenta el día de la venta y la devolución el día en que se anuló. El efectivo cuenta el monto aplicado, sin el vuelto.</p></section>'+
+ '<section class="panel"><h2>Por día · Neto</h2><table><thead><tr><th>Día</th>'+METHODS.map(m=>'<th class="num">'+m.name+'</th>').join('')+'<th class="num">Total</th></tr></thead><tbody>'+
+ Object.keys(days).sort().reverse().map(d=>'<tr><td><strong>'+shortDay(d)+'</strong></td>'+METHODS.map(m=>'<td class="money num">'+mobile(m.name)+money(days[d][m.id]||0)+'</td>').join('')+'<td class="money num">'+mobile('Total')+'<strong>'+money(total(days[d]))+'</strong></td></tr>').join('')+'</tbody></table></section>';
+}
+render();
+</script>
+</body>
+</html>

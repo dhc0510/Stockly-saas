@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Building2, Check, ChevronRight, ClipboardList, FileText, Package, Plus, ReceiptText, Search, Trash2, UserRound, X } from "lucide-react";
+import { Link, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Building2, Check, ClipboardList, FileText, Package, Plus, ReceiptText, Search, Trash2, UserRound, Wallet, X } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { MovementBranch, useMovementBranch } from "../inventory/MovementBranch";
 import { amount, failureMessage, receiptDate, type Article } from "../receipts/receiptApi";
 import { ApiError, request } from "../../lib/http";
+import {
+  applied, balance, cents, methodHints, methodLabels, paymentProblem, paymentStateLabels, toAmount, toInput,
+  type Method, type MethodState, type Payment, type PaymentDraft, type PaymentState, type Refund,
+} from "./payments";
 import "../receipts/receipts.css";
 import "./sales.css";
 
@@ -20,14 +24,35 @@ type Draft = {
   customerPhone?: string;
   customerEmail?: string;
   lines: Line[];
+  payments?: PaymentDraft[];
   requestKey?: string;
 };
-type Row = { id: string; folio: string; date: string; branchName: string; customer: string | null; total: number; voided: boolean };
+type Row = { id: string; folio: string; date: string; branchName: string; customer: string | null; total: number; voided: boolean; payment: PaymentState };
 type Sale = {
   sale: { branchName: string; customer: string | null; customerPhone: string | null; customerEmail: string | null; total: number };
   movement: { folio: string; date: string; actor: string; voidId: string | null; voidReason: string | null; voidFolio: string | null };
   lines: { itemId: string; name: string; sku: string; unit: string; quantity: number; unitPrice: number; amount: number }[];
+  payments: Payment[];
+  refund: { date: string; actor: string; lines: Refund[] } | null;
 };
+const toCents = (value: number) => BigInt(Math.round(value * 100));
+/** Medios activos de la empresa; vacío mientras carga. */
+function usePaymentMethods() {
+  const [methods, setMethods] = useState<MethodState[]>();
+  const [error, setError] = useState("");
+  const [version, setVersion] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    request<MethodState[]>(api + "/payment-methods", { signal: controller.signal }).then(setMethods)
+      .catch(failure => { if (!controller.signal.aborted) setError(failureMessage(failure)); });
+    return () => controller.abort();
+  }, [version]);
+  return { methods, error, reload: () => setVersion(value => value + 1) };
+}
+
+function PaymentBadge({ state }: { state: PaymentState }) {
+  return <span className={"sales-status sales-payment-" + state}>{paymentStateLabels[state]}</span>;
+}
 const empty = (): Draft => ({ customer: "", lines: [] });
 function load(key: string): Draft {
   try {
@@ -36,7 +61,7 @@ function load(key: string): Draft {
   } catch { return empty(); }
 }
 
-function Heading({ title, description, children }: { title: string; description: string; children?: React.ReactNode }) {
+export function Heading({ title, description, children }: { title: string; description: string; children?: React.ReactNode }) {
   return <header className="sales-heading">
     <div className="sales-heading-copy">
       <p className="sales-eyebrow"><ReceiptText size={15} aria-hidden="true" /> Operación comercial</p>
@@ -54,7 +79,7 @@ function SaleStatus({ voided }: { voided: boolean }) {
   </span>;
 }
 
-function PanelHeading({ icon: Icon, title, description }: {
+export function PanelHeading({ icon: Icon, title, description }: {
   icon: typeof ReceiptText;
   title: string;
   description: string;
@@ -75,19 +100,20 @@ export function SalesPage() {
   const canWrite = admin || level === "OPERATE" || level === "ADMIN";
   const canVoid = admin || user.specialPermissions.includes("VOID_SALES");
   return <div className="catalog-page sales-page"><Routes>
-    <Route index element={<List storage={storage} canWrite={canWrite} />} />
+    <Route index element={<List storage={storage} canWrite={canWrite} canVoid={canVoid} />} />
     {canWrite && <Route path="new" element={<Editor storage={storage} />} />}
     <Route path=":folio" element={<Document canVoid={canVoid} />} />
   </Routes></div>;
 }
 
-function List({ storage, canWrite }: { storage: string; canWrite: boolean }) {
+function List({ storage, canWrite, canVoid }: { storage: string; canWrite: boolean; canVoid: boolean }) {
   const draft = load(storage);
   const [hasDraft, setHasDraft] = useState(!!(draft.lines.length || draft.customer.trim() || draft.customerPhone?.trim() || draft.customerEmail?.trim()));
   const [discard, setDiscard] = useState(false);
   const [search, setSearch] = useState("");
   const [branchId, setBranchId] = useState("");
   const [status, setStatus] = useState("");
+  const [payment, setPayment] = useState("");
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<{ entries: Row[]; hasMore: boolean }>();
   const [error, setError] = useState("");
@@ -96,11 +122,11 @@ function List({ storage, canWrite }: { storage: string; canWrite: boolean }) {
     const controller = new AbortController();
     setError("");
     setResult(undefined);
-    const params = new URLSearchParams({ search, branchId, status, page: String(page) });
+    const params = new URLSearchParams({ search, branchId, status, payment, page: String(page) });
     request<{ entries: Row[]; hasMore: boolean }>(api + "?" + params, { signal: controller.signal }).then(setResult)
       .catch(failure => { if (!controller.signal.aborted) setError(failureMessage(failure)); });
     return () => controller.abort();
-  }, [search, branchId, status, page]);
+  }, [search, branchId, status, payment, page]);
 
   return <>
     <Heading title="Ventas" description="Registra ventas y consulta sus comprobantes por sucursal.">
@@ -143,6 +169,10 @@ function List({ storage, canWrite }: { storage: string; canWrite: boolean }) {
           <label>Estado<select value={status} onChange={event => { setStatus(event.target.value); setPage(0); }}>
             <option value="">Todos</option><option value="confirmed">Confirmadas</option><option value="voided">Anuladas</option>
           </select></label>
+          <label>Cobro<select value={payment} onChange={event => { setPayment(event.target.value); setPage(0); }}>
+            <option value="">Todos</option><option value="paid">Cobradas</option><option value="voided">Cobro anulado</option>
+            <option value="none">Sin cobro registrado</option>
+          </select></label>
         </div>
       </div>
       {error ? <p className="sales-list-message" role="alert">{error}</p> :
@@ -150,22 +180,27 @@ function List({ storage, canWrite }: { storage: string; canWrite: boolean }) {
         !result.entries.length ? <div className="sales-empty">
           <span className="sales-icon" aria-hidden="true"><ReceiptText size={22} /></span>
           <h3>No hay ventas para esta consulta</h3>
-          <p>{search || branchId || status ? "Prueba con otros filtros." : "Los comprobantes aparecerán aquí al confirmar una venta."}</p>
+          <p>{search || branchId || status || payment ? "Prueba con otros filtros." : "Los comprobantes aparecerán aquí al confirmar una venta."}</p>
         </div> : <>
           <div className="sales-register-head sales-row-grid" aria-hidden="true">
             <span>Venta</span><span>Cliente</span><span>Sucursal</span><span>Fecha y hora</span>
-            <span className="sales-amount">Total</span><span>Estado</span><span />
+            <span className="sales-amount">Total</span><span>Estado</span><span>Cobro</span><span>Acción</span>
           </div>
           <ul className="sales-list" role="list">
-            {result.entries.map(sale => <li key={sale.id}><Link className="sales-row sales-row-grid" to={path + "/" + sale.folio}>
-              <span className="sales-folio"><span className="sales-folio-icon" aria-hidden="true"><FileText size={16} /></span><strong>{sale.folio}</strong></span>
+            {result.entries.map(sale => <li key={sale.id} className="sales-row sales-row-grid">
+              <span className="sales-folio"><span className="sales-folio-icon" aria-hidden="true"><FileText size={16} /></span>
+                <Link className="sales-row-link" to={path + "/" + sale.folio}><strong>{sale.folio}</strong></Link></span>
               <span className="sales-row-customer">{sale.customer || "Público general"}</span>
               <span className="sales-row-branch"><Building2 size={14} aria-hidden="true" />{sale.branchName}</span>
               <time className="sales-date" dateTime={sale.date}>{receiptDate(sale.date)}</time>
               <strong className="sales-amount">{money(sale.total)}</strong>
               <SaleStatus voided={sale.voided} />
-              <ChevronRight className="sales-row-arrow" size={17} aria-hidden="true" />
-            </Link></li>)}
+              <PaymentBadge state={sale.payment} />
+              <span className="sales-row-action">{canVoid && !sale.voided
+                ? <Link className="button secondary sales-void-link" to={path + "/" + sale.folio + "?anular=1"}
+                  aria-label={"Anular venta " + sale.folio}>Anular venta</Link>
+                : <span className="sales-row-none" aria-hidden="true">—</span>}</span>
+            </li>)}
           </ul>
         </>}
       {(page > 0 || result?.hasMore) && <div className="sales-pagination">
@@ -205,6 +240,10 @@ function Editor({ storage }: { storage: string }) {
   const branchId = branch.selected?.id;
   const pending = !!draft.requestKey;
   const total = draft.lines.reduce((sum, line) => sum + lineCents(line), 0n);
+  const payments = draft.payments ?? [];
+  const paymentMethods = usePaymentMethods();
+  const [paymentIssues, setPaymentIssues] = useState<Record<string, string>>({});
+  const covered = payments.length > 0 && balance(total, payments).due === 0n;
   useEffect(() => {
     const controller = new AbortController();
     setResults([]);
@@ -252,6 +291,10 @@ function Editor({ storage }: { storage: string }) {
         requestKey: attempt.requestKey, branchId: attempt.branchId, customer: attempt.customer,
         customerPhone: attempt.customerPhone, customerEmail: attempt.customerEmail,
         lines: attempt.lines.map(line => ({ itemId: line.article.id, quantity: quantity(line), expectedPrice: line.price })),
+        payments: (attempt.payments ?? []).map(payment => ({
+          method: payment.method, amount: toAmount(cents(payment.amount) ?? 0n),
+          reference: payment.method === "CASH" ? null : payment.reference.trim() || null,
+        })),
       }) });
       localStorage.removeItem(storage);
       navigate(path + "/" + sale.movement.folio, { replace: true });
@@ -271,14 +314,20 @@ function Editor({ storage }: { storage: string }) {
         persist({ ...attempt, requestKey: undefined });
         setIssues(failure.fieldErrors);
         setReview(false);
-      } else if (failure instanceof ApiError && ["SALE_INVALID", "SALE_NOT_READY"].includes(failure.code)) {
+      } else if (failure instanceof ApiError && failure.code === "SALE_PAYMENT_METHOD_INACTIVE") {
+        // Un administrador desactivó un medio mientras se cobraba: se marca el pago para quitarlo.
         persist({ ...attempt, requestKey: undefined });
+        setPaymentIssues(failure.fieldErrors);
+        paymentMethods.reload();
+      } else if (failure instanceof ApiError && ["SALE_INVALID", "SALE_NOT_READY", "SALE_PAYMENT_INVALID"].includes(failure.code)) {
+        persist({ ...attempt, requestKey: undefined });
+        if (failure.code === "SALE_PAYMENT_INVALID") setPaymentIssues(failure.fieldErrors);
       }
     } finally { setSaving(false); }
   }
 
   return <>
-    <Heading title={review ? "Revisar venta" : "Nueva venta"} description={review ? "Verifica los artículos y el total antes de confirmar." : "Elige la sucursal y agrega los artículos de la venta."}>
+    <Heading title={review ? "Revisar y cobrar" : "Nueva venta"} description={review ? "Verifica la venta y registra cómo pagó el cliente." : "Elige la sucursal y agrega los artículos de la venta."}>
       <Link className="button secondary sales-back" to={path}><ArrowLeft size={16} aria-hidden="true" /> Volver a ventas</Link>
     </Heading>
     {error && <p className="notice error" role="alert">{error}</p>}
@@ -334,16 +383,10 @@ function Editor({ storage }: { storage: string }) {
         </li>)}
       </ul>
       <p className="sales-total">Total <strong>{money(Number(total) / 100)}</strong></p>
-      <div className="sales-actions">
-        {review ? <>
-          <button className="button secondary" type="button" disabled={saving || pending} onClick={() => { setReview(false); setIssues({}); setError(""); }}>Volver a editar</button>
-          <button className="catalog-primary" type="button" disabled={saving || (!pending && (!branchId || !!branch.problem))}
-            onClick={() => void confirm()}>{saving ? "Confirmando…" : pending ? "Consultar y reintentar" : "Confirmar venta"}</button>
-        </> : <>
-          <button className="button secondary" type="button" onClick={() => setDiscard(true)}>Descartar</button>
-          <button className="catalog-primary" type="button" disabled={!draft.lines.length || !branchId || !!branch.problem} onClick={startReview}>Revisar venta</button>
-        </>}
-      </div>
+      {!review && <div className="sales-actions">
+        <button className="button secondary" type="button" onClick={() => setDiscard(true)}>Descartar</button>
+        <button className="catalog-primary" type="button" disabled={!draft.lines.length || !branchId || !!branch.problem} onClick={startReview}>Revisar y cobrar</button>
+      </div>}
       {discard && <div><p>¿Descartar esta venta sin confirmar?</p><div className="sales-actions">
         <button className="button secondary" type="button" autoFocus onClick={() => setDiscard(false)}>Conservar</button>
         <button className="button danger" type="button" onClick={() => {
@@ -352,18 +395,96 @@ function Editor({ storage }: { storage: string }) {
         }}>Descartar borrador</button>
       </div></div>}
     </section>
+    {review && <section className="sales-panel sales-work-panel" aria-label="Cobro">
+      <PaymentPanel total={total} payments={payments} locked={saving || pending} state={paymentMethods} issues={paymentIssues}
+        onChange={next => { setPaymentIssues({}); setError(""); persist({ ...draft, payments: next }); }} />
+      <div className="sales-actions">
+        <button className="button secondary" type="button" disabled={saving || pending} onClick={() => { setReview(false); setIssues({}); setError(""); }}>Volver a editar</button>
+        <button className="catalog-primary" type="button" disabled={saving || (!pending && (!branchId || !!branch.problem || !covered))}
+          onClick={() => void confirm()}>{saving ? "Confirmando…" : pending ? "Consultar y reintentar" : "Confirmar venta y cobro"}</button>
+      </div>
+      {!pending && !covered && <p className="sales-hint">Registra el pendiente para poder confirmar.</p>}
+    </section>}
+  </>;
+}
+
+/** Cobro al confirmar: medios activos, pagos combinados y el saldo Total/Pagado/Pendiente/Vuelto. */
+function PaymentPanel({ total, payments, locked, state, issues, onChange }: {
+  total: bigint; payments: PaymentDraft[]; locked: boolean; issues: Record<string, string>;
+  state: ReturnType<typeof usePaymentMethods>; onChange: (payments: PaymentDraft[]) => void;
+}) {
+  const [method, setMethod] = useState<Method>();
+  const [value, setValue] = useState("");
+  const [reference, setReference] = useState("");
+  const [problem, setProblem] = useState("");
+  const amountInput = useRef<HTMLInputElement>(null);
+  const active = state.methods?.filter(option => option.active) ?? [];
+  const { paid, due, change } = balance(total, payments);
+  const amounts = applied(total, payments);
+  function choose(next: Method) {
+    setMethod(next); setProblem(""); setReference("");
+    setValue(due > 0n ? toInput(due) : "");
+    window.setTimeout(() => amountInput.current?.focus());
+  }
+  function add(event: React.FormEvent) {
+    event.preventDefault();
+    if (!method) return;
+    const next = { method, amount: value, reference: method === "CASH" ? "" : reference.trim() };
+    const message = paymentProblem(total, payments, next);
+    if (message) { setProblem(message); amountInput.current?.focus(); return; }
+    onChange([...payments, next]);
+    setMethod(undefined); setValue(""); setReference(""); setProblem("");
+  }
+  return <>
+    <PanelHeading icon={Wallet} title="Cobro" description="Stockly registra cómo pagó el cliente; no procesa pagos." />
+    {state.error && <p className="notice error" role="alert">{state.error}</p>}
+    {!state.methods ? !state.error && <p role="status">Cargando medios de pago…</p> : !active.length
+      ? <p className="notice error" role="alert">No hay medios de pago activos. Un administrador debe activar al menos uno.</p>
+      : !locked && <>
+        <div className="sales-methods" role="group" aria-label="Medio de pago">
+          {active.map(option => <button key={option.method} type="button" className="button secondary"
+            aria-pressed={method === option.method} onClick={() => choose(option.method)}>{option.label}</button>)}
+        </div>
+        {method ? <form className={"sales-pay-form" + (method === "CASH" ? " sales-pay-cash" : "")} onSubmit={add} noValidate>
+          <p className="sales-pay-hint">{methodHints[method]}</p>
+          <label>{method === "CASH" ? "Monto recibido" : "Monto"}
+            <input ref={amountInput} inputMode="decimal" autoComplete="off" value={value} maxLength={20}
+              aria-invalid={!!problem} aria-describedby={problem ? "sales-pay-error" : undefined}
+              onChange={event => { setValue(event.target.value); setProblem(""); }} /></label>
+          {method !== "CASH" && <label>Referencia opcional
+            <input value={reference} maxLength={60} autoComplete="off" placeholder="N.º de comprobante o autorización"
+              onChange={event => setReference(event.target.value)} /></label>}
+          <div className="sales-pay-buttons">
+            {method === "CASH" && due > 0n && <button type="button" className="button secondary" onClick={() => setValue(toInput(due))}>Monto exacto</button>}
+            <button type="submit" className="catalog-primary">Agregar pago</button>
+          </div>
+          {problem && <p id="sales-pay-error" className="sales-pay-error" role="alert">{problem}</p>}
+        </form> : due > 0n && <p className="sales-hint-left">Elige un medio de pago para registrar el monto.</p>}
+      </>}
+    {!!payments.length && <ul className="sales-payments">{payments.map((payment, index) => <li key={index}
+      className={issues["payments." + index] ? "sales-payment-issue" : undefined}>
+      <div><strong>{methodLabels[payment.method]}</strong>
+        <small>{payment.method === "CASH" ? "Recibido " + money(Number(cents(payment.amount) ?? 0n) / 100) : payment.reference || "Sin referencia"}</small>
+        {issues["payments." + index] && <small role="alert">{issues["payments." + index]}</small>}</div>
+      <strong className="sales-amount">{money(Number(amounts[index]) / 100)}</strong>
+      {!locked && <button type="button" className="icon-button" aria-label={"Quitar pago " + (index + 1) + " · " + methodLabels[payment.method]}
+        onClick={() => onChange(payments.filter((_, other) => other !== index))}><Trash2 size={16} /></button>}
+    </li>)}</ul>}
+    <dl className="sales-balance" aria-live="polite">
+      <div><dt>Total</dt><dd>{money(Number(total) / 100)}</dd></div>
+      <div><dt>Pagado</dt><dd>{money(Number(paid) / 100)}</dd></div>
+      <div className={due > 0n ? "sales-balance-due" : undefined}><dt>Pendiente</dt><dd>{money(Number(due) / 100)}</dd></div>
+      <div className={change > 0n ? "sales-balance-change" : undefined}><dt>Vuelto</dt><dd>{money(Number(change) / 100)}</dd></div>
+    </dl>
   </>;
 }
 
 function Document({ canVoid }: { canVoid: boolean }) {
   const { folio } = useParams();
+  const [query] = useSearchParams();
   const [sale, setSale] = useState<Sale>();
-  const [voiding, setVoiding] = useState(false);
-  const [reason, setReason] = useState("");
-  const [reasonInvalid, setReasonInvalid] = useState(false);
-  const reasonInput = useRef<HTMLTextAreaElement>(null);
+  const [voiding, setVoiding] = useState(query.get("anular") === "1");
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
   const url = api + "/" + encodeURIComponent(folio ?? "");
   useEffect(() => {
     const controller = new AbortController();
@@ -379,58 +500,141 @@ function Document({ canVoid }: { canVoid: boolean }) {
       <Link className="button secondary sales-back" to={path}><ArrowLeft size={16} aria-hidden="true" /> Volver a ventas</Link>
     </Heading>
     {error && <p className="notice error" role="alert">{error}</p>}
-    {!sale ? !error && <p role="status">Cargando comprobante…</p> : <section className="sales-panel sales-work-panel">
-      <div className="sales-document-heading"><PanelHeading icon={ReceiptText} title="Detalle de la venta" description="Artículos, precios y datos del comprobante." />
-        {sale.movement.voidId ? <a className="sales-status-link" href="#anulacion"><SaleStatus voided /></a> : <SaleStatus voided={false} />}</div>
-      <dl className="sales-details">
-        <div><dt>Sucursal</dt><dd>{sale.sale.branchName}</dd></div>
-        <div><dt>Fecha y hora</dt><dd><time className="sales-date">{receiptDate(sale.movement.date)}</time></dd></div>
-        <div><dt>Responsable</dt><dd>{sale.movement.actor}</dd></div>
-        {sale.sale.customer && <div><dt>Cliente</dt><dd>{sale.sale.customer}</dd></div>}
-        {sale.sale.customerPhone && <div><dt>Teléfono</dt><dd>{sale.sale.customerPhone}</dd></div>}
-        {sale.sale.customerEmail && <div><dt>Correo electrónico</dt><dd>{sale.sale.customerEmail}</dd></div>}
-      </dl>
-      <ul className="sales-lines">{sale.lines.map(line => <li key={line.itemId}>
-        <div><strong>{line.name}</strong><small>{line.sku}</small></div>
-        <span>{amount(line.quantity, line.unit)} · {money(line.unitPrice)} por {line.unit}</span><strong>{money(line.amount)}</strong>
-      </li>)}</ul>
-      <p className="sales-total">Total <strong>{money(sale.sale.total)}</strong></p>
-      {sale.movement.voidId ? <section className="sales-void-summary" id="anulacion" aria-labelledby="sales-void-summary-title">
-        <h3 id="sales-void-summary-title">Anulación {sale.movement.voidFolio}</h3>
-        <dl><dt>Motivo</dt><dd>{sale.movement.voidReason}</dd></dl>
-      </section> :
-        canVoid && (voiding ? <form className="sales-void-form" aria-labelledby="sales-void-title" onSubmit={async event => {
-          event.preventDefault();
-          if (busy) return;
-          if (!reason.trim()) {
-            setReasonInvalid(true);
-            reasonInput.current?.focus();
-            return;
-          }
-          setError(""); setBusy(true);
-          try {
-            setSale(await request<Sale>(url + "/void", { method: "POST", body: JSON.stringify({ reason }) }));
-            setVoiding(false);
-          } catch (failure) { setError(failureMessage(failure)); }
-          finally { setBusy(false); }
-        }}>
-          <div>
-            <h3 id="sales-void-title">Anular esta venta</h3>
-            <p id="sales-void-help">Las cantidades volverán a la sucursal original.</p>
-          </div>
-          <label>Motivo de anulación
-            <textarea ref={reasonInput} autoFocus maxLength={150} rows={3} value={reason}
-              placeholder="Escribe el motivo" aria-invalid={reasonInvalid}
-              aria-describedby={reasonInvalid ? "sales-void-help sales-void-error" : "sales-void-help"}
-              onChange={event => { setReasonInvalid(false); setReason(event.target.value); }} />
-            {reasonInvalid && <small id="sales-void-error" role="alert">Escribe el motivo de la anulación.</small>}
-          </label>
-          <div className="sales-actions">
-            <button className="button secondary" type="button" disabled={busy}
-              onClick={() => { setVoiding(false); setReasonInvalid(false); }}>Cancelar</button>
-            <button className="button danger" type="submit" disabled={busy}>{busy ? "Anulando…" : "Confirmar anulación"}</button>
-          </div>
-        </form> : <button type="button" className="button danger" onClick={() => setVoiding(true)}>Anular venta</button>)}
-    </section>}
+    {!sale ? !error && <p role="status">Cargando comprobante…</p> : <>
+      <section className="sales-panel sales-work-panel">
+        <div className="sales-document-heading"><PanelHeading icon={ReceiptText} title="Detalle de la venta" description="Artículos, precios y datos del comprobante." />
+          {sale.movement.voidId ? <a className="sales-status-link" href="#anulacion"><SaleStatus voided /></a> : <SaleStatus voided={false} />}</div>
+        <dl className="sales-details">
+          <div><dt>Sucursal</dt><dd>{sale.sale.branchName}</dd></div>
+          <div><dt>Fecha y hora</dt><dd><time className="sales-date">{receiptDate(sale.movement.date)}</time></dd></div>
+          <div><dt>Responsable</dt><dd>{sale.movement.actor}</dd></div>
+          {sale.sale.customer && <div><dt>Cliente</dt><dd>{sale.sale.customer}</dd></div>}
+          {sale.sale.customerPhone && <div><dt>Teléfono</dt><dd>{sale.sale.customerPhone}</dd></div>}
+          {sale.sale.customerEmail && <div><dt>Correo electrónico</dt><dd>{sale.sale.customerEmail}</dd></div>}
+        </dl>
+        <ul className="sales-lines">{sale.lines.map(line => <li key={line.itemId}>
+          <div><strong>{line.name}</strong><small>{line.sku}</small></div>
+          <span>{amount(line.quantity, line.unit)} · {money(line.unitPrice)} por {line.unit}</span><strong>{money(line.amount)}</strong>
+        </li>)}</ul>
+        <p className="sales-total">Total <strong>{money(sale.sale.total)}</strong></p>
+        {sale.movement.voidId && <section className="sales-void-summary" id="anulacion" aria-labelledby="sales-void-summary-title">
+          <h3 id="sales-void-summary-title">Anulación {sale.movement.voidFolio}</h3>
+          <dl><dt>Motivo</dt><dd>{sale.movement.voidReason}</dd></dl>
+        </section>}
+      </section>
+      <PaymentSummary sale={sale} />
+      {!sale.movement.voidId && canVoid && (voiding
+        ? <VoidForm sale={sale} url={url} onCancel={() => setVoiding(false)} onVoided={next => { setSale(next); setVoiding(false); }} />
+        : <div className="sales-actions"><button type="button" className="button danger" onClick={() => setVoiding(true)}>Anular venta</button></div>)}
+    </>}
   </>;
+}
+
+/** Sección Cobro del comprobante: pagos, recibido, vuelto y devolución si la venta se anuló. */
+function PaymentSummary({ sale }: { sale: Sale }) {
+  if (!sale.payments.length) return <section className="sales-panel sales-work-panel" aria-label="Cobro">
+    <PanelHeading icon={Wallet} title="Cobro" description="Medios con los que pagó el cliente." />
+    <p className="sales-payment-none" role="note">Sin cobro registrado. Esta venta se registró antes de habilitar Cobros.</p>
+  </section>;
+  const received = sale.payments.reduce((sum, payment) => sum + toCents(payment.received ?? payment.amount), 0n);
+  const change = received - toCents(sale.sale.total);
+  return <section className="sales-panel sales-work-panel" aria-label="Cobro">
+    <div className="sales-document-heading"><PanelHeading icon={Wallet} title="Cobro" description="Medios con los que pagó el cliente." />
+      <PaymentBadge state={sale.movement.voidId ? "voided" : "paid"} /></div>
+    {sale.refund && <div className="sales-refund-note">
+      <strong>Devolución registrada</strong> · <time className="sales-date">{receiptDate(sale.refund.date)}</time> · {sale.refund.actor}
+      <ul>{sale.refund.lines.map((line, index) => <li key={index}>
+        {methodLabels[line.method]} {money(line.amount)}{line.reference ? " · Ref. " + line.reference : ""}</li>)}</ul>
+    </div>}
+    <ul className="sales-payments">{sale.payments.map((payment, index) => <li key={index}>
+      <div><strong>{methodLabels[payment.method]}</strong>
+        <small>{payment.method === "CASH" ? "Recibido " + money(payment.received ?? payment.amount) : payment.reference || "Sin referencia"}</small></div>
+      <strong className="sales-amount">{money(payment.amount)}</strong>
+    </li>)}</ul>
+    <dl className="sales-balance">
+      <div><dt>Total</dt><dd>{money(sale.sale.total)}</dd></div>
+      <div><dt>Recibido</dt><dd>{money(Number(received) / 100)}</dd></div>
+      <div className={change > 0n ? "sales-balance-change" : undefined}><dt>Vuelto</dt><dd>{money(Number(change) / 100)}</dd></div>
+      <div><dt>Pagos</dt><dd>{sale.payments.length}</dd></div>
+    </dl>
+  </section>;
+}
+
+type RefundDraft = { method: Method; amount: string; reference: string };
+/** Anulación con motivo obligatorio y, si hubo cobro, la devolución que debe sumar exactamente lo cobrado. */
+function VoidForm({ sale, url, onCancel, onVoided }: { sale: Sale; url: string; onCancel: () => void; onVoided: (sale: Sale) => void }) {
+  const methods = usePaymentMethods();
+  const charged = sale.payments.length > 0;
+  const paid = sale.payments.reduce((sum, payment) => sum + toCents(payment.amount), 0n);
+  const [reason, setReason] = useState("");
+  const [refunds, setRefunds] = useState<RefundDraft[]>(() => sale.payments.map(payment =>
+    ({ method: payment.method, amount: toInput(toCents(payment.amount)), reference: "" })));
+  const [problem, setProblem] = useState("");
+  const [busy, setBusy] = useState(false);
+  const options = (methods.methods ?? []).filter(option => option.active || sale.payments.some(payment => payment.method === option.method));
+  const values = refunds.map(refund => cents(refund.amount));
+  const sum = values.reduce<bigint>((total, value) => total + (value ?? 0n), 0n);
+  const invalidAmount = values.some(value => value === null);
+  const difference = paid > sum ? paid - sum : sum - paid;
+  const ready = !!reason.trim() && (!charged || (!invalidAmount && sum === paid && refunds.length > 0));
+  const change = (index: number, next: Partial<RefundDraft>) =>
+    setRefunds(refunds.map((refund, other) => other === index ? { ...refund, ...next } : refund));
+
+  return <form className="sales-void-form" aria-labelledby="sales-void-title" noValidate onSubmit={async event => {
+    event.preventDefault();
+    if (busy) return;
+    if (!reason.trim()) { setProblem("Escribe el motivo de la anulación."); return; }
+    if (charged && invalidAmount) { setProblem("Revisa los montos: deben ser positivos y con hasta dos decimales."); return; }
+    if (charged && sum !== paid) { setProblem("La devolución debe sumar exactamente lo cobrado (" + money(Number(paid) / 100) + ")."); return; }
+    setProblem(""); setBusy(true);
+    try {
+      onVoided(await request<Sale>(url + "/void", { method: "POST", body: JSON.stringify({
+        reason, refunds: refunds.map(refund => ({ method: refund.method, amount: toAmount(cents(refund.amount) ?? 0n),
+          reference: refund.method === "CASH" ? null : refund.reference.trim() || null })),
+      }) }));
+    } catch (failure) { setProblem(failureMessage(failure)); }
+    finally { setBusy(false); }
+  }}>
+    <div>
+      <h3 id="sales-void-title">Anular esta venta</h3>
+      <p id="sales-void-help">Las cantidades volverán a la sucursal original. {charged
+        ? "Los cobros quedan anulados y se registra cómo se devolvió el dinero."
+        : "La venta no tiene cobro registrado, así que no hay dinero que devolver."}</p>
+    </div>
+    <label>Motivo de la anulación · Obligatorio
+      <textarea autoFocus maxLength={150} rows={3} value={reason} required placeholder="Ej. Cliente desistió de la compra"
+        aria-describedby="sales-void-help" onChange={event => { setProblem(""); setReason(event.target.value); }} />
+    </label>
+    {charged && <fieldset className="sales-refunds">
+      <legend>Devolución del dinero</legend>
+      <p>Indica cómo le devolviste el dinero al cliente. Stockly no mueve dinero: solo deja constancia. Viene sugerido con los mismos medios del cobro.</p>
+      <p className="sales-refund-charged">Cobrado: {sale.payments.map(payment => methodLabels[payment.method] + " " + money(payment.amount)).join(" · ")}</p>
+      {methods.error && <p className="notice error" role="alert">{methods.error}</p>}
+      {refunds.map((refund, index) => <div className="sales-refund-row" key={index}>
+        <label>Medio<select value={refund.method} onChange={event => change(index, { method: event.target.value as Method })}>
+          {(options.length ? options : [{ method: refund.method, label: methodLabels[refund.method], active: true }])
+            .map(option => <option key={option.method} value={option.method}>{option.label}</option>)}
+        </select></label>
+        <label>Monto<input inputMode="decimal" autoComplete="off" maxLength={20} value={refund.amount}
+          aria-invalid={values[index] === null} onChange={event => { setProblem(""); change(index, { amount: event.target.value }); }} /></label>
+        {refund.method === "CASH" ? <span /> : <label>Referencia opcional<input maxLength={60} autoComplete="off" value={refund.reference}
+          placeholder="N.º de transacción" onChange={event => change(index, { reference: event.target.value })} /></label>}
+        <button type="button" className="button secondary" disabled={refunds.length === 1}
+          aria-label={"Quitar devolución " + (index + 1)} onClick={() => setRefunds(refunds.filter((_, other) => other !== index))}>Quitar</button>
+      </div>)}
+      <button type="button" className="button secondary sales-refund-add" onClick={() => setRefunds([...refunds,
+        { method: options[0]?.method ?? "CASH", amount: paid > sum ? toInput(paid - sum) : "", reference: "" }])}>
+        <Plus size={16} aria-hidden="true" /> Agregar otro medio</button>
+      <dl className="sales-balance" aria-live="polite">
+        <div><dt>Cobrado</dt><dd>{money(Number(paid) / 100)}</dd></div>
+        <div><dt>A devolver</dt><dd>{money(Number(sum) / 100)}</dd></div>
+        <div className={difference > 0n ? "sales-balance-due" : undefined}><dt>Diferencia</dt><dd>{money(Number(difference) / 100)}</dd></div>
+      </dl>
+    </fieldset>}
+    {problem && <p className="sales-pay-error" role="alert">{problem}</p>}
+    <div className="sales-actions">
+      <button className="button secondary" type="button" disabled={busy} onClick={onCancel}>Cancelar</button>
+      <button className="button danger" type="submit" disabled={busy || !ready}>{busy ? "Anulando…" : "Confirmar anulación"}</button>
+    </div>
+  </form>;
 }

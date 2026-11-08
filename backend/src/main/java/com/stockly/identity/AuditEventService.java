@@ -18,7 +18,8 @@ public class AuditEventService {
         "ROLE_CREATED","Rol creado",
         "ROLE_UPDATED","Rol o permisos actualizados",
         "ROLE_DELETED","Rol eliminado",
-        "SESSION_POLICY_UPDATED","Política de sesión actualizada"
+        "SESSION_POLICY_UPDATED","Política de sesión actualizada",
+        "PAYMENT_METHODS_UPDATED","Medios de pago actualizados"
     );
     private final JdbcTemplate jdbc;
     public AuditEventService(JdbcTemplate jdbc) { this.jdbc=jdbc; }
@@ -42,7 +43,7 @@ public class AuditEventService {
         Object[] params=action==null?new Object[]{principal.companyId()}:new Object[]{principal.companyId(),action};
         Long total=jdbc.queryForObject("SELECT COUNT(*)"+from+where,Long.class,params);
         String sql="SELECT e.id,e.actor_id,actor.full_name,e.action_key,e.target_type,e.target_id,"
-            +"COALESCE(target_user.full_name,target_role.name,CASE WHEN e.target_type='SESSION_POLICY' THEN 'Política de sesión' ELSE 'Registro eliminado' END),e.occurred_at"
+            +"COALESCE(target_user.full_name,target_role.name,CASE WHEN e.target_type='SESSION_POLICY' THEN 'Política de sesión' WHEN e.target_type='PAYMENT_METHODS' THEN 'Medios de pago' ELSE 'Registro eliminado' END),e.occurred_at"
             +from+where
             +"ORDER BY e.occurred_at DESC,e.id DESC LIMIT ? OFFSET ?";
         Object[] queryParams=Arrays.copyOf(params,params.length+2); queryParams[params.length]=size; queryParams[params.length+1]=(long)page*size;

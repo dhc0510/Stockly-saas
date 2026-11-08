@@ -147,7 +147,7 @@ public class InventoryLedger {
     }
 
     /** Aplica el inverso de cada línea; si alguna quedaría negativa, rechaza toda la anulación. */
-    void reverse(StocklyPrincipal actor, String originalId, List<Line> original, String reason, Rules rules) {
+    String reverse(StocklyPrincipal actor, String originalId, List<Line> original, String reason, Rules rules) {
         String company = actor.companyId();
         String location = jdbc.queryForObject("""
             SELECT location_id FROM inventory_movements WHERE company_id=? AND id=?
@@ -162,6 +162,7 @@ public class InventoryLedger {
         String reversal = UUID.randomUUID().toString();
         insertMovement(actor, location, reversal, "VOID", nextFolio(company, Series.VOID), reason, null, null, null, originalId);
         for (Line line : lines) writeLine(company, location, reversal, line);
+        return reversal;
     }
 
     /** Lee un movimiento dentro del alcance indicado; scope es SQL fijo de cada módulo, nunca datos del usuario. */

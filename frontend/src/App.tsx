@@ -19,6 +19,8 @@ export function App() {
       : pathname.startsWith("/inventory/movements") ? "Salidas y ajustes"
       : pathname.startsWith("/inventory/history") ? "Historial"
       : pathname.startsWith("/sales") ? "Ventas"
+      : pathname === "/payments/methods" ? "Medios de pago"
+      : pathname === "/payments" ? "Resumen de cobros"
       : pathname.startsWith("/catalog") ? "Catálogo de productos"
       : pathname.startsWith("/companies") ? "Empresas"
       : pageTitles[pathname];

@@ -17,11 +17,13 @@ public class SaleService {
     private final JdbcTemplate jdbc;
     private final InventoryLedger ledger;
     private final InventoryScope scope;
+    private final SalePaymentService payments;
 
-    SaleService(JdbcTemplate jdbc, InventoryLedger ledger, InventoryScope scope) {
+    SaleService(JdbcTemplate jdbc, InventoryLedger ledger, InventoryScope scope, SalePaymentService payments) {
         this.jdbc = jdbc;
         this.ledger = ledger;
         this.scope = scope;
+        this.payments = payments;
     }
 
     public InventoryScope.Choices branches(StocklyPrincipal actor) {
@@ -44,13 +46,22 @@ public class SaleService {
 
     @Transactional(readOnly = true)
     public SalePage list(StocklyPrincipal actor, String search, String status, String branchId, int page) {
+        return list(actor, search, status, "", branchId, page);
+    }
+
+    @Transactional(readOnly = true)
+    public SalePage list(StocklyPrincipal actor, String search, String status, String payment, String branchId, int page) {
         String company = company(actor);
-        if (page < 0 || !Set.of("", "confirmed", "voided").contains(status))
+        if (page < 0 || !Set.of("", "confirmed", "voided").contains(status) || !Set.of("", "paid", "voided", "none").contains(payment))
             throw RULES.invalid("Revisa el estado y la página.");
         if (!branchId.isEmpty()) branch(actor, branchId);
         String term = RULES.term(search);
+        // Estado del cobro: sin filas en sale_payments la venta es anterior a STK-012.
         var rows = jdbc.query("""
-            SELECT s.id,m.folio,m.created_at,s.branch_name,s.customer_name,s.total,r.id IS NOT NULL AS voided
+            SELECT * FROM (
+            SELECT s.id,m.folio,m.created_at,s.branch_name,s.customer_name,s.total,r.id IS NOT NULL AS voided,
+              CASE WHEN NOT EXISTS (SELECT 1 FROM sale_payments p WHERE p.company_id=s.company_id AND p.sale_id=s.id) THEN 'none'
+                   WHEN r.id IS NOT NULL THEN 'voided' ELSE 'paid' END AS payment
             FROM sales s JOIN inventory_movements m ON m.company_id=s.company_id AND m.id=s.id
             LEFT JOIN inventory_movements r ON r.company_id=m.company_id AND r.reversed_id=m.id
             WHERE s.company_id=? AND
@@ -58,11 +69,12 @@ public class SaleService {
             AND (?='' OR s.branch_id=?)
             AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(s.customer_name,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!')
             AND (?='' OR (?='confirmed' AND r.id IS NULL) OR (?='voided' AND r.id IS NOT NULL))
-            ORDER BY m.created_at DESC,m.id DESC LIMIT ? OFFSET ?
+            ) sale WHERE (?='' OR sale.payment=?)
+            ORDER BY sale.created_at DESC,sale.id DESC LIMIT ? OFFSET ?
             """, (rs, row) -> new SaleRow(rs.getString(1), rs.getString(2), rs.getTimestamp(3).toInstant(),
-            rs.getString(4), rs.getString(5), rs.getBigDecimal(6), rs.getBoolean(7)),
+            rs.getString(4), rs.getString(5), rs.getBigDecimal(6), rs.getBoolean(7), rs.getString(8)),
             company, InventoryScope.administrator(actor), actor.accountId(), branchId, branchId, term, term, status, status,
-            status, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
+            status, payment, payment, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
         return new SalePage(rows.stream().limit(PAGE_SIZE).toList(), rows.size() > PAGE_SIZE);
     }
 
@@ -83,10 +95,15 @@ public class SaleService {
         // Conserva la huella de los intentos creados antes de añadir el contacto.
         if (customerPhone != null || customerEmail != null)
             hash = InventoryLedger.hash(hash, Objects.toString(customerPhone, ""), Objects.toString(customerEmail, ""));
+        // Los pagos forman parte del intento: la misma clave con otros pagos es un conflicto (STK-012).
+        var requestedPayments = SalePaymentService.normalize(input.payments());
+        if (!requestedPayments.isEmpty())
+            hash = InventoryLedger.hash(hash, "PAYMENTS", SalePaymentService.fingerprint(requestedPayments));
 
         ledger.lockLocation(company);
         var existing = ledger.registered(company, request, hash, RULES);
         if (existing.isPresent()) return get(actor, existing.get());
+        if (requestedPayments.isEmpty()) throw new IdentityFailure(400, "SALE_PAYMENT_INVALID", "Registra el cobro de la venta antes de confirmar.");
 
         Branch branch = branch(actor, branchId);
         if (!branch.active() || branch.location() == null)
@@ -144,6 +161,7 @@ public class SaleService {
             throw new IdentityFailure(409, "SALE_LINE_ERROR", "Revisa los artículos marcados. No se registró la venta.", errors);
         if (!changedPrices.isEmpty())
             throw new IdentityFailure(409, "SALE_PRICE_CHANGED", "Hay precios nuevos. Revisa el total y confirma otra vez.", changedPrices);
+        var applied = payments.apply(company, total, requestedPayments);
 
         String id = UUID.randomUUID().toString();
         ledger.record(actor, branch.location(), id, "SALE", Series.SALE, "Venta", null, request, hash, lines);
@@ -155,6 +173,7 @@ public class SaleService {
         for (Price price : prices)
             jdbc.update("INSERT INTO sale_line_prices(company_id,sale_id,item_id,unit_price,amount) VALUES (?,?,?,?,?)",
                 company, id, price.itemId(), price.unitPrice(), price.amount());
+        payments.record(company, id, applied);
         return get(actor, id);
     }
 
@@ -181,11 +200,24 @@ public class SaleService {
             return new SaleLine(line.itemId(), line.name(), line.sku(), line.unit(), line.quantity().negate(),
                 price.unitPrice(), price.amount());
         }).toList();
-        return new Sale(header, movement.movement(), lines);
+        Refunded refund = null;
+        if (movement.movement().voidId() != null) {
+            refund = jdbc.query("""
+                SELECT r.created_at,COALESCE(u.full_name,r.actor_name) FROM inventory_movements r
+                LEFT JOIN users u ON u.company_id=r.company_id AND u.id=r.actor_id
+                WHERE r.company_id=? AND r.id=?
+                """, (rs, row) -> new Refunded(rs.getTimestamp(1).toInstant(), rs.getString(2),
+                payments.refunds(company, saleId)), company, movement.movement().voidId()).stream().findFirst().orElse(null);
+        }
+        return new Sale(header, movement.movement(), lines, payments.payments(company, saleId), refund);
+    }
+
+    public Sale reverse(StocklyPrincipal actor, String id, String input) {
+        return reverse(actor, id, input, List.of());
     }
 
     @Transactional
-    public Sale reverse(StocklyPrincipal actor, String id, String input) {
+    public Sale reverse(StocklyPrincipal actor, String id, String input, List<SalePaymentService.RefundInput> refunds) {
         String company = company(actor);
         String reason = RULES.required(input, 150, "Escribe el motivo de la anulación.");
         ledger.lockLocation(company);
@@ -193,7 +225,8 @@ public class SaleService {
         if (original.movement().voidId() != null) throw RULES.conflict("Esta venta ya fue anulada.");
         String originalId = original.movement().id();
         var movement = ledger.document(company, originalId, "m.kind='SALE'").orElseThrow(SaleService::missing);
-        ledger.reverse(actor, originalId, movement.lines(), reason, RULES);
+        String reversal = ledger.reverse(actor, originalId, movement.lines(), reason, RULES);
+        payments.refund(company, originalId, reversal, refunds);
         return get(actor, id);
     }
 
@@ -241,14 +274,21 @@ public class SaleService {
     private record Price(String itemId, BigDecimal unitPrice, BigDecimal amount) {}
     public record SaleArticle(Article article, BigDecimal price) {}
     public record SaleRow(String id, String folio, java.time.Instant date, String branchName, String customer,
-                          BigDecimal total, boolean voided) {}
+                          BigDecimal total, boolean voided, String payment) {}
     public record SalePage(List<SaleRow> entries, boolean hasMore) {}
     public record SaleInput(String requestKey, String branchId, String customer, String customerPhone,
-                            String customerEmail, List<LineInput> lines) {}
+                            String customerEmail, List<LineInput> lines, List<SalePaymentService.PaymentInput> payments) {
+        public SaleInput(String requestKey, String branchId, String customer, String customerPhone,
+                         String customerEmail, List<LineInput> lines) {
+            this(requestKey, branchId, customer, customerPhone, customerEmail, lines, null);
+        }
+    }
+    public record Refunded(java.time.Instant date, String actor, List<SalePaymentService.Refund> lines) {}
     public record LineInput(String itemId, BigDecimal quantity, BigDecimal expectedPrice) {}
     public record SaleHeader(String branchId, String branchName, String customer, String customerPhone,
                              String customerEmail, BigDecimal total) {}
     public record SaleLine(String itemId, String name, String sku, String unit, BigDecimal quantity,
                            BigDecimal unitPrice, BigDecimal amount) {}
-    public record Sale(SaleHeader sale, Summary movement, List<SaleLine> lines) {}
+    public record Sale(SaleHeader sale, Summary movement, List<SaleLine> lines,
+                       List<SalePaymentService.Payment> payments, Refunded refund) {}
 }
