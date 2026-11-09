@@ -31,7 +31,46 @@ const fixture = (n = 1): Company => ({
   },
 });
 
+// Sesión del administrador de Stockly (STK-005). Las demás llamadas (suscripciones de STK-018) responden vacío.
+async function mockSaasSession(page: Page) {
+  await page.route("**/api/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/api/auth/csrf")
+      return route.fulfill({ json: { csrfToken: "t", csrfHeaderName: "X-CSRF-TOKEN" } });
+    const subscription = path.match(/^\/api\/saas\/companies\/([^/]+)\/subscription$/);
+    if (subscription)
+      return route.fulfill({
+        json: {
+          documents: [],
+          subscription: {
+            companyId: subscription[1], companyName: "", legalName: "", state: "TRIAL",
+            planId: null, planName: null, cycle: null, price: null,
+            trialEndsOn: "2026-11-19", paidUntil: null, expiresOn: "2026-11-19", suspendsOn: "2026-11-26",
+            limited: true, cancelledAt: null, cancelReason: null, createdAt: "2026-11-05T16:00:00Z",
+            payments: [], noticesSent: [], version: 0,
+          },
+        },
+      });
+    if (path === "/api/saas/subscriptions") return route.fulfill({ json: [] });
+    return path === "/api/auth/me"
+      ? route.fulfill({
+          json: {
+            id: "saas",
+            companyId: null,
+            role: "SAAS_ADMIN",
+            fullName: "Administración Stockly",
+            email: "saas@example.invalid",
+            mustChangePassword: false,
+            modules: [],
+            specialPermissions: [],
+          },
+        })
+      : route.fulfill({ status: 404, json: { message: "Sin datos." } });
+  });
+}
+
 async function mockApi(page: Page) {
+  await mockSaasSession(page);
   let companies = [fixture(1), fixture(2), fixture(3)];
   const mutations: string[] = [];
   await page.route("**/api/companies**", async (route) => {
@@ -226,21 +265,17 @@ test("registro, edición, suspensión, reactivación y borrado confirmado", asyn
   ]);
 });
 
-test("sin sesión muestra acceso restringido, sin login inventado", async ({
-  page,
-}) => {
-  await page.route("**/api/companies**", (route) =>
-    route.fulfill({
+test("sin sesión pide ingresar y no consulta empresas", async ({ page }) => {
+  const requested: string[] = [];
+  await page.route("**/api/**", (route) => {
+    requested.push(new URL(route.request().url()).pathname);
+    return route.fulfill({
       status: 401,
-      json: {
-        code: "UNAUTHENTICATED",
-        message: "Inicia sesión para continuar.",
-      },
-    }),
-  );
+      json: { code: "UNAUTHENTICATED", message: "Inicia sesión para continuar." },
+    });
+  });
   await page.goto("/companies");
-  await expect(page.getByRole("alert")).toContainText("Acceso restringido");
-  await expect(page.getByRole("textbox", { name: /contraseña/i })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole("button", { name: /Ingresar|Iniciar sesión/ })).toBeVisible();
+  await expect(page.getByText("Ferretería El Sol")).toHaveCount(0);
+  expect(requested.some((p) => p.startsWith("/api/companies"))).toBe(false);
 });

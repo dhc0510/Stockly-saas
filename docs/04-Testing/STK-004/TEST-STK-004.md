@@ -60,3 +60,43 @@ El simulador está en frontend/demo/server.ts y se registra solo en configureSer
 El propietario confirmó: «Listo, todo aprobado, todo funciono bien», después de probar la demostración local. Quedan aprobadas la interfaz y las operaciones simuladas presentadas de STK-004; no se solicitaron ajustes.
 
 Esta aprobación cierra la revisión de la demo. Se conserva pendiente la integración con autenticación/sesiones reales de STK-005, las comprobaciones operativas de respaldos y los criterios no verificados. No equivale a autorizar commits, push o despliegues, ni a completar automáticamente las tareas dependientes. El siguiente trabajo funcional corresponde a definir STK-005 mediante el flujo SDD.
+
+## Integración con el ingreso real (STK-005) — 2026-11-09
+
+Con STK-005 ya integrado, se verificó STK-004 contra React, Spring Boot y MySQL (`stockly_demo`) con sesiones reales. Se usó el código de `main` en `517d821`. Las decisiones de cierre están en [ADR-011](../../05-Decisions/ADR-011.md).
+
+### Recorrido real
+
+Pasaron 27 de 27 comprobaciones. El script no imprime contraseñas ni códigos.
+
+- **Alta (AC-01/02):** se creó una empresa activa con su administrador. La respuesta no incluye la contraseña. Una identificación repetida devuelve 409.
+- **Primer ingreso:** el administrador nuevo entra con la contraseña temporal, cambia la contraseña de forma obligatoria y queda ligado solo a su empresa (`COMPANY_ADMIN`).
+- **Permisos y aislamiento (AC-07):**
+  - sin sesión, `/api/companies` responde 401;
+  - el administrador de empresa recibe 403 en `/api/companies`, en el detalle de empresas y en `/api/saas`;
+  - una venta o la imagen de un producto de otra empresa, pedidas por su ID, responden 404.
+- **Suspensión (AC-05):**
+  - con la sesión abierta en el navegador y el equipo desconectado, se suspende la empresa;
+  - al reconectar, el equipo vuelve a la pantalla de ingreso;
+  - la sesión abierta queda invalidada (401) y un ingreso nuevo se rechaza.
+- **Reactivación (AC-05):** la sesión invalidada no vuelve. Un ingreso nuevo sí funciona.
+- **Eliminación (AC-06):**
+  - un nombre incorrecto no elimina (400);
+  - el nombre exacto, aun con espacios exteriores, elimina (204);
+  - la empresa desaparece, la sesión y el ingreso del administrador dejan de funcionar;
+  - el registro de borrado queda en `COMMITTED`, sin datos personales;
+  - la otra empresa de la base conservó sus productos y ventas.
+
+### Pruebas automáticas
+
+- **Playwright:** `companies.spec.ts` se actualizó a la sesión de STK-005 y a la suscripción de STK-018, que antes lo hacían fallar.
+  - Pasan las 6 pruebas en Edge a 375 y 1440 px: listado, filtros, registro, edición, suspensión, reactivación, borrado confirmado, Escape con foco restaurado y la pantalla de ingreso sin sesión.
+  - Las capturas de `screenshots/` se regeneraron con la interfaz actual.
+- **Base de datos:** `CompanyIntegrationTest`, con MySQL en Testcontainers, no se volvió a ejecutar en esta revisión porque requiere Docker. Su última corrida con éxito está registrada arriba.
+
+### Criterios
+
+- **AC-05 y AC-07:** verificados con sesiones reales.
+- **AC-06:** verificados el borrado, la confirmación y la conservación. Los respaldos productivos se configuran al desplegar (ADR-011).
+- **AC-08:** verificado con Playwright: escritorio y móvil, teclado, foco y diálogos. La auditoría WCAG completa queda como mejora general (ADR-011).
+- **Aprobación final:** el propietario revisó en local y aprobó el 2026-11-09: «aprobado push a esta stk verificada y 100% funcional».
