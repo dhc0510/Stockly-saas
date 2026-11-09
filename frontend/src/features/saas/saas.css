@@ -63,7 +63,7 @@
 .saas-card dt { color: var(--muted); font-size: 11px; }
 .saas-card dd { margin: 0; font-weight: 650; }
 
-.saas-field { display: grid; gap: 5px; margin: 0 0 12px; font-size: 13px; font-weight: 650; }
+.saas-field { display: grid; align-content: start; gap: 5px; margin: 0 0 12px; font-size: 13px; font-weight: 650; }
 .saas-field input, .saas-field select, .saas-field textarea { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: #18181b; font: inherit; font-weight: 500; }
 .saas-field input[aria-invalid="true"] { border-color: #b91c1c; }
 .saas-field small { color: var(--muted); font-size: 12px; font-weight: 400; }
