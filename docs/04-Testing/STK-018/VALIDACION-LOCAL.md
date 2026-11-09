@@ -1,6 +1,6 @@
 # STK-018 · Validación local
 
-El propietario revisó la aplicación local el 2026-11-09 y la aprobó: «aprobado push en main con el commit "STK-018 | Administración del SaaS y suscripciones"». Este documento separa lo verificado de lo pendiente. **STK-018 no está terminada** hasta completar las pruebas de integración de la última sección.
+El propietario revisó la aplicación local el 2026-11-09 y la aprobó: «aprobado push en main con el commit "STK-018 | Administración del SaaS y suscripciones"». El propietario dio la aprobación final el 2026-11-09 («marca como aprobadas las pruebas de STK-017 y STK-018»), aceptando la evidencia de este documento.
 
 ## Verificado
 
@@ -53,14 +53,16 @@ Capturas en [screenshots](screenshots/).
 - **Actividad del SaaS:** se registra en la tabla nueva `saas_audit_events`, porque la de empresas exige `company_id`.
 - **Datos de revisión local:** el plan Estándar de ₡15 000 y el emisor de Stockly son ficticios. La llave `.p12` es autofirmada y solo funciona con la Hacienda simulada.
 
-## Pendiente antes de dar STK-018 por terminada
+## Pruebas no ejecutadas, aceptadas por el propietario
 
-- [ ] Integración en MySQL con datos controlados:
+El propietario decidió el 2026-11-09 dar la funcionalidad por terminada sin estas pruebas dedicadas. No se escribieron ni se ejecutaron; quedan como mejora recomendada si se quiere más cobertura automática.
+
+- Integración en MySQL con datos controlados:
   - transiciones por fechas con reloj fijo y cierre de sesiones al suspender;
   - pago, reintento idempotente y anulación con recálculo;
   - cancelación;
   - límites al crear y reactivar productos, usuarios y sucursales;
   - avisos únicos;
   - factura y nota de crédito contra la Hacienda simulada.
-- [ ] Permisos y aislamiento: `/api/saas` solo para `SAAS_ADMIN`; «Mi suscripción» y sus facturas solo para el `COMPANY_ADMIN` de su empresa; secretos cifrados que nunca se devuelven.
-- [ ] Playwright propio de STK-018.
+- Permisos y aislamiento: `/api/saas` solo para `SAAS_ADMIN`; «Mi suscripción» y sus facturas solo para el `COMPANY_ADMIN` de su empresa; secretos cifrados que nunca se devuelven.
+- Playwright propio de STK-018.

@@ -6,9 +6,9 @@ Aprobado por el propietario el 2026-11-08. Desarrollo autorizado el 2026-11-08; 
 - [x] Migración V17 con el módulo `REPORTS` y el índice de devoluciones por fecha. AC-06.
 
 ## Backend
-- [ ] Validación de período, período anterior y sucursales autorizadas en hora de Costa Rica. AC-01.
-- [ ] Resumen con anulaciones del mismo día y de otro día, devoluciones en su fecha, variaciones y serie por día o mes. AC-02.
-- [ ] Productos y categorías, vendedores y «Sin ventas». AC-03.
+- [x] Validación de período, período anterior y sucursales autorizadas en hora de Costa Rica. AC-01. — aprobada por el propietario el 2026-11-09 con la evidencia de regresión y del recorrido real; sin prueba de integración dedicada.
+- [x] Resumen con anulaciones del mismo día y de otro día, devoluciones en su fecha, variaciones y serie por día o mes. AC-02. — aprobada por el propietario el 2026-11-09 con la evidencia de regresión y del recorrido real; sin prueba de integración dedicada.
+- [x] Productos y categorías, vendedores y «Sin ventas». AC-03. — aprobada por el propietario el 2026-11-09 con la evidencia de regresión y del recorrido real; sin prueba de integración dedicada.
 - [x] Cobros reutilizando el cálculo de la pantalla Cobros, con la línea «Sin cobro registrado». AC-04.
 - [x] Helper `TabularExport` compartido con Por reponer, y exportación de Reportes a Excel (una hoja por reporte) y CSV. AC-05.
 
@@ -19,11 +19,11 @@ Aprobado por el propietario el 2026-11-08. Desarrollo autorizado el 2026-11-08; 
 - [x] Ajustar el mockup con la línea de anulaciones de ventas anteriores y la nota de Cobros. AC-02 y AC-04.
 
 ## Seguridad
-- [ ] Permisos y aislamiento entre empresas y sucursales en todas las consultas y archivos. AC-06.
+- [x] Permisos y aislamiento entre empresas y sucursales en todas las consultas y archivos. AC-06. — aprobada por el propietario el 2026-11-09 con la evidencia de regresión y del recorrido real; sin prueba de integración dedicada.
 
 ## Pruebas
 - [x] Presentar la aplicación local al propietario antes de ejecutar pruebas.
-- [ ] Integración en MySQL, regresión de Por reponer, Vitest y Playwright a 320 y 1440 px, con evidencia en `docs/04-Testing/STK-017/`. AC-01 a AC-06.
+- [x] Integración en MySQL, regresión de Por reponer, Vitest y Playwright a 320 y 1440 px, con evidencia en `docs/04-Testing/STK-017/`. AC-01 a AC-06. — aprobada por el propietario el 2026-11-09 con la evidencia de regresión y del recorrido real; sin prueba de integración dedicada.
 
 ## Validación final
-- [ ] Aprobación final del propietario e integración en GitHub y Trello autorizadas.
+- [x] Aprobación final del propietario e integración en GitHub y Trello autorizadas. Aprobación final el 2026-11-09.

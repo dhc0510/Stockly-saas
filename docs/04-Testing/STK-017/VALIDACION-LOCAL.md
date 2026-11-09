@@ -1,6 +1,6 @@
 # STK-017 · Validación local
 
-El propietario revisó la aplicación local el 2026-11-08 y pidió publicarla en `main` con el commit «STK-017 | Resúmenes y reportes operativos». Este documento separa lo verificado de lo pendiente: **STK-017 no está terminada** hasta completar las pruebas de integración de la última sección.
+El propietario revisó la aplicación local el 2026-11-08 y pidió publicarla en `main` con el commit «STK-017 | Resúmenes y reportes operativos». El propietario dio la aprobación final el 2026-11-09 («marca como aprobadas las pruebas de STK-017 y STK-018»), aceptando la evidencia de este documento.
 
 ## Verificado
 
@@ -27,9 +27,11 @@ El propietario revisó la aplicación local el 2026-11-08 y pidió publicarla en
 - En celular las listas usan una flecha propia con margen, porque la nativa quedaba pegada al borde.
 - La letra de tablas y desgloses quedó en 14 px, como en el mockup.
 
-## Pendiente antes de dar STK-017 por terminada
+## Pruebas no ejecutadas, aceptadas por el propietario
 
-- [ ] Integración en MySQL con datos controlados:
+El propietario decidió el 2026-11-09 dar la funcionalidad por terminada sin estas pruebas dedicadas. No se escribieron ni se ejecutaron; quedan como mejora recomendada si se quiere más cobertura automática.
+
+- Integración en MySQL con datos controlados:
   - anulaciones del mismo día y de otro día;
   - devoluciones en su fecha;
   - período anterior y límite de 366 días;
@@ -37,4 +39,4 @@ El propietario revisó la aplicación local el 2026-11-08 y pidió publicarla en
   - productos, vendedores y «Sin ventas»;
   - archivos.
   Cubre AC-01 a AC-03 y AC-05.
-- [ ] Integración de permisos y aislamiento: sin módulo (403), sucursal ajena (404), otra empresa y sin sesión (401). AC-06.
+- Integración de permisos y aislamiento: sin módulo (403), sucursal ajena (404), otra empresa y sin sesión (401). AC-06.
