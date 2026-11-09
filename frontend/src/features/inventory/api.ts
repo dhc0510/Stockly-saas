@@ -11,13 +11,24 @@ export type StockItem = {
   sku:string; barcode:string|null; unit:string; branchId:string; branchName:string;
   onHand:number; reserved:number; available:number; minimumQuantity:number|null; lowThreshold:number;
   recoveryMargin:number; exhaustedBasis:"AVAILABLE"|"ON_HAND"; state:"AVAILABLE"|"LOW"|"MINIMUM"|"EXHAUSTED";
+  targetQuantity:number|null; restockPaused:boolean;
 };
 export type PendingItem = { productId:string; productName:string; category:string|null; itemId:string; variantName:string|null; sku:string; unit:string };
 export type StockAlert = {
   id:string; type:"MINIMUM"|"EXHAUSTED"; productId:string; productName:string; variantName:string|null;
   sku:string; unit:string; branchId:string; branchName:string; available:number; minimumQuantity:number|null; lastNotifiedAt:string|null;
 };
-export type ThresholdInput = { minimumQuantity:number|null; lowThreshold:number; recoveryMargin:number; exhaustedBasis:"AVAILABLE"|"ON_HAND" };
+export type ThresholdInput = { minimumQuantity:number|null; lowThreshold:number; recoveryMargin:number; exhaustedBasis:"AVAILABLE"|"ON_HAND";
+  targetQuantity?:number|null; restockPaused?:boolean };
+/** STK-016 · Por reponer. */
+export type RestockRow = {
+  productId:string; productName:string; category:string|null; itemId:string; variantName:string|null; sku:string; unit:string;
+  branchId:string; branchName:string; state:"EXHAUSTED"|"MINIMUM"|"LOW"; available:number; minimumQuantity:number|null;
+  recoveryMargin:number; targetQuantity:number|null; toOrder:number|null; basis:"TARGET"|"RECOVERY"|"NONE";
+};
+export type PausedRow = { productId:string; productName:string; itemId:string; variantName:string|null; sku:string; unit:string;
+  branchId:string; branchName:string; available:number; pausedBy:string|null; pausedAt:string|null };
+export type Restock = { companyName:string; rows:RestockRow[]; totals:{exhausted:number;minimum:number;low:number}; paused:PausedRow[] };
 export const inventoryApi = {
   branches:(includeInactive=false)=>request<Branch[]>(`/api/inventory/branches?includeInactive=${includeInactive}`),
   createBranch:(input:BranchInput)=>request<Branch>("/api/inventory/branches",{method:"POST",body:JSON.stringify(input)}),
@@ -33,5 +44,7 @@ export const inventoryApi = {
   updateThresholds:(branchId:string,itemId:string,input:ThresholdInput)=>request<void>(`/api/inventory/branches/${branchId}/items/${itemId}/thresholds`,{method:"PUT",body:JSON.stringify(input)}),
   unassignItem:(branchId:string,itemId:string)=>request<void>(`/api/inventory/branches/${branchId}/items/${itemId}`,{method:"DELETE"}),
   alerts:()=>request<StockAlert[]>("/api/inventory/alerts"),
+  restock:(params:URLSearchParams)=>request<Restock>(`/api/inventory/restock?${params}`),
+  restockCount:()=>request<{count:number}>("/api/inventory/restock/count"),
   dismissAlert:(id:string)=>request<void>(`/api/inventory/alerts/${id}/dismiss`,{method:"POST"}),
 };

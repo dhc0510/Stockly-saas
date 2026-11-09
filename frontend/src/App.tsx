@@ -18,6 +18,7 @@ export function App() {
     const page = pathname.startsWith("/inventory/receipts") ? "Entradas de inventario"
       : pathname.startsWith("/inventory/movements") ? "Salidas y ajustes"
       : pathname.startsWith("/inventory/history") ? "Historial"
+      : pathname.startsWith("/inventory/restock") ? "Por reponer"
       : pathname.startsWith("/sales") ? "Ventas"
       : pathname === "/payments/methods" ? "Medios de pago"
       : pathname === "/payments" ? "Resumen de cobros"

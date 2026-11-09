@@ -101,6 +101,8 @@
         <dependency><groupId>eu.europa.ec.joinup.sd-dss</groupId><artifactId>dss-utils-apache-commons</artifactId><version>${dss.version}</version></dependency>
         <!-- STK-013 · ADR-007: representación gráfica (PDF) de los comprobantes (OpenPDF, LGPL 2.1 / MPL 2.0). -->
         <dependency><groupId>com.github.librepdf</groupId><artifactId>openpdf</artifactId><version>3.0.5</version></dependency>
+        <!-- STK-016: exportación de «Por reponer» a Excel (.xlsx). fastexcel, Apache-2.0, solo escritura y sin dependencias pesadas. -->
+        <dependency><groupId>org.dhatim</groupId><artifactId>fastexcel</artifactId><version>0.20.2</version></dependency>
         <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-mysql</artifactId><scope>test</scope></dependency>
         <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-junit-jupiter</artifactId><scope>test</scope></dependency></dependencies>
 

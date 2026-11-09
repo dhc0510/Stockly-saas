@@ -14,8 +14,34 @@ import static com.stockly.inventory.InventoryContracts.*;
 @RequestMapping("/api/inventory")
 @PreAuthorize("hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')")
 public class InventoryController {
+    private static final String READERS = "hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')";
     private final InventoryService inventory;
-    public InventoryController(InventoryService inventory) { this.inventory = inventory; }
+    private final RestockService restock;
+    public InventoryController(InventoryService inventory, RestockService restock) { this.inventory = inventory; this.restock = restock; }
+
+    // STK-016: Por reponer, contador del menú y exportación, con los mismos permisos y sucursales que Existencias.
+    @GetMapping("/restock")
+    @PreAuthorize(READERS)
+    RestockService.Restock restock(Authentication auth,@RequestParam(required=false) String branchId,@RequestParam(defaultValue="") String search,
+                                   @RequestParam(defaultValue="") String category,@RequestParam(defaultValue="false") boolean includeLow) {
+        return restock.list(principal(auth),branchId,search,category,includeLow);
+    }
+
+    @GetMapping("/restock/count")
+    @PreAuthorize(READERS)
+    java.util.Map<String,Integer> restockCount(Authentication auth) { return java.util.Map.of("count",restock.count(principal(auth))); }
+
+    @GetMapping("/restock/export")
+    @PreAuthorize(READERS)
+    org.springframework.http.ResponseEntity<byte[]> restockExport(Authentication auth,@RequestParam String format,@RequestParam(required=false) String branchId,
+                                       @RequestParam(defaultValue="") String search,@RequestParam(defaultValue="") String category,
+                                       @RequestParam(defaultValue="false") boolean includeLow) {
+        RestockService.Export file = restock.export(principal(auth),format,branchId,search,category,includeLow);
+        return org.springframework.http.ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, org.springframework.http.ContentDisposition.attachment().filename(file.fileName()).build().toString())
+            .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-store")
+            .contentType(org.springframework.http.MediaType.parseMediaType(file.contentType())).body(file.content());
+    }
 
     @GetMapping("/location-setup")
     @PreAuthorize("hasRole('COMPANY_ADMIN')")

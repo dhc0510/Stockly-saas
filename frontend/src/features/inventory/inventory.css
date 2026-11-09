@@ -137,3 +137,14 @@
   .inventory-search { grid-column: auto; }
   .inventory-controls label,.inventory-controls select { min-width: 0; width: 100%; }
 }
+
+/* STK-016 · Reposición en la ventana de alertas y etiqueta «No se repone». */
+.inventory-fieldset { display: grid; gap: 13px; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; }
+.inventory-fieldset legend { padding: 0 4px; font-size: 13px; font-weight: 700; }
+.inventory-restock-preview { margin: 0; padding: 9px 11px; border-radius: 8px; background: #fff4ea; color: #9a3412; font-size: 13px; }
+.inventory-check { display: flex !important; align-items: flex-start; gap: 10px; cursor: pointer; }
+.inventory-check input { width: 20px !important; min-height: 20px !important; height: 20px; margin-top: 1px; flex: none; accent-color: #f97316; }
+.inventory-check span { display: grid; gap: 3px; }
+.inventory-status-group { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+.inventory-paused-badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; background: #f4f4f5; color: #52525b; font-size: 11px; font-weight: 650; white-space: nowrap; margin-left: 6px; }
+.inventory-status-group .inventory-paused-badge { margin-left: 0; }

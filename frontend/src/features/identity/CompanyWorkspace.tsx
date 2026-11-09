@@ -9,6 +9,7 @@ import { ReceiptsPage, receiptAccess } from "../receipts/ReceiptsPage";
 import { MovementsPage, movementAccess } from "../movements/MovementsPage";
 import { HistoryPage, historyAccess } from "../history/HistoryPage";
 import { InventoryPage, BranchesPage, InventoryBell } from "../inventory/InventoryPages";
+import { RestockNavLink, RestockPage } from "../inventory/RestockPage";
 import { useAuth } from "../auth/AuthContext";
 import { identityApi, type AuditPage, type CreatedWorker, type Permission, type Role, type SessionPolicy, type Worker } from "./api";
 
@@ -86,6 +87,7 @@ export function CompanyWorkspace() {
       {(canCatalog||canInventory||canBranches||canReceipts||canMovements||canHistory)&&<div className="nav-caption inventory-caption">INVENTARIO</div>}
       {canCatalog&&<NavLink className="identity-nav" to="/catalog" onClick={closeMenu}><Package size={18}/> Catálogo</NavLink>}
       {canInventory&&<NavLink className="identity-nav" to="/inventory" end onClick={closeMenu}><Boxes size={18}/> Existencias</NavLink>}
+      {canInventory&&<RestockNavLink onClick={closeMenu}/>}
       {canBranches&&<NavLink className="identity-nav" to="/branches" onClick={closeMenu}><MapPin size={18}/> Sucursales</NavLink>}
       {canReceipts&&<NavLink className="identity-nav" to="/inventory/receipts" onClick={closeMenu}><PackagePlus size={18}/> Entradas de inventario</NavLink>}
       {canMovements&&<NavLink className="identity-nav" to="/inventory/movements" onClick={closeMenu}><PackageMinus size={18}/> Salidas y ajustes</NavLink>}
@@ -103,6 +105,7 @@ export function CompanyWorkspace() {
         {canPolicy&&<Route path="/audit" element={<AuditPageView/>}/>}
         {canCatalog&&<Route path="/catalog" element={<CatalogPage access={catalog}/>}/>}
         {canInventory&&<Route path="/inventory" element={<InventoryPage canEditCatalog={catalog.edit} isAdmin={user.role==="COMPANY_ADMIN"}/>}/>}
+        {canInventory&&<Route path="/inventory/restock" element={<RestockPage canEdit={catalog.edit}/>}/>}
         {canBranches&&<Route path="/branches" element={<BranchesPage/>}/>}
         {canReceipts&&<Route path="/inventory/receipts/*" element={<ReceiptsPage user={user} access={receipts}/>}/>}
         {canMovements&&<Route path="/inventory/movements/*" element={<MovementsPage user={user} access={movements}/>}/>}

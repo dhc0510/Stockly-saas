@@ -21,7 +21,9 @@ public class AuditEventService {
         Map.entry("SESSION_POLICY_UPDATED","Política de sesión actualizada"),
         Map.entry("PAYMENT_METHODS_UPDATED","Medios de pago actualizados"),
         Map.entry("BILLING_SETTINGS_UPDATED","Facturación electrónica actualizada"),
-        Map.entry("BILLING_PRODUCTION_ENABLED","Producción de facturación activada")
+        Map.entry("BILLING_PRODUCTION_ENABLED","Producción de facturación activada"),
+        Map.entry("RESTOCK_PAUSED","Producto marcado como «No reponer»"),
+        Map.entry("RESTOCK_RESUMED","Producto vuelve a reponerse")
     );
     private final JdbcTemplate jdbc;
     public AuditEventService(JdbcTemplate jdbc) { this.jdbc=jdbc; }
@@ -40,12 +42,14 @@ public class AuditEventService {
         if(page<0 || size<1 || size>100) throw new IdentityFailure(400,"VALIDATION","Revisa la paginación.");
         if(action!=null && !LABELS.containsKey(action)) throw new IdentityFailure(400,"VALIDATION","El filtro de acción no es válido.");
         String from=" FROM identity_audit_events e LEFT JOIN users actor ON actor.id=e.actor_id LEFT JOIN users target_user ON e.target_type='USER' AND target_user.id=e.target_id "
-            +"LEFT JOIN company_roles target_role ON e.target_type='ROLE' AND target_role.id=e.target_id ";
+            +"LEFT JOIN company_roles target_role ON e.target_type='ROLE' AND target_role.id=e.target_id "
+            +"LEFT JOIN catalog_items target_item ON e.target_type='INVENTORY_ITEM' AND target_item.company_id=e.company_id AND target_item.id=e.target_id "
+            +"LEFT JOIN catalog_products target_product ON target_product.company_id=target_item.company_id AND target_product.id=target_item.product_id ";
         String where=" WHERE e.company_id=?"+(action==null?"":" AND e.action_key=?");
         Object[] params=action==null?new Object[]{principal.companyId()}:new Object[]{principal.companyId(),action};
         Long total=jdbc.queryForObject("SELECT COUNT(*)"+from+where,Long.class,params);
         String sql="SELECT e.id,e.actor_id,actor.full_name,e.action_key,e.target_type,e.target_id,"
-            +"COALESCE(target_user.full_name,target_role.name,CASE WHEN e.target_type='SESSION_POLICY' THEN 'Política de sesión' WHEN e.target_type='PAYMENT_METHODS' THEN 'Medios de pago' WHEN e.target_type='BILLING' THEN 'Facturación electrónica' ELSE 'Registro eliminado' END),e.occurred_at"
+            +"COALESCE(target_user.full_name,target_role.name,CONCAT(target_product.name,COALESCE(CONCAT(' · ',target_item.variant_name),'')),CASE WHEN e.target_type='SESSION_POLICY' THEN 'Política de sesión' WHEN e.target_type='PAYMENT_METHODS' THEN 'Medios de pago' WHEN e.target_type='BILLING' THEN 'Facturación electrónica' ELSE 'Registro eliminado' END),e.occurred_at"
             +from+where
             +"ORDER BY e.occurred_at DESC,e.id DESC LIMIT ? OFFSET ?";
         Object[] queryParams=Arrays.copyOf(params,params.length+2); queryParams[params.length]=size; queryParams[params.length+1]=(long)page*size;

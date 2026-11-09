@@ -1,0 +1,90 @@
+/* STK-016 · Por reponer (mockup aprobado docs/06-Mockups/STK-016). */
+.restock-page { position: relative; }
+.restock-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.restock-actions .button { min-height: 44px; }
+.restock-menu-wrap { position: relative; }
+.restock-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 12px 30px #0000001a; }
+.restock-menu button { display: grid; width: 100%; gap: 2px; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; text-align: left; font-weight: 650; cursor: pointer; }
+.restock-menu button:hover, .restock-menu button:focus-visible { background: #fff4ea; }
+.restock-menu small { color: var(--muted); font-weight: 400; }
+.restock-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0 14px; }
+.restock-summary > div { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.restock-summary > div.off { opacity: .6; }
+.restock-summary strong { display: block; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+.restock-summary span:not(.restock-dot) { display: block; font-weight: 650; }
+.restock-summary small { display: block; color: var(--muted); font-size: 12px; }
+.restock-dot { width: 12px; height: 12px; flex: none; border-radius: 50%; }
+.restock-dot.out { background: #dc2626; } .restock-dot.min { background: #eab308; } .restock-dot.low { background: #6b9f7e; }
+.restock-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; border: 1px solid var(--border); border-bottom: 0; border-radius: 12px 12px 0 0; background: #fff; }
+.restock-toolbar .inventory-search { flex: 1 1 260px; min-width: 0; }
+.restock-toolbar select { flex: 0 1 220px; min-width: 0; min-height: 44px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: #fff; }
+.restock-switch { min-height: 44px; align-items: center !important; font-weight: 650; }
+/* La lista decide tabla o tarjetas por su propio ancho (con menú lateral el contenido puede ser angosto aunque la ventana no lo sea). */
+.restock-list { container: restock-list / inline-size; border: 1px solid var(--border); border-radius: 0 0 12px 12px; background: #fff; overflow-x: auto; }
+.restock-table { min-width: 720px; }
+@container restock-list (max-width: 900px) { .restock-list .restock-table { display: none; } .restock-list .restock-cards { display: block; } }
+.restock-list[aria-busy="true"] { opacity: .6; }
+.restock-table { width: 100%; border-collapse: collapse; }
+.restock-table th, .restock-table td { padding: 11px 12px; border-top: 1px solid var(--border); text-align: left; vertical-align: middle; }
+.restock-table th { border-top: 0; background: #fafafa; color: var(--muted); font-size: 12px; font-weight: 650; }
+.restock-table td small, .restock-order-cell small { display: block; color: var(--muted); font-size: 11px; }
+.restock-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.restock-order { font-size: 15px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.restock-missing { color: #9a3412; font-size: 13px; font-weight: 650; }
+.restock-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.restock-badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.restock-badge.out { background: #fef2f2; color: #991b1b; } .restock-badge.min { background: #fefce8; color: #854d0e; } .restock-badge.low { background: #eef6f0; color: #3f6f50; }
+.restock-cards { display: none; }
+.restock-card { display: grid; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+.restock-card:first-child { border-top: 0; }
+.restock-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.restock-card-head small { display: block; color: var(--muted); font-size: 12px; }
+.restock-card dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.restock-card dt { color: var(--muted); font-size: 11px; } .restock-card dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; }
+.restock-card-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: #fff4ea; }
+.restock-paused { margin-top: 14px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.restock-paused summary { min-height: 44px; padding: 12px 14px; font-weight: 700; cursor: pointer; }
+.restock-paused-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border); }
+.restock-paused-row small { display: block; color: var(--muted); font-size: 12px; }
+.restock-paused .restock-note { padding: 0 14px 14px; }
+.restock-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+.restock-state { display: grid; gap: 8px; justify-items: center; text-align: center; }
+.restock-state h2 { margin: 0; font-size: 18px; }
+.restock-state.error h2 { color: #b91c1c; }
+.restock-toast { position: fixed; right: 20px; bottom: 20px; z-index: 40; max-width: calc(100% - 40px); padding: 11px 14px; border-radius: 10px; background: #18181b; color: #fff; font-weight: 600; box-shadow: 0 10px 30px #0003; }
+.restock-nav { display: flex !important; align-items: center; }
+.restock-nav-count { margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #fef2f2; color: #991b1b; font-size: 12px; font-weight: 750; text-align: center; }
+.restock-sheet { max-width: 900px; margin: 16px auto 0; padding: 32px 36px; border: 1px solid var(--border); border-radius: 4px; background: #fff; color: #000; overflow-x: auto; }
+.restock-sheet header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid #000; }
+.restock-sheet h2 { margin: 2px 0; font-size: 22px; }
+.restock-sheet header p { margin: 0; font-size: 12px; }
+.restock-sheet header > p { text-align: right; }
+.restock-sheet table { width: 100%; border-collapse: collapse; }
+.restock-sheet th, .restock-sheet td { padding: 7px 6px; border-bottom: 1px solid #d4d4d8; text-align: left; font-size: 12px; }
+.restock-sheet th { border-bottom: 1px solid #000; }
+.restock-sheet .num { text-align: right; white-space: nowrap; }
+.restock-blank { display: block; width: 80px; border-bottom: 1px solid #71717a; height: 14px; }
+.restock-sheet footer { margin-top: 16px; color: #3f3f46; font-size: 11px; }
+@media (max-width: 760px) {
+  .restock-summary { gap: 6px; }
+  /* El punto de color queda al lado del número; la etiqueta va debajo. */
+  .restock-summary > div { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 7px; row-gap: 4px; padding: 10px; }
+  .restock-summary > div > div { display: contents; }
+  .restock-summary > div span:not(.restock-dot) { grid-column: 1 / -1; }
+  .restock-summary strong { font-size: 22px; }
+  .restock-summary small { display: none; }
+  .restock-actions { width: 100%; }
+  .restock-actions > * { flex: 1 1 140px; }
+  .restock-actions .inventory-branch-select { flex: 1 1 100%; display: grid; min-width: 0; }
+  .restock-actions .inventory-branch-select select { width: 100%; max-width: none; min-width: 0; }
+  .restock-actions .button, .restock-actions select, .restock-menu-wrap .button { width: 100%; }
+  .restock-menu { left: 0; right: auto; width: 100%; }
+  .restock-toolbar select { flex: 1 1 100%; }
+  .restock-toolbar input, .restock-toolbar select { font-size: 16px; }
+  .restock-sheet { padding: 18px 14px; }
+}
+@media print {
+  body * { visibility: hidden !important; }
+  .restock-sheet, .restock-sheet * { visibility: visible !important; }
+  .restock-sheet { position: absolute; inset: 0 auto auto 0; width: 100%; max-width: none; margin: 0; padding: 0; border: 0; overflow: visible; }
+}

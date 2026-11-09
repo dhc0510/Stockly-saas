@@ -23,11 +23,14 @@ public class InventoryService {
 
     private final InventoryLedger ledger;
     private final com.stockly.billing.FiscalDocumentService fiscal;
+    private final com.stockly.identity.AuditEventService audit;
 
-    public InventoryService(JdbcTemplate jdbc, InventoryLedger ledger, com.stockly.billing.FiscalDocumentService fiscal) {
+    public InventoryService(JdbcTemplate jdbc, InventoryLedger ledger, com.stockly.billing.FiscalDocumentService fiscal,
+                            com.stockly.identity.AuditEventService audit) {
         this.jdbc = jdbc;
         this.ledger = ledger;
         this.fiscal = fiscal;
+        this.audit = audit;
     }
 
     public record LocationSetup(List<Branch> branches, boolean needsPrincipal, boolean pending) {}
@@ -217,7 +220,7 @@ public class InventoryService {
         List<Object> params = new ArrayList<>(); params.add(company);
         StringBuilder sql = new StringBuilder("""
             SELECT p.id,p.name,p.category,i.id,i.variant_name,i.sku,i.barcode,i.unit,b.id,b.name,
-              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0)
+              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0),bi.target_quantity,bi.restock_paused
             FROM inventory_branch_items bi
             JOIN inventory_branches b ON b.company_id=bi.company_id AND b.id=bi.branch_id AND b.active=TRUE
             JOIN catalog_items i ON i.company_id=bi.company_id AND i.id=bi.item_id AND i.active=TRUE
@@ -279,12 +282,21 @@ public class InventoryService {
     public void updateThresholds(StocklyPrincipal actor, String branchId, String itemId, ThresholdInput input) {
         String company = company(actor); requireBranchAccess(actor, company, branchId, false);
         ThresholdInput clean = validThresholds(input, false);
-        int changed = jdbc.update("""
-            UPDATE inventory_branch_items SET minimum_quantity=?,low_threshold=?,recovery_margin=?,exhausted_basis=?,updated_at=?
+        validTarget(input.targetQuantity(), clean.minimumQuantity());
+        Boolean wasPaused = jdbc.query("SELECT restock_paused FROM inventory_branch_items WHERE company_id=? AND branch_id=? AND item_id=? FOR UPDATE",
+            (rs,row)->rs.getBoolean(1), company, branchId, itemId).stream().findFirst().orElseThrow(InventoryService::missing);
+        boolean paused = input.restockPaused() == null ? wasPaused : input.restockPaused();
+        Instant now = Instant.now();
+        jdbc.update("""
+            UPDATE inventory_branch_items SET minimum_quantity=?,low_threshold=?,recovery_margin=?,exhausted_basis=?,target_quantity=?,updated_at=?
             WHERE company_id=? AND branch_id=? AND item_id=?
-            """, clean.minimumQuantity(), clean.lowThreshold(), clean.recoveryMargin(), clean.exhaustedBasis(),
-            Timestamp.from(Instant.now()), company, branchId, itemId);
-        if (changed == 0) throw missing();
+            """, clean.minimumQuantity(), clean.lowThreshold(), clean.recoveryMargin(), clean.exhaustedBasis(), input.targetQuantity(),
+            Timestamp.from(now), company, branchId, itemId);
+        if (paused != wasPaused) {
+            jdbc.update("UPDATE inventory_branch_items SET restock_paused=?,restock_paused_by=?,restock_paused_at=? WHERE company_id=? AND branch_id=? AND item_id=?",
+                paused, paused ? actor.accountId() : null, paused ? Timestamp.from(now) : null, company, branchId, itemId);
+            audit.record(paused ? "RESTOCK_PAUSED" : "RESTOCK_RESUMED", "INVENTORY_ITEM", itemId);
+        }
         jdbc.update("UPDATE inventory_alerts SET active=FALSE,dismissed_at=NULL,updated_at=? WHERE company_id=? AND branch_id=? AND item_id=?",
             Timestamp.from(Instant.now()),company,branchId,itemId);
         syncItemAlerts(company, branchId, itemId, withState(loadOne(company, branchId, itemId)));
@@ -344,9 +356,9 @@ public class InventoryService {
         boolean wasMinimum = Boolean.TRUE.equals(jdbc.queryForObject("""
             SELECT EXISTS(SELECT 1 FROM inventory_alerts WHERE company_id=? AND branch_id=? AND item_id=? AND alert_type='MINIMUM' AND active=TRUE)
             """,Boolean.class,company,branchId,itemId));
-        boolean minimum = item.minimumQuantity() != null && (item.available().compareTo(item.minimumQuantity()) <= 0 ||
+        boolean minimum = !item.restockPaused() && item.minimumQuantity() != null && (item.available().compareTo(item.minimumQuantity()) <= 0 ||
             wasMinimum && item.available().compareTo(item.minimumQuantity().add(item.recoveryMargin())) < 0);
-        boolean exhausted = ("ON_HAND".equals(item.exhaustedBasis()) ? item.onHand() : item.available()).signum() <= 0;
+        boolean exhausted = !item.restockPaused() && ("ON_HAND".equals(item.exhaustedBasis()) ? item.onHand() : item.available()).signum() <= 0;
         syncAlertType(company, branchId, itemId, "MINIMUM", minimum, now);
         syncAlertType(company, branchId, itemId, "EXHAUSTED", exhausted, now);
         List<String> recipients = jdbc.query("""
@@ -386,7 +398,7 @@ public class InventoryService {
         if (branches.isEmpty()) return List.of();
         return jdbc.query("""
             SELECT p.id,p.name,p.category,i.id,i.variant_name,i.sku,i.barcode,i.unit,b.id,b.name,
-              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0)
+              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0),bi.target_quantity,bi.restock_paused
             FROM inventory_branch_items bi JOIN inventory_branches b ON b.company_id=bi.company_id AND b.id=bi.branch_id AND b.active=TRUE
             JOIN catalog_items i ON i.company_id=bi.company_id AND i.id=bi.item_id AND i.active=TRUE
             JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id AND p.active=TRUE
@@ -398,7 +410,7 @@ public class InventoryService {
     private StockItem loadOne(String company, String branchId, String itemId) {
         return jdbc.query("""
             SELECT p.id,p.name,p.category,i.id,i.variant_name,i.sku,i.barcode,i.unit,b.id,b.name,
-              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0)
+              bi.minimum_quantity,bi.low_threshold,bi.recovery_margin,bi.exhausted_basis,COALESCE(stock.quantity,0),bi.target_quantity,bi.restock_paused
             FROM inventory_branch_items bi JOIN inventory_branches b ON b.company_id=bi.company_id AND b.id=bi.branch_id
             JOIN catalog_items i ON i.company_id=bi.company_id AND i.id=bi.item_id JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id
             LEFT JOIN inventory_balances stock ON stock.company_id=b.company_id AND stock.location_id=b.location_id AND stock.item_id=i.id
@@ -409,7 +421,8 @@ public class InventoryService {
     private StockItem stockItem(java.sql.ResultSet rs) throws java.sql.SQLException {
         BigDecimal onHand = rs.getBigDecimal(15);
         return new StockItem(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5),rs.getString(6),rs.getString(7),rs.getString(8),
-            rs.getString(9),rs.getString(10),onHand,ZERO,onHand,rs.getBigDecimal(11),rs.getBigDecimal(12),rs.getBigDecimal(13),rs.getString(14),"");
+            rs.getString(9),rs.getString(10),onHand,ZERO,onHand,rs.getBigDecimal(11),rs.getBigDecimal(12),rs.getBigDecimal(13),rs.getString(14),"",
+            rs.getBigDecimal(16),rs.getBoolean(17));
     }
 
     private StockItem withState(StockItem item) {
@@ -420,7 +433,8 @@ public class InventoryService {
         else if (item.minimumQuantity() != null && item.available().compareTo(item.minimumQuantity().add(item.lowThreshold())) <= 0) state = "LOW";
         else state = "AVAILABLE";
         return new StockItem(item.productId(),item.productName(),item.category(),item.itemId(),item.variantName(),item.sku(),item.barcode(),item.unit(),
-            item.branchId(),item.branchName(),item.onHand(),item.reserved(),item.available(),item.minimumQuantity(),item.lowThreshold(),item.recoveryMargin(),item.exhaustedBasis(),state);
+            item.branchId(),item.branchName(),item.onHand(),item.reserved(),item.available(),item.minimumQuantity(),item.lowThreshold(),item.recoveryMargin(),item.exhaustedBasis(),state,
+            item.targetQuantity(),item.restockPaused());
     }
 
     private boolean matchesStatus(StockItem item, String filter) {
@@ -507,6 +521,14 @@ public class InventoryService {
         if(!Set.of("AVAILABLE","ON_HAND").contains(basis)) throw invalid("Selecciona un criterio de agotado válido.");
         return new ThresholdInput(input.minimumQuantity(),low,recovery,basis);
     }
+    /** STK-016: nivel deseado opcional, mayor que el mínimo (o que 0 sin mínimo), con hasta 2 decimales. */
+    private void validTarget(BigDecimal target,BigDecimal minimum) {
+        if(target==null) return;
+        if(target.scale()>2||target.signum()<=0||target.compareTo(new BigDecimal("9999999999999.99"))>0)
+            throw invalidField("targetQuantity","El nivel deseado debe ser una cantidad mayor que cero, con hasta 2 decimales.");
+        if(minimum!=null&&target.compareTo(minimum)<=0)
+            throw invalidField("targetQuantity","El nivel deseado debe ser mayor que el mínimo ("+minimum.stripTrailingZeros().toPlainString()+").");
+    }
     private void decimal(BigDecimal value,boolean nullable,String message) {
         if(value==null&&nullable)return;
         if(value==null||value.signum()<0||value.scale()>2||value.compareTo(new BigDecimal("9999999999999.99"))>0) throw invalid(message);
@@ -529,6 +551,7 @@ public class InventoryService {
     private static Instant instant(Timestamp value){return value==null?null:value.toInstant();}
     private static IdentityFailure missing(){return new IdentityFailure(404,"INVENTORY_NOT_FOUND","No se encontró la sucursal, el producto o la alerta.");}
     private static IdentityFailure invalid(String message){return new IdentityFailure(400,"INVENTORY_INVALID",message);}
+    private static IdentityFailure invalidField(String field,String message){return new IdentityFailure(400,"INVENTORY_INVALID",message,Map.of(field,message));}
     private static IdentityFailure conflict(String message){return new IdentityFailure(409,"INVENTORY_CONFLICT",message);}
     private static IdentityFailure forbidden(String message){return new IdentityFailure(403,"FORBIDDEN",message);}
 }

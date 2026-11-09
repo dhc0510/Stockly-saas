@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Por reponer · Stockly · STK-016</title>
+<style>
+:root{color-scheme:light;--ink:#18181b;--muted:#52525b;--edge:#e4e4e7;--orange:#f97316;--rust:#9a3412;--warm:#fff4ea;--back:#f7f6f4;--green:#166534;--red:#991b1b;--yellow:#854d0e;--low:#3f6f50;font:14px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:var(--back)}
+*{box-sizing:border-box}body{margin:0}button,select,input{font:inherit;color:inherit;min-height:44px;border:1px solid #d4d4d8;border-radius:8px;background:#fff;padding:8px 12px}button{font-weight:650;cursor:pointer}button:hover{background:#faf7f3}.primary{background:var(--orange);border-color:var(--orange)}.primary:hover{background:#fb923c}.quiet{border-color:transparent;background:transparent;color:var(--rust);padding-inline:6px}:focus-visible{outline:2px solid var(--rust);outline-offset:3px}[hidden]{display:none!important}
+h1,h2,h3,p{margin:0}h1{font-size:clamp(25px,4cqi,32px);line-height:1.15;letter-spacing:-.035em}h2{font-size:18px}.muted,small{color:var(--muted)}small{font-size:12px}.qty{font-variant-numeric:tabular-nums;white-space:nowrap}
+.preview{max-width:1440px;margin:auto;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.preview-title{font-weight:750}.preview-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.preview-controls button[aria-pressed=true]{border-color:#eaa875;background:var(--warm);color:var(--rust)}.preview-controls label{display:flex;align-items:center;gap:6px;font-weight:650}
+.frame{max-width:1440px;margin:0 auto 28px;container:stockly/inline-size;border:1px solid #ece3dc;border-radius:15px;background:#fffcf9;overflow:clip;position:relative}.frame[data-size=mobile]{max-width:375px}
+.shell{min-height:660px;display:grid;grid-template-columns:195px minmax(0,1fr)}.sidebar{padding:23px 16px;border-right:1px solid #eee7e1;background:#fff}.brand{display:flex;align-items:center;gap:8px;font-size:25px;font-weight:800;letter-spacing:-.05em}.brand img{width:24px;height:24px}.brand em{font-style:normal;color:var(--orange)}.nav-label,.eyebrow{font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--rust)}.nav-label{color:#686168;margin:30px 0 9px}.nav-item{display:flex;justify-content:space-between;align-items:center;padding:10px 11px;border-radius:8px;color:var(--muted)}.nav-item.current{background:var(--warm);color:var(--rust);font-weight:700}.count{min-width:22px;padding:1px 7px;border-radius:999px;background:#fef2f2;color:var(--red);font-size:12px;font-weight:750;text-align:center}
+.workspace{min-width:0}.topbar{padding:14px 24px;border-bottom:1px solid #eee7e1;background:#fff;display:flex;justify-content:space-between;gap:12px;align-items:center}.topbar .brand{display:none}.topbar>span{font-size:12px;color:var(--muted)}main{padding:clamp(16px,3cqi,32px);max-width:1180px;margin:auto}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:4px 0 16px}.hero p.muted{margin-top:6px;max-width:620px}.actions{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+.menu{position:absolute;right:0;top:50px;z-index:5;min-width:220px;background:#fff;border:1px solid var(--edge);border-radius:10px;box-shadow:0 12px 30px #0000001a;padding:6px}.menu button{display:block;width:100%;text-align:left;border:0;font-weight:600}.menu small{display:block;font-weight:400}
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}.stat{background:#fff;border:1px solid var(--edge);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px}.stat strong{font-size:26px;line-height:1;font-variant-numeric:tabular-nums}.stat span{display:block;font-weight:650}.stat small{display:block}.dot{width:12px;height:12px;border-radius:50%;flex:none}.dot.out{background:#dc2626}.dot.min{background:#eab308}.dot.low{background:#6b9f7e}.stat.off{opacity:.6}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid var(--edge);border-radius:12px 12px 0 0;padding:12px}.toolbar input[type=search]{flex:1 1 220px;min-width:0}.toolbar select{flex:0 1 200px;min-width:0}.switch{display:flex;align-items:center;gap:8px;font-weight:650;min-height:44px;padding:0 4px}.switch input{width:20px;height:20px;min-height:0;accent-color:var(--orange)}
+.table-wrap{background:#fff;border:1px solid var(--edge);border-top:0;border-radius:0 0 12px 12px;overflow:hidden}table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;text-align:left;border-top:1px solid var(--edge);vertical-align:middle}th{font-size:12px;color:var(--muted);font-weight:650;border-top:0;background:#fafafa}td.num,th.num{text-align:right}.prod strong{display:block}.prod small{display:block}.order{font-weight:750;font-size:15px}.order small{display:block;font-weight:400;font-size:11px}.order.missing{font-weight:600;font-size:13px;color:var(--rust)}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}.badge.out{background:#fef2f2;color:var(--red)}.badge.min{background:#fefce8;color:var(--yellow)}.badge.low{background:#eef6f0;color:var(--low)}.badge.paused{background:#f4f4f5;color:#52525b}.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.cards{display:none}.card{border-top:1px solid var(--edge);padding:12px;display:grid;gap:8px}.card-head{display:flex;justify-content:space-between;gap:8px;align-items:start}.card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.card-grid dt{font-size:11px;color:var(--muted)}.card-grid dd{margin:0;font-weight:650}.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--warm);border-radius:8px;padding:8px 10px}
+.paused-panel{margin-top:14px;background:#fff;border:1px solid var(--edge);border-radius:12px}.paused-panel summary{padding:14px;cursor:pointer;font-weight:700;min-height:44px}.paused-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--edge);padding:10px 14px}
+.note{margin-top:12px;font-size:12px;color:var(--muted)}.state-panel{background:#fff;border:1px solid var(--edge);border-radius:12px;padding:40px 20px;text-align:center;display:grid;gap:8px;justify-items:center}.state-panel .icon{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:#edf9ef;color:var(--green)}.state-panel.error .icon{background:#fef2f2;color:var(--red)}
+.toast{position:absolute;right:20px;bottom:20px;background:var(--ink);color:#fff;border-radius:10px;padding:11px 14px;box-shadow:0 10px 30px #0003;font-weight:600;max-width:calc(100% - 40px)}
+.backdrop{position:absolute;inset:0;background:#18181b66;display:grid;justify-items:center;align-items:start;padding:72px 16px 16px;z-index:10}.modal{background:#fff;border-radius:14px;width:min(520px,100%);max-height:100%;overflow:auto;padding:20px;display:grid;gap:14px}.modal-head{display:flex;justify-content:space-between;gap:8px}.modal label{display:grid;gap:5px;font-weight:650;font-size:13px}.modal label input,.modal label select{width:100%;font-weight:500}.modal label small{font-weight:400}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.group{border:1px solid var(--edge);border-radius:10px;padding:12px;display:grid;gap:12px}.group h3{font-size:14px}.check{display:flex!important;grid-template-columns:none;align-items:flex-start;gap:10px}.modal .check input{width:20px;height:20px;min-height:0;margin-top:2px;accent-color:var(--orange);flex:none}.field-error{color:#b91c1c;font-size:12px;font-weight:600}.invalid{border-color:#b91c1c}.preview-calc{background:var(--warm);color:var(--rust);border-radius:8px;padding:9px 11px;font-size:13px}.modal-actions{display:flex;justify-content:flex-end;gap:8px}
+.sheet{background:#fff;max-width:794px;margin:0 auto;padding:36px 40px;border:1px solid var(--edge);border-radius:4px;box-shadow:0 6px 24px #0000000f;color:#000}.sheet header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:12px}.sheet h1{font-size:22px}.sheet th{background:none;color:#000;border-bottom:1px solid #000}.sheet td,.sheet th{padding:7px 6px;font-size:12px}.sheet .blank{border-bottom:1px solid #999;width:80px}.sheet footer{margin-top:16px;font-size:11px;color:#444}
+@container stockly (max-width:1000px){.shell{grid-template-columns:160px minmax(0,1fr)}}
+@container stockly (max-width:680px){.shell{display:block;min-height:0}.sidebar{display:none}.topbar{padding:12px 14px}.topbar .brand{display:flex;font-size:21px}.topbar .brand img{width:19px;height:19px}.topbar strong{display:none}.summary{gap:6px}.stat{flex-direction:column;align-items:flex-start;gap:4px;padding:10px}.stat strong{font-size:22px}.stat small{display:none}.actions{width:100%}.actions>button{flex:1}.menu{left:0;right:auto;width:100%}table:not(.sheet table){display:none}.cards{display:block}.sheet{overflow-x:auto}.toolbar select{flex:1 1 100%}.toolbar input,.toolbar select,.modal input,.modal select{font-size:16px}.grid2{grid-template-columns:1fr}.sheet{padding:18px 14px}}
+@media(max-width:480px){.frame{border-radius:0;margin-bottom:0}.preview{padding:10px 12px}}
+</style>
+</head>
+<body>
+<header class="preview">
+  <div><span class="preview-title">Mockup STK-016 · Por reponer</span> <small>· Datos ficticios</small></div>
+  <div class="preview-controls">
+    <button type="button" data-size="desktop" aria-pressed="true">Escritorio</button>
+    <button type="button" data-size="mobile" aria-pressed="false">Celular</button>
+    <label>Escenario<select id="scenario">
+      <option value="list">Lista de una sucursal</option>
+      <option value="all">Todas mis sucursales</option>
+      <option value="low">Incluyendo stock bajo</option>
+      <option value="config">Configurar reposición</option>
+      <option value="configError">Configurar con error</option>
+      <option value="readonly">Solo lectura</option>
+      <option value="print">Vista para imprimir</option>
+      <option value="empty">Todo al día</option>
+      <option value="error">Error de carga</option>
+    </select></label>
+  </div>
+</header>
+<div class="frame" id="frame" data-size="desktop">
+  <div class="shell">
+    <aside class="sidebar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div>
+      <p class="nav-label">Inventario</p><div class="nav-item">Existencias</div><div class="nav-item current">Por reponer <span class="count" id="navCount">8</span></div><div class="nav-item">Historial</div>
+      <p class="nav-label">Operación comercial</p><div class="nav-item">Ventas</div><div class="nav-item">Cobros</div>
+    </aside>
+    <div class="workspace"><div class="topbar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div>
+      <strong>Ferretería La Esquina</strong><span id="topBranch">Sucursal Centro</span></div><main id="app"></main></div>
+  </div>
+  <div id="overlay"></div>
+</div>
+<script>
+const app=document.getElementById("app"),frame=document.getElementById("frame"),overlay=document.getElementById("overlay");
+const fmt=new Intl.NumberFormat("es-CR",{minimumFractionDigits:0,maximumFractionDigits:2});
+const q=(n,u)=>`${fmt.format(n)} ${u}`;
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const label={out:"Agotado",min:"Stock mínimo",low:"Stock bajo"};
+// min = mínimo; margin = margen de recuperación; target = nivel deseado (opcional)
+const rows=[
+ {name:"Cemento gris 50 kg",sku:"CEM-50",cat:"Construcción",branch:"Centro",unit:"saco",available:0,min:10,margin:2,target:40,state:"out"},
+ {name:"Tornillo para gypsum 1\"",variant:"Caja 100 u",sku:"TOR-G1-100",cat:"Tornillería",branch:"Centro",unit:"caja",available:0,min:5,margin:3,target:null,state:"out"},
+ {name:"Pintura acrílica blanca",variant:"Galón",sku:"PIN-AB-GL",cat:"Pinturas",branch:"Centro",unit:"galón",available:0,min:null,margin:1,target:null,state:"out"},
+ {name:"Cable eléctrico #12",sku:"CAB-12",cat:"Electricidad",branch:"Centro",unit:"m",available:18.5,min:25,margin:10,target:100,state:"min"},
+ {name:"Clavo de acero 2\"",sku:"CLA-2",cat:"Tornillería",branch:"Centro",unit:"kg",available:3.25,min:5,margin:2,target:20,state:"min"},
+ {name:"Lija de agua #220",sku:"LIJ-220",cat:"Abrasivos",branch:"Centro",unit:"unidad",available:6,min:8,margin:4,target:null,state:"min"},
+ {name:"Silicón transparente",sku:"SIL-TR",cat:"Adhesivos",branch:"Centro",unit:"tubo",available:4,min:4,margin:2,target:24,state:"min"},
+ {name:"Brocha 2\"",sku:"BRO-2",cat:"Pinturas",branch:"Centro",unit:"unidad",available:2,min:3,margin:2,target:15,state:"min"},
+ {name:"Tubo PVC 1/2\"",sku:"PVC-12",cat:"Fontanería",branch:"Centro",unit:"unidad",available:11,min:10,margin:2,target:30,state:"low",lowT:2},
+ {name:"Cinta métrica 5 m",sku:"CIN-5",cat:"Herramientas",branch:"Centro",unit:"unidad",available:5,min:4,margin:1,target:5,state:"low",lowT:2},
+ {name:"Guantes de trabajo",variant:"Talla L",sku:"GUA-L",cat:"Seguridad",branch:"Centro",unit:"par",available:7,min:6,margin:2,target:null,state:"low",lowT:2},
+ {name:"Arena fina",sku:"ARE-F",cat:"Construcción",branch:"Centro",unit:"m³",available:1.5,min:1,margin:1,target:4,state:"low",lowT:1}
+];
+const otherBranch=[
+ {name:"Cemento gris 50 kg",sku:"CEM-50",cat:"Construcción",branch:"Norte",unit:"saco",available:3,min:8,margin:2,target:30,state:"min"},
+ {name:"Cable eléctrico #12",sku:"CAB-12",cat:"Electricidad",branch:"Norte",unit:"m",available:0,min:20,margin:10,target:80,state:"out"}
+];
+const paused=[{name:"Pintura anticorrosiva roja",variant:"Cuarto",sku:"PIN-AR-CU",unit:"cuarto",available:0,by:"Ana Mora",at:"02/11/2026"},{name:"Adorno navideño LED",sku:"NAV-LED",unit:"unidad",available:1,by:"Ana Mora",at:"15/01/2026"}];
+function suggestion(r){
+  if(r.target!=null){const n=Math.max(0,r.target-r.available);return {n,how:`hasta el nivel deseado (${q(r.target,r.unit)})`};}
+  if(r.min!=null){const n=Math.max(0,r.min+r.margin-r.available);return {n,how:`hasta salir de alerta (mínimo + margen = ${q(r.min+r.margin,r.unit)})`};}
+  return null;
+}
+function orderCell(r,edit){const s=suggestion(r);
+  if(!s)return `<span class="order missing">Sin dato para sugerir</span><br>${edit?`<button class="quiet" type="button" data-config>Definir nivel deseado</button>`:`<small class="muted">Falta mínimo o nivel deseado</small>`}`;
+  if(s.n===0)return `<span class="qty">—</span><small>Ya está en el nivel deseado</small>`;
+  return `<span class="order qty">${q(s.n,r.unit)}<small>${esc(s.how)}</small></span>`;}
+function render(sc){
+  overlay.innerHTML="";
+  document.getElementById("topBranch").textContent=sc==="all"?"Todas mis sucursales":"Sucursal Centro";
+  if(sc==="print")return renderPrint();
+  const edit=sc!=="readonly",incLow=sc==="low",all=sc==="all";
+  const base=all?[...rows,...otherBranch]:rows;
+  const shown=base.filter(r=>incLow||r.state!=="low").sort((a,b)=>({out:0,min:1,low:2}[a.state]-{out:0,min:1,low:2}[b.state])||a.name.localeCompare(b.name,"es"));
+  const c=s=>base.filter(r=>r.state===s).length;
+  let body;
+  if(sc==="error")body=`<div class="state-panel error" role="alert"><div class="icon">!</div><h2>No pudimos cargar la lista</h2><p class="muted">No mostramos cantidades viejas para no inducir a error. Revisa la conexión e intenta de nuevo.</p><button type="button">Reintentar</button></div>`;
+  else if(sc==="empty")body=`<div class="state-panel" role="status"><div class="icon">✓</div><h2>Todo al día en Sucursal Centro</h2><p class="muted">Ningún producto está agotado ni en su mínimo. Activa «Incluir stock bajo» para adelantar pedidos.</p></div>`;
+  else body=`<div class="toolbar"><input type="search" aria-label="Buscar producto" placeholder="Buscar por nombre, SKU o código"><select aria-label="Categoría"><option>Todas las categorías</option><option>Construcción</option><option>Tornillería</option></select><label class="switch"><input type="checkbox" ${incLow?"checked":""}>Incluir stock bajo</label></div>
+   <div class="table-wrap"><table><thead><tr><th>Producto</th>${all?"<th>Sucursal</th>":""}<th>Estado</th><th class="num">Disponible</th><th class="num">Mínimo</th><th class="num">Nivel deseado</th><th class="num">A pedir</th>${edit?"<th><span class='sr'></span></th>":""}</tr></thead><tbody>
+   ${shown.map(r=>`<tr><td class="prod"><strong>${esc(r.name)}${r.variant?` · ${esc(r.variant)}`:""}</strong><small>SKU ${esc(r.sku)} · ${esc(r.cat)}</small></td>${all?`<td>${r.branch}</td>`:""}<td><span class="badge ${r.state}">${label[r.state]}</span></td><td class="num qty">${q(r.available,r.unit)}</td><td class="num qty">${r.min==null?"<small>Sin configurar</small>":q(r.min,r.unit)}</td><td class="num qty">${r.target==null?"<small>Sin definir</small>":q(r.target,r.unit)}</td><td class="num">${orderCell(r,edit)}</td>${edit?`<td><button class="quiet" type="button" data-config aria-label="Configurar reposición de ${esc(r.name)}">Configurar</button></td>`:""}</tr>`).join("")}
+   </tbody></table>
+   <div class="cards">${shown.map(r=>`<article class="card"><div class="card-head"><div class="prod"><strong>${esc(r.name)}${r.variant?` · ${esc(r.variant)}`:""}</strong><small>SKU ${esc(r.sku)}${all?` · ${r.branch}`:""}</small></div><span class="badge ${r.state}">${label[r.state]}</span></div><dl class="card-grid"><div><dt>Disponible</dt><dd class="qty">${q(r.available,r.unit)}</dd></div><div><dt>Mínimo</dt><dd class="qty">${r.min==null?"—":q(r.min,r.unit)}</dd></div><div><dt>Deseado</dt><dd class="qty">${r.target==null?"—":q(r.target,r.unit)}</dd></div></dl><div class="card-foot"><div>${orderCell(r,edit).replace("order qty","order qty").replace(/<br>/,"")}</div>${edit?`<button class="quiet" type="button" data-config>Configurar</button>`:""}</div></article>`).join("")}</div></div>
+   <details class="paused-panel"><summary>No se reponen en esta sucursal (${paused.length})</summary>${paused.map(p=>`<div class="paused-row"><div class="prod"><strong>${esc(p.name)}${p.variant?` · ${esc(p.variant)}`:""}</strong><small>SKU ${esc(p.sku)} · Disponible ${q(p.available,p.unit)} · Marcado por ${esc(p.by)} el ${p.at}</small></div>${edit?`<button type="button">Volver a reponer</button>`:`<span class="badge paused">No se repone</span>`}</div>`).join("")}<p class="note" style="padding:0 14px 14px">Estos productos no avisan en la campanita ni aparecen arriba. En Existencias se ven con la etiqueta «No se repone».</p></details>
+   <p class="note">«A pedir» es una sugerencia: nivel deseado − disponible. Si no hay nivel deseado, sugiere lo necesario para salir de alerta (mínimo + margen de recuperación). No crea pedidos ni mueve inventario.</p>`;
+  app.innerHTML=`<div class="hero"><div><p class="eyebrow">Inventario</p><h1>Por reponer</h1><p class="muted">Productos agotados y en su mínimo, ordenados por urgencia, con la cantidad sugerida para pedir.</p></div>
+   <div class="actions"><select aria-label="Sucursal"><option ${all?"":"selected"}>Sucursal Centro</option><option>Sucursal Norte</option><option ${all?"selected":""}>Todas mis sucursales</option></select><button type="button" id="exportBtn" ${sc==="error"||sc==="empty"?"disabled":""} aria-haspopup="menu" aria-expanded="false">Exportar ▾</button><button type="button" ${sc==="error"||sc==="empty"?"disabled":""} id="printBtn">Imprimir</button>
+   <div class="menu" role="menu" hidden id="menu"><button role="menuitem" type="button" data-file="xlsx">Excel (.xlsx)<small>Para editar y enviar al proveedor</small></button><button role="menuitem" type="button" data-file="csv">CSV<small>Abre en Excel, Google Sheets u otros</small></button></div></div></div>
+   ${sc==="error"?"":`<div class="summary"><div class="stat"><span class="dot out"></span><div><strong>${sc==="empty"?0:c("out")}</strong><span>Agotados</span><small>Reponer primero</small></div></div><div class="stat"><span class="dot min"></span><div><strong>${sc==="empty"?0:c("min")}</strong><span>En mínimo</span><small>Ya avisan en la campanita</small></div></div><div class="stat ${incLow?"":"off"}"><span class="dot low"></span><div><strong>${sc==="empty"?0:c("low")}</strong><span>Stock bajo</span><small>${incLow?"Incluidos en la lista":"Ocultos · usa el filtro"}</small></div></div></div>`}
+   ${body}`;
+  document.getElementById("navCount").textContent=sc==="empty"?"0":all?String(c("out")+c("min")):"8";
+  const btn=document.getElementById("exportBtn"),menu=document.getElementById("menu");
+  btn.onclick=()=>{menu.hidden=!menu.hidden;btn.setAttribute("aria-expanded",String(!menu.hidden));};
+  menu.querySelectorAll("[data-file]").forEach(b=>b.onclick=()=>{menu.hidden=true;toast(`Descargando por-reponer-centro-2026-11-08.${b.dataset.file}`)});
+  document.getElementById("printBtn").onclick=()=>{document.getElementById("scenario").value="print";render("print")};
+  app.querySelectorAll("[data-config]").forEach(b=>b.onclick=()=>openConfig(false));
+  if(sc==="config")openConfig(false);if(sc==="configError")openConfig(true);
+}
+function toast(t){overlay.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;setTimeout(()=>overlay.innerHTML="",2600)}
+function openConfig(err){
+  overlay.innerHTML=`<div class="backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="cfgTitle"><div class="modal-head"><div><p class="eyebrow">Sucursal Centro</p><h2 id="cfgTitle">Alertas y reposición: Cable eléctrico #12</h2><small>Disponible ahora: 18,5 m</small></div><button class="quiet" type="button" data-close aria-label="Cerrar">✕</button></div>
+  <div class="group"><h3>Alertas (como hoy)</h3><label>Avisarme cuando queden<input type="number" value="25" step="0.01"><small>Mínimo. Déjalo vacío para no recibir este aviso.</small></label><div class="grid2"><label>Mostrar «Stock bajo» hasta<input type="number" value="5" step="0.01"><small>Por encima del mínimo.</small></label><label>Quitar el aviso cuando se reponga en<input type="number" value="10" step="0.01"><small>Por encima del mínimo.</small></label></div></div>
+  <div class="group"><h3>Reposición <span class="badge low" style="margin-left:4px">Nuevo</span></h3><label>Reponer hasta (nivel deseado)<input id="target" type="number" step="0.01" value="${err?"20":"100"}" class="${err?"invalid":""}" aria-describedby="targetHelp" ${err?'aria-invalid="true"':""}><small id="targetHelp">Cantidad que quieres tener después de reponer. Opcional.</small>${err?'<span class="field-error" role="alert">El nivel deseado debe ser mayor que el mínimo (25 m).</span>':""}</label>
+  <div class="preview-calc" id="calc">${err?"Corrige el nivel deseado para ver la sugerencia.":"Sugerencia hoy: pedir <strong>81,5 m</strong> (100 − 18,5)."}</div>
+  <label class="check"><input type="checkbox"><span>No reponer en esta sucursal<br><small>Para productos descontinuados o de temporada. Deja de avisar en la campanita y sale de «Por reponer». Las existencias y ventas siguen igual.</small></span></label></div>
+  <div class="modal-actions"><button type="button" data-close>Cancelar</button><button class="primary" type="button" data-save>Guardar cambios</button></div></section></div>`;
+  overlay.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>overlay.innerHTML="");
+  overlay.querySelector("[data-save]").onclick=()=>{if(err)return;toast("Cambios guardados")};
+  const t=overlay.querySelector("#target");t.oninput=()=>{const v=parseFloat(t.value);overlay.querySelector("#calc").innerHTML=isNaN(v)?"Sin nivel deseado: se sugerirá llegar a 35 m (mínimo + margen) → pedir <strong>16,5 m</strong>.":v<=25?"El nivel deseado debe ser mayor que el mínimo (25 m).":`Sugerencia hoy: pedir <strong>${fmt.format(Math.max(0,v-18.5))} m</strong> (${fmt.format(v)} − 18,5).`};
+  overlay.querySelector("input").focus();
+}
+function renderPrint(){
+  const list=rows.filter(r=>r.state!=="low");
+  app.innerHTML=`<div class="hero"><div><p class="eyebrow">Vista para imprimir</p><h1>Por reponer</h1><p class="muted">Se abre el cuadro de impresión del navegador; también permite guardar como PDF. Respeta los filtros aplicados.</p></div><div class="actions"><button type="button" id="back">Volver a la lista</button><button class="primary" type="button">Imprimir</button></div></div>
+  <div class="sheet"><header><div><strong>Ferretería La Esquina</strong><h1>Productos por reponer</h1><div>Sucursal Centro · Agotados y en mínimo</div></div><div style="text-align:right">08/11/2026 6:40 p. m.<br>Generado por Ana Mora</div></header>
+  <table><thead><tr><th>Producto</th><th>SKU</th><th>Estado</th><th style="text-align:right">Disponible</th><th style="text-align:right">A pedir</th><th>Pedido</th></tr></thead><tbody>${list.map(r=>{const s=suggestion(r);return `<tr><td>${esc(r.name)}${r.variant?` · ${esc(r.variant)}`:""}</td><td>${esc(r.sku)}</td><td>${label[r.state]}</td><td style="text-align:right">${q(r.available,r.unit)}</td><td style="text-align:right"><strong>${s?q(s.n,r.unit):"Sin dato"}</strong></td><td><div class="blank">&nbsp;</div></td></tr>`}).join("")}</tbody></table>
+  <footer>${list.length} productos · «A pedir» = nivel deseado − disponible, o hasta salir de alerta si no hay nivel deseado. La columna «Pedido» queda en blanco para anotar a mano.</footer></div>`;
+  document.getElementById("back").onclick=()=>{document.getElementById("scenario").value="list";render("list")};
+}
+document.querySelectorAll("[data-size]").forEach(b=>b.onclick=()=>{frame.dataset.size=b.dataset.size;document.querySelectorAll("[data-size]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
+document.getElementById("scenario").onchange=e=>render(e.target.value);
+render("list");
+</script>
+</body>
+</html>
