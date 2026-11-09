@@ -27,6 +27,7 @@ export type Filters = {
   status: string;
   registeredFrom: string;
   registeredTo: string;
+  subscription: string;
   page: number;
 };
 export type CompanyPage = {

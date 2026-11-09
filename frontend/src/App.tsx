@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { NavLink, Route, Routes, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { Building2, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { Building2, ChevronDown, LayoutDashboard, LogOut, Menu, Settings2, Tags, X } from "lucide-react";
 import { CompanyList } from "./features/companies/CompanyList";
 import { CompanyDetail } from "./features/companies/CompanyDetail";
 import { CompanyForm } from "./features/companies/CompanyForm";
 import { AuthProvider, useAuth } from "./features/auth/AuthContext";
 import { CompleteRecoveryPage, FirstPasswordChangePage, LoginPage, RecoveryPage, VerifyDevicePage } from "./features/auth/AuthPages";
 import { CompanyWorkspace } from "./features/identity/CompanyWorkspace";
+import { SaasPanel } from "./features/saas/SaasPanel";
+import { PlansPage } from "./features/saas/PlansPage";
+import { SaasSettingsPage } from "./features/saas/SaasSettingsPage";
 
 const pageTitles: Record<string, string> = {
   "/users": "Usuarios", "/roles": "Roles y permisos", "/security": "Seguridad", "/audit": "Actividad",
@@ -24,6 +27,10 @@ export function App() {
       : pathname === "/payments" ? "Resumen de cobros"
       : pathname === "/billing" ? "Facturación electrónica"
       : pathname === "/reports" ? "Reportes"
+      : pathname === "/subscription" ? "Mi suscripción"
+      : pathname === "/saas" ? "Panel"
+      : pathname === "/saas/plans" ? "Planes"
+      : pathname === "/saas/settings" ? "Configuración de suscripciones"
       : pathname.startsWith("/catalog") ? "Catálogo de productos"
       : pathname.startsWith("/companies") ? "Empresas"
       : pageTitles[pathname];
@@ -68,14 +75,22 @@ function AuthenticatedApp() {
     <aside className={`sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación principal">
       <NavLink className="brand" to="/companies" aria-label="Stockly, empresas"><img className="brand-mark" src="/brand/stockly-caja.svg" alt="" width="30" height="30" /><span>Stockly<span className="brand-dot" aria-hidden="true">.</span></span></NavLink>
       <div className="nav-caption">ADMINISTRACIÓN</div>
+      <NavLink className="nav-item" to="/saas" end onClick={closeMenu}><LayoutDashboard size={19}/> Panel</NavLink>
       <NavLink className="nav-item" to="/companies" onClick={closeMenu}><Building2 size={19}/> Empresas</NavLink>
+      <NavLink className="nav-item" to="/saas/plans" onClick={closeMenu}><Tags size={19}/> Planes</NavLink>
+      <NavLink className="nav-item" to="/saas/settings" onClick={closeMenu}><Settings2 size={19}/> Configuración</NavLink>
       <div className="sidebar-footer"><span className="avatar"><Building2 size={19}/></span><span>{user.fullName}<br/><strong>{user.email}</strong></span><ChevronDown size={15}/></div>
     </aside>
     {menuOpen&&<button className="mobile-drawer-scrim" type="button" aria-label="Cerrar menú" onClick={closeMenu}/>}
     <div className="workspace">
       {import.meta.env.DEV && import.meta.env.MODE === "demo" && <div className="demo-notice" role="status"><strong>Demostración local</strong><span>Datos ficticios · Cambios simulados, sin conexión al backend real.</span></div>}
       <header className="topbar"><button className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span>Administración de Stockly</span><button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></header>
-      <main id="main" tabIndex={-1}><CompanyRoutes/></main>
+      <main id="main" tabIndex={-1}><Routes>
+        <Route path="/saas" element={<SaasPanel/>}/>
+        <Route path="/saas/plans" element={<PlansPage/>}/>
+        <Route path="/saas/settings" element={<SaasSettingsPage/>}/>
+        <Route path="*" element={<CompanyRoutes/>}/>
+      </Routes></main>
     </div>
   </div>;
 }

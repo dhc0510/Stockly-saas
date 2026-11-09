@@ -72,16 +72,22 @@ public class FiscalXmlBuilder {
                 w.text(el, "ImpuestoAsumidoEmisorFabrica", money5(BigDecimal.ZERO));
                 w.text(el, "ImpuestoNeto", money5(b.tax()));
                 w.text(el, "MontoTotalLinea", money5(b.total()));
-                totals.add(line.rateCode(), b);
+                totals.add(line.rateCode(), b, FiscalDraft.SERVICE.equals(line.unit()));
             }
 
             Element summary = w.child(top, "ResumenFactura");
             Element currency = w.child(summary, "CodigoTipoMoneda");
             w.text(currency, "CodigoMoneda", "CRC");
             w.text(currency, "TipoCambio", money5(BigDecimal.ONE));
-            w.text(summary, "TotalMercanciasGravadas", money5(totals.gravado));
-            w.text(summary, "TotalMercanciasExentas", money5(totals.exento));
-            w.text(summary, "TotalMercNoSujeta", money5(totals.noSujeto));
+            // Servicios (STK-018) solo si hay líneas de servicio: el XML de las ventas de mercancías no cambia.
+            if (totals.services) {
+                w.text(summary, "TotalServGravados", money5(totals.servGravado));
+                w.text(summary, "TotalServExentos", money5(totals.servExento));
+                w.text(summary, "TotalServNoSujeto", money5(totals.servNoSujeto));
+            }
+            w.text(summary, "TotalMercanciasGravadas", money5(totals.gravado.subtract(totals.servGravado)));
+            w.text(summary, "TotalMercanciasExentas", money5(totals.exento.subtract(totals.servExento)));
+            w.text(summary, "TotalMercNoSujeta", money5(totals.noSujeto.subtract(totals.servNoSujeto)));
             w.text(summary, "TotalGravado", money5(totals.gravado));
             w.text(summary, "TotalExento", money5(totals.exento));
             w.text(summary, "TotalNoSujeto", money5(totals.noSujeto));
@@ -141,12 +147,15 @@ public class FiscalXmlBuilder {
     private static final class Totals {
         BigDecimal gravado = BigDecimal.ZERO, exento = BigDecimal.ZERO, noSujeto = BigDecimal.ZERO, tax = BigDecimal.ZERO;
         final SortedMap<String, BigDecimal> byRate = new TreeMap<>();
-        void add(String rateCode, FiscalDraft.Breakdown b) {
+        BigDecimal servGravado = BigDecimal.ZERO, servExento = BigDecimal.ZERO, servNoSujeto = BigDecimal.ZERO;
+        boolean services;
+        void add(String rateCode, FiscalDraft.Breakdown b, boolean service) {
             switch (FiscalDraft.category(rateCode)) {
-                case "EXENTO" -> exento = exento.add(b.subtotal());
-                case "NO_SUJETO" -> noSujeto = noSujeto.add(b.subtotal());
-                default -> gravado = gravado.add(b.subtotal());
+                case "EXENTO" -> { exento = exento.add(b.subtotal()); if (service) servExento = servExento.add(b.subtotal()); }
+                case "NO_SUJETO" -> { noSujeto = noSujeto.add(b.subtotal()); if (service) servNoSujeto = servNoSujeto.add(b.subtotal()); }
+                default -> { gravado = gravado.add(b.subtotal()); if (service) servGravado = servGravado.add(b.subtotal()); }
             }
+            services |= service;
             tax = tax.add(b.tax());
             byRate.merge(rateCode, b.tax(), BigDecimal::add);
         }

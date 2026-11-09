@@ -26,9 +26,12 @@ public class IdentityManagementService {
     private final AuditEventService audit;
 
     public IdentityManagementService(AccountRepository accounts, CompanyRoleRepository roles, CompanyRepository companies,
-                                    JdbcTemplate jdbc, PasswordEncoder encoder, SessionRevoker revoker,AuditEventService audit) {
+                                    JdbcTemplate jdbc, PasswordEncoder encoder, SessionRevoker revoker,AuditEventService audit,
+                                    com.stockly.subscriptions.SubscriptionGuard guard) {
         this.accounts=accounts; this.roles=roles; this.companies=companies; this.jdbc=jdbc; this.encoder=encoder; this.revoker=revoker; this.audit=audit;
+        this.guard=guard;
     }
+    private final com.stockly.subscriptions.SubscriptionGuard guard;
 
     @Transactional(readOnly=true)
     public List<WorkerView> listWorkers() {
@@ -50,6 +53,7 @@ public class IdentityManagementService {
         if(fullName.length()<2 || !username.matches("[a-z0-9._-]{3,30}") || email.length()>254 || !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"))
             throw invalid("request","Revisa el nombre, usuario y correo.");
         var role=roles.findByIdAndCompanyId(input.roleId(),companyId).orElseThrow(() -> new IdentityFailure(404,"ROLE_NOT_FOUND","El rol no está disponible."));
+        guard.requireCapacity(companyId,com.stockly.subscriptions.SubscriptionGuard.Limit.USERS); // STK-018: límite de la prueba
         String temporaryPassword=temporaryPassword();
         var account=Account.worker(companyId,fullName,username,email,encoder.encode(temporaryPassword),role.id());
         accounts.saveAndFlush(account);

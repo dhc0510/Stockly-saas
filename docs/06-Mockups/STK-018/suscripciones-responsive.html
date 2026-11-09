@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suscripciones · Stockly · STK-018</title>
+<style>
+:root{color-scheme:light;--ink:#18181b;--muted:#52525b;--edge:#e4e4e7;--orange:#f97316;--rust:#9a3412;--warm:#fff4ea;--back:#f7f6f4;--green:#166534;--red:#991b1b;--yellow:#854d0e;font:14px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:var(--back)}
+*{box-sizing:border-box}body{margin:0}button,select,input,textarea{font:inherit;color:inherit;min-height:44px;border:1px solid #d4d4d8;border-radius:8px;background:#fff;padding:8px 12px}button{font-weight:650;cursor:pointer}button:hover{background:#faf7f3}.primary{background:var(--orange);border-color:var(--orange)}.primary:hover{background:#fb923c}.danger{color:#b91c1c;border-color:#fecaca;background:#fef2f2}.quiet{border-color:transparent;background:transparent;color:var(--rust);padding-inline:6px}:focus-visible{outline:2px solid var(--rust);outline-offset:3px}[hidden]{display:none!important}
+h1,h2,h3,p{margin:0}h1{font-size:clamp(25px,4cqi,32px);line-height:1.15;letter-spacing:-.035em}h2{font-size:17px}h3{font-size:14px}.muted,small{color:var(--muted)}small{font-size:12px}.num{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.preview{max-width:1440px;margin:auto;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.preview-title{font-weight:750}.preview-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.preview-controls button[aria-pressed=true]{border-color:#eaa875;background:var(--warm);color:var(--rust)}.preview-controls label{display:flex;align-items:center;gap:6px;font-weight:650}
+.frame{max-width:1440px;margin:0 auto 28px;container:stockly/inline-size;border:1px solid #ece3dc;border-radius:15px;background:#fffcf9;overflow:clip;position:relative}.frame[data-size=mobile]{max-width:375px}
+.shell{min-height:720px;display:grid;grid-template-columns:205px minmax(0,1fr)}.sidebar{padding:23px 16px;border-right:1px solid #eee7e1;background:#fff}.brand{display:flex;align-items:center;gap:8px;font-size:25px;font-weight:800;letter-spacing:-.05em}.brand img{width:24px;height:24px}.brand em{font-style:normal;color:var(--orange)}.nav-label,.eyebrow{font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--rust)}.nav-label{color:#686168;margin:30px 0 9px}.nav-item{display:flex;justify-content:space-between;align-items:center;padding:10px 11px;border-radius:8px;color:var(--muted)}.nav-item.current{background:var(--warm);color:var(--rust);font-weight:700}
+.workspace{min-width:0}.topbar{padding:14px 24px;border-bottom:1px solid #eee7e1;background:#fff;display:flex;justify-content:space-between;gap:12px;align-items:center}.topbar .brand{display:none}.topbar>span{font-size:12px;color:var(--muted)}main{padding:clamp(16px,3cqi,32px);max-width:1180px;margin:auto}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:4px 0 16px}.hero p.muted{margin-top:6px;max-width:640px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.kpi{background:#fff;border:1px solid var(--edge);border-radius:12px;padding:12px 14px;display:grid;gap:3px}.kpi span{font-weight:650;color:var(--muted);font-size:13px}.kpi strong{font-size:24px;line-height:1.15;font-variant-numeric:tabular-nums}.kpi small{font-size:12px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px}.panel{background:#fff;border:1px solid var(--edge);border-radius:12px;padding:14px;margin-bottom:14px}.grid2 .panel{margin-bottom:0}.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}.badge.trial{background:#eff6ff;color:#1e40af}.badge.active{background:#edf9ef;color:var(--green)}.badge.grace{background:#fefce8;color:var(--yellow)}.badge.suspended{background:#fef2f2;color:var(--red)}.badge.cancelled{background:#f4f4f5;color:#3f3f46}.badge.off{background:#f4f4f5;color:#52525b}
+table{width:100%;border-collapse:collapse}th,td{padding:10px 12px;text-align:left;border-top:1px solid var(--edge);vertical-align:middle}th{font-size:12px;color:var(--muted);font-weight:650;border-top:0;background:#fafafa}td strong,td small{display:block}
+.table-wrap{background:#fff;border:1px solid var(--edge);border-radius:12px;overflow:hidden}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;border-bottom:1px solid var(--edge)}.tools input{flex:1 1 240px;min-width:0}.tools select{flex:0 1 200px;min-width:0}
+.cards{display:none}.card{border-top:1px solid var(--edge);padding:12px;display:grid;gap:6px}.card:first-child{border-top:0}.card-head{display:flex;justify-content:space-between;gap:8px;align-items:start}.card dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0}.card dt{font-size:11px;color:var(--muted)}.card dd{margin:0;font-weight:650}
+.list>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--edge)}.list>div:first-child{border-top:0}.list dt{color:var(--muted)}.list dd{margin:0;font-weight:650;text-align:right}
+.meter{height:8px;border-radius:4px;background:#f4f4f5;overflow:hidden}.meter i{display:block;height:100%;border-radius:4px;background:#ea580c}.meter.full i{background:#b91c1c}
+.usage{display:grid;gap:10px}.usage>div{display:grid;gap:4px}.usage .row{display:flex;justify-content:space-between;font-size:13px}
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid;font-size:14px}.banner strong{display:block}.banner.trial{background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a}.banner.due{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}.banner.grace{background:#fefce8;border-color:#fde68a;color:#713f12}.banner button{min-height:40px}
+.note{margin-top:10px;font-size:12px;color:var(--muted)}.callout{border-radius:10px;padding:10px 12px;background:var(--warm);color:var(--rust);font-size:13px}.callout.info{background:#eff6ff;color:#1e3a8a}
+.backdrop{position:absolute;inset:0;background:#18181b66;display:grid;justify-items:center;align-items:start;padding:60px 16px 16px;z-index:10;overflow:auto}.modal{background:#fff;border-radius:14px;width:min(560px,100%);padding:20px;display:grid;gap:14px}.modal-head{display:flex;justify-content:space-between;gap:8px}.modal label,.form label{display:grid;gap:5px;font-weight:650;font-size:13px}.modal label input,.modal label select,.modal label textarea,.form label input,.form label select,.form label textarea{width:100%;font-weight:500}.modal label small,.form label small{font-weight:400}.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}.field-error{color:#b91c1c;font-size:12px;font-weight:600}.invalid{border-color:#b91c1c}.group{border:1px solid var(--edge);border-radius:10px;padding:12px;display:grid;gap:12px}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.plan{border:1px solid var(--edge);border-radius:12px;padding:14px;background:#fff;display:grid;gap:6px}.plan.pick{border-color:#eaa875;background:var(--warm)}.plan .price{font-size:22px;font-weight:750}
+.toast{position:absolute;right:20px;bottom:20px;background:var(--ink);color:#fff;border-radius:10px;padding:11px 14px;font-weight:600;max-width:calc(100% - 40px)}
+.center{min-height:640px;display:grid;place-items:center;padding:24px}.login{background:#fff;border:1px solid var(--edge);border-radius:16px;padding:28px;width:min(420px,100%);display:grid;gap:14px}.login .icon{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:#fef2f2;color:var(--red)}
+.mail{background:#fff;border:1px solid var(--edge);border-radius:12px;max-width:620px;margin:auto;overflow:hidden}.mail header{padding:14px 18px;border-bottom:1px solid var(--edge);font-size:13px;color:var(--muted)}.mail .body{padding:22px;display:grid;gap:12px}
+textarea{field-sizing:content;min-height:88px;overflow:hidden;resize:none;line-height:1.5}
+@container stockly (max-width:1000px){.shell{grid-template-columns:170px minmax(0,1fr)}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}}
+@container stockly (max-width:680px){.shell{display:block;min-height:0}.sidebar{display:none}.topbar{padding:12px 14px}.topbar .brand{display:flex;font-size:21px}.topbar .brand img{width:19px;height:19px}.topbar strong{display:none}.kpis{gap:6px}.kpi{padding:10px}.kpi strong{font-size:19px}.actions{width:100%}.actions>button{flex:1}table.wide{display:none}.cards{display:block}.g2,.g3{grid-template-columns:1fr}.tools select{flex:1 1 100%}input,select,textarea{font-size:16px!important}.backdrop{padding:12px}.banner button{width:100%}}
+@media(max-width:480px){.frame{border-radius:0;margin-bottom:0}.preview{padding:10px 12px}}
+</style>
+</head>
+<body>
+<header class="preview">
+  <div><span class="preview-title">Mockup STK-018 · Suscripciones</span> <small>· Datos ficticios</small></div>
+  <div class="preview-controls">
+    <button type="button" data-size="desktop" aria-pressed="true">Escritorio</button>
+    <button type="button" data-size="mobile" aria-pressed="false">Celular</button>
+    <label>Escenario<select id="scenario">
+      <optgroup label="Administrador de Stockly">
+        <option value="panel">Panel del SaaS</option>
+        <option value="companies">Empresas con suscripción</option>
+        <option value="detail">Detalle de empresa · suscripción</option>
+        <option value="payment">Registrar pago</option>
+        <option value="paymentError">Registrar pago con error</option>
+        <option value="voidPayment">Anular pago</option>
+        <option value="cancel">Cancelar suscripción</option>
+        <option value="plans">Planes</option>
+        <option value="planForm">Crear o editar plan</option>
+        <option value="settings">Configuración de suscripciones</option>
+      </optgroup>
+      <optgroup label="Administrador de la empresa">
+        <option value="trial">Prueba con límites</option>
+        <option value="limit">Límite de la prueba alcanzado</option>
+        <option value="due">Aviso: vence pronto</option>
+        <option value="grace">Aviso: en gracia</option>
+        <option value="mine">Mi suscripción</option>
+        <option value="suspended">Ingreso con suscripción suspendida</option>
+        <option value="email">Correo de aviso</option>
+      </optgroup>
+    </select></label>
+  </div>
+</header>
+<div class="frame" id="frame" data-size="desktop"><div id="root"></div><div id="overlay"></div></div>
+<script>
+const root=document.getElementById("root"),frame=document.getElementById("frame"),overlay=document.getElementById("overlay");
+const crc=new Intl.NumberFormat("es-CR",{style:"currency",currency:"CRC",maximumFractionDigits:0}),usd=new Intl.NumberFormat("es-CR",{style:"currency",currency:"USD"});
+const money=(v,c)=>(c==="USD"?usd:crc).format(v);
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const stateLabel={trial:"Prueba",active:"Activa",grace:"Vencida en gracia",suspended:"Suspendida por falta de pago",cancelled:"Cancelada"};
+const badge=s=>`<span class="badge ${s}">${stateLabel[s]}</span>`;
+const plans=[{name:"Estándar",currency:"CRC",month:15000,year:150000,companies:21,active:true},{name:"Lanzamiento 2026",currency:"CRC",month:9900,year:null,companies:4,active:false}];
+const companies=[
+ {name:"Ferretería El Sol",id:"3-101-765432",state:"active",plan:"Estándar · mensual",until:"02/12/2026",last:"02/11/2026"},
+ {name:"Librería Central",id:"3-102-118844",state:"grace",plan:"Estándar · mensual",until:"05/11/2026",last:"05/10/2026",note:"Se suspende el 12/11/2026"},
+ {name:"Papelería Arcoíris",id:"1-1234-0567",state:"trial",plan:"Prueba",until:"16/11/2026",last:"—",note:"38/50 productos"},
+ {name:"Bazar La Esquina",id:"3-101-554433",state:"suspended",plan:"Estándar · mensual",until:"20/10/2026",last:"20/09/2026"},
+ {name:"Tienda Don Pepe",id:"1-0987-0654",state:"active",plan:"Estándar · anual",until:"15/03/2027",last:"15/03/2026"},
+ {name:"Ferretería Las Brisas",id:"3-101-990011",state:"cancelled",plan:"Estándar · mensual",until:"30/11/2026",last:"30/10/2026",note:"Acceso hasta el 30/11/2026"}
+];
+function saasShell(current,body){
+ return `<div class="shell"><aside class="sidebar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div>
+ <p class="nav-label">Administración</p>${[["panel","Panel"],["companies","Empresas"],["plans","Planes"],["settings","Configuración"]].map(([k,l])=>`<div class="nav-item ${k===current?"current":""}">${l}</div>`).join("")}</aside>
+ <div class="workspace"><div class="topbar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div><strong>Administración de Stockly</strong><span>Cerrar sesión</span></div><main>${body}</main></div></div>`}
+function companyShell(banner,body,current="Existencias"){
+ return `<div class="shell"><aside class="sidebar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div>
+ <p class="nav-label">Mi empresa</p><div class="nav-item">Usuarios</div><div class="nav-item ${current==="Mi suscripción"?"current":""}">Mi suscripción</div>
+ <p class="nav-label">Inventario</p><div class="nav-item">Catálogo</div><div class="nav-item ${current==="Existencias"?"current":""}">Existencias</div>
+ <p class="nav-label">Operación comercial</p><div class="nav-item">Ventas</div><div class="nav-item">Reportes</div></aside>
+ <div class="workspace"><div class="topbar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div><strong>Mi empresa</strong><span>Cerrar sesión</span></div>${banner}<main>${body}</main></div></div>`}
+// ---------- Administrador de Stockly ----------
+function panel(){return saasShell("panel",`<div class="hero"><div><p class="eyebrow">Administración</p><h1>Panel</h1><p class="muted">Estado de las suscripciones y pagos registrados. Stockly no procesa cobros: los pagos se registran a mano.</p></div></div>
+ <div class="kpis"><div class="kpi"><span>Empresas activas</span><strong>21</strong><small>+2 este mes</small></div><div class="kpi"><span>En prueba</span><strong>4</strong><small>2 terminan esta semana</small></div><div class="kpi"><span>En gracia</span><strong>2</strong><small>Se suspenden si no pagan</small></div><div class="kpi"><span>Suspendidas</span><strong>1</strong><small>Por falta de pago</small></div></div>
+ <div class="grid2"><section class="panel"><div class="panel-head"><h2>Requieren atención</h2><small>Próximos 7 días</small></div>
+ <table class="wide"><thead><tr><th>Empresa</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>
+ <tr><td><strong>Librería Central</strong><small>Estándar · mensual</small></td><td>${badge("grace")}</td><td>Se suspende el 12/11</td><td><button class="quiet">Registrar pago</button></td></tr>
+ <tr><td><strong>Papelería Arcoíris</strong><small>38/50 productos</small></td><td>${badge("trial")}</td><td>Prueba termina el 16/11</td><td><button class="quiet">Ver</button></td></tr>
+ <tr><td><strong>Ferretería El Sol</strong><small>Estándar · mensual</small></td><td>${badge("active")}</td><td>Vence el 14/11</td><td><button class="quiet">Ver</button></td></tr>
+ <tr><td><strong>Tienda Don Pepe</strong><small>Factura del 08/11 rechazada por Hacienda</small></td><td><span class="badge suspended">Factura rechazada</span></td><td>08/11</td><td><button class="quiet">Revisar</button></td></tr></tbody></table>
+ <div class="cards">${[["Librería Central","grace","Se suspende el 12/11"],["Papelería Arcoíris","trial","Prueba termina el 16/11"],["Ferretería El Sol","active","Vence el 14/11"]].map(([n,s,d])=>`<article class="card"><div class="card-head"><strong>${n}</strong>${badge(s)}</div><small>${d}</small></article>`).join("")}</div></section>
+ <section class="panel"><div class="panel-head"><h2>Pagos registrados</h2><small>Noviembre 2026</small></div><dl class="list">
+ <div><dt>Total cobrado (IVA incluido)</dt><dd>${crc.format(420000)}</dd></div><div><dt>Pagos</dt><dd>20</dd></div><div><dt>Anulados</dt><dd>1</dd></div><div><dt>Facturas aceptadas por Hacienda</dt><dd>19</dd></div><div><dt>Facturas con problema</dt><dd style="color:#b91c1c">1</dd></div></dl>
+ <p class="note">Todos los planes son en colones. Cada pago genera una factura electrónica de Stockly.</p></section></div>`)}
+function companiesView(){return saasShell("companies",`<div class="hero"><div><p class="eyebrow">Administración</p><h1>Empresas</h1><p class="muted">Gestión de empresas (STK-004) con su suscripción.</p></div><div class="actions"><button class="primary">Registrar empresa</button></div></div>
+ <div class="table-wrap"><div class="tools"><input type="search" placeholder="Nombre o identificación" aria-label="Buscar empresa"><select aria-label="Suscripción"><option>Todas las suscripciones</option>${Object.values(stateLabel).map(s=>`<option>${s}</option>`).join("")}</select></div>
+ <table class="wide"><thead><tr><th>Empresa</th><th>Suscripción</th><th>Plan</th><th>Pagado hasta</th><th>Último pago</th></tr></thead><tbody>${companies.map(c=>`<tr><td><strong>${esc(c.name)}</strong><small>${c.id}</small></td><td>${badge(c.state)}${c.note?`<small>${c.note}</small>`:""}</td><td>${c.plan}</td><td>${c.state==="trial"?"Prueba hasta "+c.until:c.until}</td><td>${c.last}</td></tr>`).join("")}</tbody></table>
+ <div class="cards">${companies.map(c=>`<article class="card"><div class="card-head"><div><strong>${esc(c.name)}</strong><small>${c.id}</small></div>${badge(c.state)}</div><dl><div><dt>Plan</dt><dd>${c.plan}</dd></div><div><dt>${c.state==="trial"?"Prueba hasta":"Pagado hasta"}</dt><dd>${c.until}</dd></div></dl>${c.note?`<small>${c.note}</small>`:""}</article>`).join("")}</div></div>
+ <p class="note">El estado de la empresa de STK-004 (activa o suspendida a mano) se mantiene. La suspensión por falta de pago es automática y se quita sola al registrar un pago.</p>`)}
+function detail(){return saasShell("companies",`<div class="hero"><div><p class="eyebrow">Empresas</p><h1>Librería Central ${badge("grace")}</h1><p class="muted">3-102-118844 · registrada el 05/09/2026</p></div><div class="actions"><button>Editar empresa</button><button class="danger">Suspender</button></div></div>
+ <div class="grid2"><section class="panel"><div class="panel-head"><h2>Suscripción</h2><div class="actions"><button class="primary" data-open="payment">Registrar pago</button><button data-open="cancel">Cancelar suscripción</button></div></div>
+ <div class="callout" style="margin-bottom:10px">Venció el 05/11/2026. Tiene acceso completo hasta el <strong>12/11/2026</strong>; ese día se suspende si no se registra un pago.</div>
+ <dl class="list"><div><dt>Plan</dt><dd>Estándar · mensual · ${crc.format(15000)}</dd></div><div><dt>Pagado hasta</dt><dd>05/11/2026</dd></div><div><dt>Fin de la gracia</dt><dd>12/11/2026</dd></div><div><dt>Cliente desde</dt><dd>05/09/2026 (prueba de 14 días)</dd></div><div><dt>Avisos enviados</dt><dd>29/10, 05/11</dd></div></dl></section>
+ <section class="panel"><div class="panel-head"><h2>Historial de pagos</h2></div>
+ <table class="wide"><thead><tr><th>Fecha</th><th>Período</th><th class="num">Monto</th><th>Factura</th><th></th></tr></thead><tbody>
+ <tr><td>05/10/2026<small>SINPE Móvil · 88776655</small></td><td>05/10 – 05/11</td><td class="num">${crc.format(15000)}</td><td><span class="badge active">Aceptada</span><small>FE …0124 · <a href="#">PDF</a> · <a href="#">XML</a></small></td><td><button class="quiet" data-open="voidPayment">Anular</button></td></tr>
+ <tr><td>19/09/2026<small>Transferencia · BN-4471</small></td><td>19/09 – 05/10<small>Primer pago al terminar la prueba</small></td><td class="num">${crc.format(15000)}</td><td><span class="badge active">Aceptada</span><small>FE …0098 · <a href="#">PDF</a></small></td><td></td></tr>
+ <tr style="opacity:.6"><td>18/09/2026<small>Efectivo · anulado por Diego: monto equivocado</small></td><td>—</td><td class="num"><s>${crc.format(1500)}</s></td><td><span class="badge off">Nota de crédito aceptada</span></td><td></td></tr></tbody></table>
+ <div class="cards"><article class="card"><div class="card-head"><strong>05/10/2026</strong><strong>${crc.format(15000)}</strong></div><small>SINPE Móvil · 05/10 – 05/11</small></article><article class="card"><div class="card-head"><strong>19/09/2026</strong><strong>${crc.format(15000)}</strong></div><small>Transferencia · 19/09 – 05/10</small></article></div>
+ <p class="note">Un pago no se borra: se anula con motivo, queda en el historial y su factura se anula con una nota de crédito enviada a Hacienda. Si Hacienda rechaza una factura, se corrige y se reenvía como en STK-013.</p></section></div>`)}
+function paymentModal(err){return `<div class="backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="payT"><div class="modal-head"><div><p class="eyebrow">Librería Central</p><h2 id="payT">Registrar pago</h2><small>Stockly no cobra: registra un pago que ya recibiste.</small></div><button class="quiet" data-close aria-label="Cerrar">✕</button></div>
+ <div class="g2"><label>Plan<select><option>Estándar</option></select></label><label>Ciclo<select><option>Mensual · ${crc.format(15000)}</option><option>Anual · ${crc.format(150000)}</option></select></label></div>
+ <div class="g3"><label>Períodos<input type="number" value="1" min="1" max="12"></label><label>Monto recibido<input value="${err?"14000":"15000"}" class="${err?"invalid":""}" ${err?'aria-invalid="true"':""}>${err?'<span class="field-error" role="alert">El monto debe ser igual al precio del plan (₡15 000 × 1).</span>':""}</label><label>Fecha del pago<input type="date" value="2026-11-09"></label></div>
+ <div class="g2"><label>Medio<select><option>SINPE Móvil</option><option>Transferencia</option><option>Efectivo</option></select></label><label>Referencia<input value="${err?"":"99001122"}" placeholder="Número de comprobante" class="${err?"invalid":""}">${err?'<span class="field-error">La referencia es obligatoria para SINPE Móvil y transferencia.</span>':"<small>Obligatoria para SINPE y transferencia.</small>"}</label></div>
+ <div class="callout info">Cubre del <strong>05/11/2026 al 05/12/2026</strong>. Como estaba en gracia, el período sigue desde el vencimiento anterior. La empresa vuelve a «Activa».</div>
+ <div class="callout">Se emitirá la <strong>factura electrónica de Stockly</strong> a Librería Central S.A. (3-102-118844) y se enviará a Hacienda: base ₡13 274,34 + IVA 13 % ₡1 725,66 = ${crc.format(15000)}. El comercio la recibe por correo.</div>
+ <div class="modal-actions"><button data-close>Cancelar</button><button class="primary" data-save ${err?"disabled":""}>Registrar pago</button></div></section></div>`}
+function voidModal(){return `<div class="backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="voidT"><div class="modal-head"><h2 id="voidT">Anular pago del 05/10/2026</h2><button class="quiet" data-close aria-label="Cerrar">✕</button></div>
+ <p>${crc.format(15000)} por SINPE Móvil (88776655). El período 05/10 – 05/11 deja de estar pagado y la fecha «Pagado hasta» vuelve al 05/10/2026. Se emite una <strong>nota de crédito</strong> por la factura FE …0124 y se envía a Hacienda.</p>
+ <label>Motivo<input placeholder="Ej.: pago duplicado, monto equivocado"><small>Obligatorio. Queda en el historial y en la actividad.</small></label>
+ <div class="callout">Si con esto la empresa queda vencida, entra en gracia o se suspende según las fechas.</div>
+ <div class="modal-actions"><button data-close>Volver</button><button class="danger">Anular pago</button></div></section></div>`}
+function cancelModal(){return `<div class="backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="canT"><div class="modal-head"><h2 id="canT">Cancelar la suscripción de Librería Central</h2><button class="quiet" data-close aria-label="Cerrar">✕</button></div>
+ <p>Úsalo cuando el comercio avisa que deja Stockly. No se envían más avisos de cobro.</p>
+ <dl class="list"><div><dt>Acceso</dt><dd>Hasta el fin de lo pagado</dd></div><div><dt>Después</dt><dd>Suspendida, con los datos conservados</dd></div><div><dt>Volver</dt><dd>Registrar un pago la reactiva</dd></div></dl>
+ <label>Motivo<input placeholder="Ej.: cerró el negocio"></label><div class="callout">Para borrar los datos se usa «Eliminar empresa» de STK-004, por separado.</div>
+ <div class="modal-actions"><button data-close>Volver</button><button class="danger">Cancelar suscripción</button></div></section></div>`}
+function plansView(){return saasShell("plans",`<div class="hero"><div><p class="eyebrow">Administración</p><h1>Planes</h1><p class="muted">Los planes pagados dan acceso completo, sin límites. Precios en colones con IVA incluido. Cambiar un precio aplica a los próximos pagos; lo ya pagado no cambia.</p></div><div class="actions"><button class="primary" data-open="planForm">Crear plan</button></div></div>
+ <div class="table-wrap"><table class="wide"><thead><tr><th>Plan</th><th class="num">Mensual</th><th class="num">Anual</th><th class="num">Empresas</th><th>Estado</th><th></th></tr></thead><tbody>${plans.map(p=>`<tr><td><strong>${p.name}</strong></td><td class="num">${money(p.month,p.currency)}</td><td class="num">${p.year?money(p.year,p.currency)+`<small>${Math.round((1-p.year/(p.month*12))*100)} % de ahorro</small>`:"<small>Sin plan anual</small>"}</td><td class="num">${p.companies}</td><td>${p.active?'<span class="badge active">Disponible</span>':'<span class="badge off">Archivado</span>'}</td><td><button class="quiet" data-open="planForm">Editar</button></td></tr>`).join("")}</tbody></table>
+ <div class="cards">${plans.map(p=>`<article class="card"><div class="card-head"><strong>${p.name}</strong>${p.active?'<span class="badge active">Disponible</span>':'<span class="badge off">Archivado</span>'}</div><dl><div><dt>Mensual</dt><dd>${money(p.month,p.currency)}</dd></div><div><dt>Anual</dt><dd>${p.year?money(p.year,p.currency):"—"}</dd></div></dl><small>${p.companies} empresas</small></article>`).join("")}</div></div>
+ <p class="note">Un plan archivado no se ofrece a empresas nuevas; quienes ya lo tienen lo conservan al renovar. No se borra un plan con historial.</p>`)}
+function planModal(){return `<div class="backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="planT"><div class="modal-head"><h2 id="planT">Editar plan</h2><button class="quiet" data-close aria-label="Cerrar">✕</button></div>
+ <label>Nombre<input value="Estándar"></label><div class="g2"><label>Precio mensual (₡, IVA incluido)<input value="15000"></label><label>Precio anual (₡, IVA incluido)<input value="150000"><small>Opcional. Vacío = sin plan anual.</small></label></div>
+ <label>Descripción para el comercio<textarea rows="2">Acceso completo a Stockly, sin límites de productos, usuarios ni sucursales.</textarea></label>
+ <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked style="width:20px;min-height:20px;accent-color:var(--orange)">Disponible para nuevas suscripciones</label>
+ <div class="callout info">21 empresas usan este plan. El nuevo precio aplica desde su próximo pago.</div>
+ <div class="modal-actions"><button data-close>Cancelar</button><button class="primary">Guardar plan</button></div></section></div>`}
+function settings(){return saasShell("settings",`<div class="hero"><div><p class="eyebrow">Administración</p><h1>Configuración de suscripciones</h1><p class="muted">Se aplica a las empresas nuevas y a los próximos vencimientos.</p></div></div>
+ <div class="grid2"><section class="panel form"><h2 style="margin-bottom:10px">Prueba y gracia</h2><div class="g2"><label>Días de prueba<input type="number" value="14"></label><label>Días de gracia<input type="number" value="7"><small>Acceso completo después del vencimiento.</small></label></div>
+ <h3 style="margin:14px 0 8px">Límites durante la prueba</h3><div class="g3"><label>Productos<input type="number" value="50"></label><label>Usuarios<input type="number" value="2"></label><label>Sucursales<input type="number" value="1"></label></div>
+ <p class="note">La facturación electrónica funciona completa durante la prueba: el comercio emite comprobantes reales ante Hacienda.</p></section>
+ <section class="panel form"><h2 style="margin-bottom:10px">Avisos y forma de pago</h2><label>Avisar antes del vencimiento (días)<input type="number" value="7"><small>También se avisa el día del vencimiento y al empezar la gracia.</small></label>
+ <label style="margin-top:12px">Instrucciones de pago para el comercio<textarea rows="4">SINPE Móvil al 8888-0000 (Stockly S.A.) o transferencia a la cuenta IBAN CR00 0000 0000 0000 0000 00. Indica el nombre de tu empresa y envía el comprobante a pagos@stockly.test.</textarea><small>Se muestran en «Mi suscripción» y en los correos.</small></label></section></div>
+ <section class="panel form" style="margin-top:14px"><div class="panel-head"><h2>Facturación electrónica de Stockly</h2><span class="badge active">Credenciales verificadas</span></div>
+ <p class="muted" style="margin-bottom:12px">Datos del emisor para facturar los pagos de suscripción. Mismo motor de firma y envío que STK-013.</p>
+ <div class="g3"><label>Razón social<input value="Stockly S.A."></label><label>Cédula jurídica<input value="3-101-000000"></label><label>Correo para facturas<input value="facturas@stockly.test"></label></div>
+ <div class="g3" style="margin-top:12px"><label>Actividad económica<input placeholder="6 dígitos"></label><label>Código CABYS del servicio<input placeholder="13 dígitos"><small>Lo define Stockly con su contador.</small></label><label>Ambiente<select><option>Pruebas de Hacienda</option><option>Producción</option></select></label></div>
+ <div class="g3" style="margin-top:12px"><label>Usuario de Hacienda<input value="••••••••"></label><label>Contraseña de Hacienda<input type="password" value="••••••••"></label><label>Certificado (.p12) y PIN<button type="button">Reemplazar certificado</button><small>Vence el 30/06/2027.</small></label></div>
+ <p class="note">Las credenciales se guardan cifradas y nunca se muestran. Si faltan o fallan, el pago se registra igual y la factura queda pendiente de envío.</p></section>
+ <div class="actions" style="justify-content:flex-end;margin-top:14px"><button>Descartar</button><button class="primary">Guardar configuración</button></div>`)}
+// ---------- Administrador de la empresa ----------
+const existencias=`<div class="hero"><div><p class="eyebrow">Inventario</p><h1>Existencias</h1><p class="muted">Contenido normal de la pantalla.</p></div><div class="actions"><button class="primary" data-open="limit">Crear producto</button></div></div><div class="panel" style="height:220px"></div>`;
+function trial(){return companyShell(`<div class="banner trial" role="status"><span><strong>Prueba: te quedan 7 días (hasta el 16/11/2026).</strong>Productos 38/50 · usuarios 2/2 · sucursales 1/1 · facturación electrónica incluida.</span><button>Elegir un plan</button></div>`,existencias)}
+function due(){return companyShell(`<div class="banner due" role="status"><span><strong>Tu suscripción vence en 5 días (14/11/2026).</strong>Paga a tiempo para seguir sin interrupciones.</span><button>Ver cómo pagar</button></div>`,existencias)}
+function grace(){return companyShell(`<div class="banner grace" role="alert"><span><strong>Tu suscripción venció el 05/11/2026.</strong>Tienes acceso completo hasta el 12/11/2026; ese día se suspende si no se registra el pago.</span><button>Ver cómo pagar</button></div>`,existencias)}
+function limitModal(){return `<div class="backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="limT"><div class="modal-head"><h2 id="limT">Llegaste al límite de la prueba</h2><button class="quiet" data-close aria-label="Cerrar">✕</button></div>
+ <p>La prueba permite hasta <strong>50 productos</strong>. Lo que ya cargaste se conserva; con un plan pagado no hay límites.</p>
+ <div class="plans"><div class="plan pick"><strong>Estándar</strong><span class="price">${crc.format(15000)}<small> / mes</small></span><small>o ${crc.format(150000)} al año (ahorra 17 %) · IVA incluido</small></div></div>
+ <div class="callout">SINPE Móvil al 8888-0000 (Stockly S.A.) o transferencia. Indica el nombre de tu empresa y envía el comprobante a pagos@stockly.test. Activamos tu plan al confirmar el pago.</div>
+ <div class="modal-actions"><button data-close>Entendido</button></div></section></div>`}
+function mine(){return companyShell("",`<div class="hero"><div><p class="eyebrow">Mi empresa</p><h1>Mi suscripción</h1><p class="muted">Solo el administrador de la empresa ve esta pantalla.</p></div></div>
+ <div class="grid2"><section class="panel"><div class="panel-head"><h2>Estado</h2>${badge("active")}</div><dl class="list"><div><dt>Plan</dt><dd>Estándar · mensual · ${crc.format(15000)}</dd></div><div><dt>Pagado hasta</dt><dd>14/11/2026</dd></div><div><dt>Próximo pago</dt><dd>${crc.format(15000)} antes del 14/11/2026</dd></div></dl>
+ <h3 style="margin:14px 0 6px">Cómo pagar</h3><div class="callout">SINPE Móvil al 8888-0000 (Stockly S.A.) o transferencia a la cuenta IBAN CR00 0000 0000 0000 0000 00. Indica el nombre de tu empresa y envía el comprobante a pagos@stockly.test.</div></section>
+ <section class="panel"><div class="panel-head"><h2>Pagos</h2></div><table class="wide"><thead><tr><th>Fecha</th><th>Período</th><th class="num">Monto</th><th>Factura</th></tr></thead><tbody><tr><td>14/10/2026<small>SINPE Móvil</small></td><td>14/10 – 14/11</td><td class="num">${crc.format(15000)}</td><td><a href="#">PDF</a> · <a href="#">XML</a></td></tr><tr><td>14/09/2026<small>Transferencia</small></td><td>14/09 – 14/10</td><td class="num">${crc.format(15000)}</td><td><a href="#">PDF</a> · <a href="#">XML</a></td></tr></tbody></table>
+ <div class="cards"><article class="card"><div class="card-head"><strong>14/10/2026</strong><strong>${crc.format(15000)}</strong></div><small>SINPE Móvil · 14/10 – 14/11 · <a href="#">Factura PDF</a></small></article><article class="card"><div class="card-head"><strong>14/09/2026</strong><strong>${crc.format(15000)}</strong></div><small>Transferencia · 14/09 – 14/10</small></article></div>
+ <p class="note">Para cambiar de plan o de ciclo, escríbenos; se aplica en tu próximo pago.</p></section></div>`,"Mi suscripción")}
+function suspended(){return `<div class="center"><div class="login" role="alert"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div><div class="icon">!</div><h1 style="font-size:24px">Tu suscripción está suspendida</h1>
+ <p>El acceso de <strong>Bazar La Esquina</strong> se suspendió el 27/10/2026 por falta de pago. Tus datos están guardados y no se borran.</p>
+ <div class="callout">SINPE Móvil al 8888-0000 (Stockly S.A.) o transferencia. Indica el nombre de tu empresa y envía el comprobante a pagos@stockly.test. Al registrar el pago se reactiva el acceso.</div>
+ <small>Los demás usuarios de la empresa ven: «El acceso de tu empresa está suspendido. Comunícate con el administrador de tu empresa».</small><button>Volver al inicio de sesión</button></div></div>`}
+function email(){return `<div style="padding:24px"><div class="mail"><header>De: Stockly &lt;avisos@stockly.test&gt; · Para: admin@libreriacentral.test<br><strong style="color:var(--ink)">Asunto: Tu suscripción de Stockly venció · tienes hasta el 12/11/2026</strong></header>
+ <div class="body"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div><p>Hola, Andrea:</p><p>La suscripción de <strong>Librería Central</strong> (plan Estándar, ${crc.format(15000)} al mes) venció el 05/11/2026. Mantienes el acceso completo hasta el <strong>12/11/2026</strong>. Si para entonces no se registra el pago, el acceso se suspende; tus datos se conservan.</p>
+ <div class="callout">SINPE Móvil al 8888-0000 (Stockly S.A.) o transferencia a la cuenta IBAN CR00 0000 0000 0000 0000 00. Indica el nombre de tu empresa y envía el comprobante a pagos@stockly.test.</div>
+ <p class="muted" style="font-size:12px">Recibes este correo porque eres administradora de Librería Central en Stockly. También te avisamos 7 días antes y el día del vencimiento.</p></div></div></div>`}
+function render(sc){
+ overlay.innerHTML="";
+ const map={panel,companies:companiesView,detail,payment:detail,paymentError:detail,voidPayment:detail,cancel:detail,plans:plansView,planForm:plansView,settings,trial,limit:trial,due,grace,mine,suspended,email};
+ root.innerHTML=map[sc]();
+ const modal={payment:()=>paymentModal(false),paymentError:()=>paymentModal(true),voidPayment:voidModal,cancel:cancelModal,planForm:planModal,limit:limitModal}[sc];
+ if(modal)overlay.innerHTML=modal();
+ wire();
+}
+function autosize(t){t.style.height="auto";t.style.height=t.scrollHeight+2+"px";}
+function wire(){
+ frame.querySelectorAll("textarea").forEach(t=>{autosize(t);t.oninput=()=>autosize(t);});
+ frame.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{overlay.innerHTML={payment:()=>paymentModal(false),voidPayment:voidModal,cancel:cancelModal,planForm:planModal,limit:limitModal}[b.dataset.open]();wire();});
+ frame.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>overlay.innerHTML="");
+ frame.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>{overlay.innerHTML=`<div class="toast" role="status">Pago registrado. Librería Central vuelve a «Activa» hasta el 05/12/2026.</div>`;setTimeout(()=>overlay.innerHTML="",2600)});
+}
+document.querySelectorAll("[data-size]").forEach(b=>b.onclick=()=>{frame.dataset.size=b.dataset.size;frame.querySelectorAll("textarea").forEach(autosize);document.querySelectorAll("[data-size]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
+document.getElementById("scenario").onchange=e=>render(e.target.value);
+render("panel");
+</script>
+</body>
+</html>

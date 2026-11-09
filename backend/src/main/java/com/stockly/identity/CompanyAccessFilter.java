@@ -10,13 +10,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class CompanyAccessFilter extends OncePerRequestFilter {
     private final CompanyRepository companies;
     private final AccountRepository accounts;
-    public CompanyAccessFilter(CompanyRepository companies, AccountRepository accounts) { this.companies=companies; this.accounts=accounts; }
+    private final com.stockly.subscriptions.SubscriptionGuard subscriptions;
+    public CompanyAccessFilter(CompanyRepository companies, AccountRepository accounts, com.stockly.subscriptions.SubscriptionGuard subscriptions) {
+        this.companies=companies; this.accounts=accounts; this.subscriptions=subscriptions;
+    }
     @Override protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
         var auth=SecurityContextHolder.getContext().getAuthentication();
         if(auth!=null && auth.getPrincipal() instanceof StocklyPrincipal principal) {
             var company=principal.companyId()==null ? null : companies.findById(principal.companyId()).orElse(null);
             var account=accounts.findById(principal.accountId()).orElse(null);
-            boolean companyInvalid=principal.companyId()!=null && (company==null || !company.status().equals("ACTIVE") || company.accessVersion()!=principal.accessVersion());
+            boolean companyInvalid=principal.companyId()!=null && (company==null || !company.status().equals("ACTIVE") || company.accessVersion()!=principal.accessVersion()
+                || subscriptions.suspended(principal.companyId())); // STK-018: suspendida por falta de pago
             boolean accountInvalid=account==null || !account.active() || account.accessVersion()!=principal.accountAccessVersion();
             if(companyInvalid || accountInvalid) {
                 revoke(req, res); return;

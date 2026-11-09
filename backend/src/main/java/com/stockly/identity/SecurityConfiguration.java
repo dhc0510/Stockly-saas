@@ -17,7 +17,8 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
 public class SecurityConfiguration {
     @Bean PasswordEncoder passwordEncoder() { return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8(); }
     @Bean SecurityContextRepository stocklySecurityContextRepository() { return new HttpSessionSecurityContextRepository(); }
-    @Bean @ConditionalOnWebApplication SecurityFilterChain security(HttpSecurity http, CompanyRepository companies, AccountRepository accounts) throws Exception {
+    @Bean @ConditionalOnWebApplication SecurityFilterChain security(HttpSecurity http, CompanyRepository companies, AccountRepository accounts,
+                                                                  com.stockly.subscriptions.SubscriptionGuard subscriptions) throws Exception {
         return http.authorizeHttpRequests(r -> r
                 .requestMatchers("/api/auth/csrf", "/api/auth/login", "/api/auth/device-challenges/verify",
                     "/api/auth/password-recovery", "/api/auth/password-recovery/complete").permitAll()
@@ -34,6 +35,8 @@ public class SecurityConfiguration {
                 .requestMatchers("/api/billing/settings", "/api/billing/settings/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/api/sales", "/api/sales/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
                     "MODULE_SALES_READ", "MODULE_SALES_OPERATE", "MODULE_SALES_ADMIN")
+                .requestMatchers("/api/saas", "/api/saas/**").hasRole("SAAS_ADMIN")
+                .requestMatchers("/api/subscription", "/api/subscription/**").hasAnyRole("COMPANY_ADMIN", "WORKER")
                 .requestMatchers("/api/reports", "/api/reports/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
                     "MODULE_REPORTS_READ", "MODULE_REPORTS_OPERATE", "MODULE_REPORTS_ADMIN")
                 .requestMatchers("/api/inventory/receipts", "/api/inventory/receipts/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
@@ -51,7 +54,7 @@ public class SecurityConfiguration {
                 .accessDeniedHandler((req,res,ex) -> error(res,403,"FORBIDDEN","No tienes permiso para esta operación.")))
             .requestCache(cache -> cache.disable())
             .securityContext(c -> c.securityContextRepository(stocklySecurityContextRepository()))
-            .addFilterBefore(new CompanyAccessFilter(companies, accounts), AuthorizationFilter.class)
+            .addFilterBefore(new CompanyAccessFilter(companies, accounts, subscriptions), AuthorizationFilter.class)
             .build();
     }
     private static void error(jakarta.servlet.http.HttpServletResponse res,int status,String code,String message) throws java.io.IOException {

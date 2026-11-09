@@ -11,12 +11,15 @@ import {
 } from "lucide-react";
 import { api, registrationDate, type CompanyPage, type Filters } from "./api";
 import { ErrorNotice, Loading, Status, Success } from "./shared";
+import { day, saasApi, stateLabel, type Summary } from "../saas/api";
+import { StateBadge } from "../saas/shared";
 
 const initial: Filters = {
   search: "",
   status: "",
   registeredFrom: "",
   registeredTo: "",
+  subscription: "",
   page: 0,
 };
 export function CompanyList() {
@@ -27,6 +30,7 @@ export function CompanyList() {
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [subscriptions, setSubscriptions] = useState<Record<string, Summary>>({});
   const location = useLocation();
   useEffect(() => {
     const timer = setTimeout(
@@ -46,7 +50,14 @@ export function CompanyList() {
     setError(undefined);
     api
       .list(filters, abort.signal)
-      .then(setData)
+      .then((page) => {
+        setData(page);
+        // STK-018: datos de suscripción de las empresas de esta página.
+        saasApi
+          .summaries(page.items.map((c) => c.id))
+          .then((list) => setSubscriptions(Object.fromEntries(list.map((s) => [s.companyId, s]))))
+          .catch(() => setSubscriptions({}));
+      })
       .catch((e) => {
         if (!abort.signal.aborted) setError(e);
       })
@@ -65,6 +76,7 @@ export function CompanyList() {
   const filtered = Boolean(
     filters.search ||
       filters.status ||
+      filters.subscription ||
       filters.registeredFrom ||
       filters.registeredTo,
   );
@@ -114,6 +126,21 @@ export function CompanyList() {
                 <option value="">Todas las empresas</option>
                 <option value="ACTIVE">Activas</option>
                 <option value="SUSPENDED">Suspendidas</option>
+              </select>
+            </label>
+            <label>
+              <span>Suscripción</span>
+              <select
+                aria-label="Suscripción"
+                value={filters.subscription}
+                onChange={(e) => change("subscription", e.target.value)}
+              >
+                <option value="">Todas las suscripciones</option>
+                {Object.entries(stateLabel).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </label>
             <label>
@@ -182,6 +209,7 @@ export function CompanyList() {
                   <th scope="col">Identificación</th>
                   <th scope="col">Administrador</th>
                   <th scope="col">Estado</th>
+                  <th scope="col">Suscripción</th>
                   <th scope="col">Fecha de registro</th>
                   <th scope="col">
                     <span className="sr-only">Acciones</span>
@@ -207,6 +235,19 @@ export function CompanyList() {
                     </td>
                     <td>
                       <Status status={company.status} />
+                    </td>
+                    <td data-label="Suscripción">
+                      {subscriptions[company.id] ? (
+                        <span className="company-subscription">
+                          <StateBadge state={subscriptions[company.id].state} />
+                          <small>
+                            {subscriptions[company.id].limited ? "Prueba hasta " : "Pagado hasta "}
+                            {day(subscriptions[company.id].expiresOn)}
+                          </small>
+                        </span>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td data-label="Registro">
                       {registrationDate(company.createdAt)}

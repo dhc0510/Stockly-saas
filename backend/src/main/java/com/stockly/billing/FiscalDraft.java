@@ -29,7 +29,10 @@ public record FiscalDraft(String docType, String key, String consecutive, Instan
         Map.entry("10", BigDecimal.ZERO), Map.entry("11", BigDecimal.ZERO));
 
     /** Unidades del catálogo de Stockly en la tabla de unidades (RTC 443:2010) del XSD. */
-    static final Map<String, String> UNITS = Map.of("unidad", "Unid", "kg", "Kg", "litro", "L", "metro", "M");
+    static final Map<String, String> UNITS = Map.of("unidad", "Unid", "kg", "Kg", "litro", "L", "metro", "M", "servicio", "Os");
+
+    /** Unidad de las suscripciones de Stockly (STK-018): «Os», otro tipo de servicio; suma en los totales de servicios. */
+    public static final String SERVICE = "servicio";
 
     /** Desglose de la línea: sin IVA = total ÷ (1 + tarifa) a céntimos; IVA = total − sin IVA (SPEC §7). */
     public record Breakdown(BigDecimal unitPrice, BigDecimal subtotal, BigDecimal rate, BigDecimal tax, BigDecimal total) {}

@@ -25,9 +25,11 @@ public class CompanyService {
     private final DeletionJournal journal;
     private final com.stockly.billing.FiscalArchive archive;
     private final JdbcTemplate jdbc;
-    public CompanyService(CompanyRepository companies,AccountRepository accounts,CompanyRoleRepository roles,CompanyValidation validation,PasswordEncoder encoder,DeletionJournal journal,JdbcTemplate jdbc,com.stockly.billing.FiscalArchive archive) {
+    private final com.stockly.subscriptions.SubscriptionService subscriptions;
+    public CompanyService(CompanyRepository companies,AccountRepository accounts,CompanyRoleRepository roles,CompanyValidation validation,PasswordEncoder encoder,DeletionJournal journal,JdbcTemplate jdbc,com.stockly.billing.FiscalArchive archive,
+                          com.stockly.subscriptions.SubscriptionService subscriptions) {
         this.companies=companies; this.accounts=accounts; this.roles=roles; this.validation=validation; this.encoder=encoder; this.journal=journal; this.jdbc=jdbc;
-        this.archive=archive;
+        this.archive=archive; this.subscriptions=subscriptions;
     }
     @Transactional
     public CompanyView create(CreateCompany request) {
@@ -36,13 +38,18 @@ public class CompanyService {
         var admin=validation.normalize(request.administrator());
         var company=companies.saveAndFlush(Company.create(input));
         jdbc.update("INSERT INTO inventory_locations(company_id,id,name) VALUES (?,'principal','Principal')", company.id);
+        subscriptions.startTrial(company.id); // STK-018: la empresa nueva empieza en prueba
         var account=accounts.saveAndFlush(Account.initial(company.id,admin.fullName(),admin.username(),admin.email(),encoder.encode(admin.temporaryPassword())));
         return CompanyView.of(company,account);
     }
     @Transactional(readOnly=true)
     public CompanyView get(String id) { return view(companies.findById(id).orElseThrow(CompanyService::missing)); }
     @Transactional(readOnly=true)
-    public CompanyPage list(String search,String status,LocalDate from,LocalDate to,int page,int size) {
+    public CompanyPage list(String search,String status,LocalDate from,LocalDate to,int page,int size) { return list(search,status,null,from,to,page,size); }
+    @Transactional
+    public CompanyPage list(String search,String status,String subscription,LocalDate from,LocalDate to,int page,int size) {
+        // STK-018: filtro por estado de la suscripción (último estado calculado).
+        List<String> subscribed=subscription==null || subscription.isBlank() ? null : subscriptions.companiesInState(subscription);
         if(page<0 || size<1 || size>100 || (search!=null && search.length()>150))
             throw CompanyValidation.invalid("filters","Revisa la búsqueda y la paginación.");
         if(status!=null && !Set.of("ACTIVE","SUSPENDED").contains(status)) throw CompanyValidation.invalid("status","Estado inválido.");
@@ -57,6 +64,7 @@ public class CompanyService {
                 filters.add(id.matches("[0-9]+") ? cb.or(names,cb.like(root.get("identificationNormalized"),"%"+id+"%")) : names);
             }
             if(status!=null) filters.add(cb.equal(root.get("status"),status));
+            if(subscribed!=null) filters.add(subscribed.isEmpty() ? cb.disjunction() : root.get("id").in(subscribed));
             if(from!=null) filters.add(cb.greaterThanOrEqualTo(root.get("createdAt"),from.atStartOfDay(zone).toInstant()));
             if(to!=null) filters.add(cb.lessThan(root.get("createdAt"),to.plusDays(1).atStartOfDay(zone).toInstant()));
             return cb.and(filters.toArray(Predicate[]::new));

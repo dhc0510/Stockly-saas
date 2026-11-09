@@ -3,7 +3,7 @@ import { PaymentMethodsPage, PaymentSummaryPage } from "../sales/PaymentPages";
 import { BillingPage } from "../billing/BillingPage";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart, BarChart3, Wallet, FileText, LineChart } from "lucide-react";
+import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart, BarChart3, Wallet, FileText, LineChart, CreditCard } from "lucide-react";
 import { CatalogPage, catalogAccess } from "../catalog/CatalogPage";
 import { ReceiptsPage, receiptAccess } from "../receipts/ReceiptsPage";
 import { MovementsPage, movementAccess } from "../movements/MovementsPage";
@@ -11,6 +11,7 @@ import { HistoryPage, historyAccess } from "../history/HistoryPage";
 import { InventoryPage, BranchesPage, InventoryBell } from "../inventory/InventoryPages";
 import { RestockNavLink, RestockPage } from "../inventory/RestockPage";
 import { ReportsPage, reportsAccess } from "../reports/ReportsPage";
+import { MySubscriptionPage, SubscriptionBanner, TrialLimitDialog } from "../saas/CompanySubscription";
 import { useAuth } from "../auth/AuthContext";
 import { identityApi, type AuditPage, type CreatedWorker, type Permission, type Role, type SessionPolicy, type Worker } from "./api";
 
@@ -86,6 +87,7 @@ export function CompanyWorkspace() {
       {canRoles&&<NavLink className="identity-nav" to="/roles" onClick={closeMenu}><Shield size={18}/> Roles y permisos</NavLink>}
       {canPolicy&&<NavLink className="identity-nav" to="/security" onClick={closeMenu}><Settings2 size={18}/> Seguridad</NavLink>}
       {canPolicy&&<NavLink className="identity-nav" to="/audit" onClick={closeMenu}><Shield size={18}/> Actividad</NavLink>}
+      {user.role==="COMPANY_ADMIN"&&<NavLink className="identity-nav" to="/subscription" onClick={closeMenu}><CreditCard size={18}/> Mi suscripción</NavLink>}
       {(canCatalog||canInventory||canBranches||canReceipts||canMovements||canHistory)&&<div className="nav-caption inventory-caption">INVENTARIO</div>}
       {canCatalog&&<NavLink className="identity-nav" to="/catalog" onClick={closeMenu}><Package size={18}/> Catálogo</NavLink>}
       {canInventory&&<NavLink className="identity-nav" to="/inventory" end onClick={closeMenu}><Boxes size={18}/> Existencias</NavLink>}
@@ -102,7 +104,10 @@ export function CompanyWorkspace() {
     </aside>
     {menuOpen&&<button className="mobile-drawer-scrim" type="button" tabIndex={-1} aria-label="Cerrar menú" onClick={closeMenu}/>}
     <div className="workspace" inert={menuOpen}>{(import.meta.env.MODE === "stk005-demo"||import.meta.env.MODE === "stk007-demo")&&<div className="demo-notice" role="status"><strong>{import.meta.env.MODE==="stk007-demo"?"Simulación STK-007":"Simulación STK-005"}</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button ref={menuToggle} className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span className="topbar-title"><img className="topbar-mark" src="/brand/stockly-caja.svg" alt="Stockly" width="26" height="26" /><span className="topbar-name">Mi empresa</span></span><div className="company-top-actions">{canInventory&&<InventoryBell/>}<button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></div></header>
+      {user.role==="COMPANY_ADMIN"&&<SubscriptionBanner/>}
+      <TrialLimitDialog admin={user.role==="COMPANY_ADMIN"}/>
       <main id="main" tabIndex={-1}><Routes>
+        {user.role==="COMPANY_ADMIN"&&<Route path="/subscription" element={<MySubscriptionPage/>}/>}
         {canUsers&&<Route path="/users" element={<UsersPage/>}/>}
         {canRoles&&<Route path="/roles" element={<RolesPage/>}/>}
         {canPolicy&&<Route path="/security" element={<SessionPolicyPage/>}/>}

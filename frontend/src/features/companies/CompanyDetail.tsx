@@ -19,6 +19,7 @@ import {
   type Company,
 } from "./api";
 import { ErrorNotice, Loading, Status, Success } from "./shared";
+import { SubscriptionSection } from "../saas/SubscriptionSection";
 
 export function CompanyDetail() {
   const { id } = useParams();
@@ -131,6 +132,7 @@ export function CompanyDetail() {
           </p>
         </section>
       </div>
+      <SubscriptionSection companyId={company.id} companyName={company.commercialName} />
       {action && (
         <Confirmation
           company={company}

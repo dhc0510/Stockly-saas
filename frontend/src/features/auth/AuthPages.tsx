@@ -4,6 +4,7 @@ import { ShieldCheck } from "lucide-react";
 import { authApi } from "./api";
 import { useAuth } from "./AuthContext";
 import { ApiError } from "../../lib/http";
+import { SuspendedLogin, isSuspension } from "../saas/CompanySubscription";
 
 function AuthFrame({title,description,children}:{title:string;description:string;children:React.ReactNode}) {
   return <section className="auth-frame"><div className="auth-brand">Stockly<span>.</span></div>{import.meta.env.MODE === "stk005-demo"&&<div className="demo-notice" role="status"><strong>Simulación STK-005</strong><span>Datos ficticios · Cambios locales no persistentes.</span></div>}<div className="panel form-panel auth-panel"><div className="auth-icon"><ShieldCheck size={23}/></div><h1>{title}</h1><p className="subtitle">{description}</p>{children}</div><p className="auth-footnote">Acceso seguro a Stockly</p></section>;
@@ -26,6 +27,7 @@ export function LoginPage() {
       else { navigate(returnTo,{replace:true}); await refresh(); }
     } catch(e) { setError(e); } finally { setBusy(false); }
   }
+  if(isSuspension(error)) return <AuthFrame title="Acceso suspendido" description="Stockly · suscripción"><SuspendedLogin error={error} onBack={()=>{setError(undefined);setPassword("");}}/></AuthFrame>;
   return <AuthFrame title="Iniciar sesión" description="Ingresa con tu usuario o correo y contraseña.">
     <form className="form-grid single-column" onSubmit={submit}>
       <label className="field"><span>Usuario o correo</span><input autoComplete="username" value={identifier} onChange={e=>setIdentifier(e.target.value)} required maxLength={254}/></label>
@@ -45,6 +47,7 @@ export function VerifyDevicePage() {
       navigate(typeof returnTo==="string" && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/",{replace:true}); await refresh(); }
     catch(e){setError(e);}finally{setBusy(false);}
   }
+  if(isSuspension(error)) return <AuthFrame title="Acceso suspendido" description="Stockly · suscripción"><SuspendedLogin error={error} onBack={()=>{sessionStorage.removeItem("stockly.challenge");window.location.assign("/login");}}/></AuthFrame>;
   return <AuthFrame title="Verifica este dispositivo" description="Te enviamos un código de 6 dígitos al correo de tu cuenta. Vence en 10 minutos.">
     {!challenge?<div className="notice error" role="alert">No hay una verificación pendiente. <Link to="/login">Volver a ingresar</Link></div>:<form className="form-grid single-column" onSubmit={submit}>
       <label className="field"><span>Código de verificación</span><input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,""))} required/></label>

@@ -25,8 +25,10 @@ public class InventoryService {
     private final com.stockly.billing.FiscalDocumentService fiscal;
     private final com.stockly.identity.AuditEventService audit;
 
+    private final com.stockly.subscriptions.SubscriptionGuard guard;
     public InventoryService(JdbcTemplate jdbc, InventoryLedger ledger, com.stockly.billing.FiscalDocumentService fiscal,
-                            com.stockly.identity.AuditEventService audit) {
+                            com.stockly.identity.AuditEventService audit, com.stockly.subscriptions.SubscriptionGuard guard) {
+        this.guard = guard;
         this.jdbc = jdbc;
         this.ledger = ledger;
         this.fiscal = fiscal;
@@ -93,6 +95,7 @@ public class InventoryService {
     public Branch createBranch(StocklyPrincipal actor, BranchInput input) {
         String company = requireAdmin(actor);
         BranchInput value = validBranch(input);
+        guard.requireCapacity(company, com.stockly.subscriptions.SubscriptionGuard.Limit.BRANCHES); // STK-018: límite de la prueba
         String id = UUID.randomUUID().toString(); Instant now = Instant.now();
         try {
             jdbc.update("""
@@ -153,6 +156,8 @@ public class InventoryService {
     @Transactional
     public void activateBranch(StocklyPrincipal actor, String branchId) {
         String company = requireAdmin(actor); requireBranchExists(company, branchId);
+        if (Boolean.FALSE.equals(jdbc.queryForObject("SELECT active FROM inventory_branches WHERE company_id=? AND id=?", Boolean.class, company, branchId)))
+            guard.requireCapacity(company, com.stockly.subscriptions.SubscriptionGuard.Limit.BRANCHES); // STK-018
         jdbc.update("UPDATE inventory_branches SET active=TRUE,updated_at=? WHERE company_id=? AND id=?",
             Timestamp.from(Instant.now()), company, branchId);
         jdbc.update("INSERT IGNORE INTO inventory_branch_users(company_id,branch_id,user_id) VALUES(?,?,?)",

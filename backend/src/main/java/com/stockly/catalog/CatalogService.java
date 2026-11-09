@@ -18,8 +18,11 @@ public class CatalogService {
     private static final Set<String> UNITS = Set.of("unidad", "kg", "litro", "metro");
     private final JdbcTemplate jdbc;
 
-    CatalogService(JdbcTemplate jdbc) {
+    private final com.stockly.subscriptions.SubscriptionGuard guard;
+
+    CatalogService(JdbcTemplate jdbc, com.stockly.subscriptions.SubscriptionGuard guard) {
         this.jdbc = jdbc;
+        this.guard = guard;
     }
 
     @Transactional(readOnly = true)
@@ -90,6 +93,7 @@ public class CatalogService {
         if (creating) id = uuid();
         else lockProduct(company, id);
         if (creating) {
+            guard.requireCapacity(company, com.stockly.subscriptions.SubscriptionGuard.Limit.PRODUCTS); // STK-018: límite de la prueba
             jdbc.update("INSERT INTO catalog_products(company_id,id,name,category,description) VALUES (?,?,?,?,?)",
                 company, id, name, category, description);
         } else {
@@ -151,6 +155,10 @@ public class CatalogService {
             case "items" -> "catalog_items";
             default -> throw missing();
         };
+        // STK-018: reactivar un producto cuenta para el límite de la prueba.
+        if (active && "catalog_products".equals(table) && Boolean.FALSE.equals(jdbc.query("SELECT active FROM catalog_products WHERE company_id=? AND id=?",
+            (rs, n) -> rs.getBoolean(1), company, id).stream().findFirst().orElse(null)))
+            guard.requireCapacity(company, com.stockly.subscriptions.SubscriptionGuard.Limit.PRODUCTS);
         if (jdbc.update("UPDATE " + table + " SET active=? WHERE company_id=? AND id=?", active, company, id) == 0)
             throw missing();
     }

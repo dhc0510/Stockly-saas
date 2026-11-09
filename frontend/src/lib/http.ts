@@ -44,6 +44,9 @@ export async function request<T>(
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
+    // STK-018: cualquier pantalla que choque con un límite de la prueba abre la ventana de planes.
+    if (body.code === "TRIAL_LIMIT" && typeof window !== "undefined")
+      window.dispatchEvent(new CustomEvent("stockly:trial-limit", { detail: body.fieldErrors || {} }));
     throw new ApiError(
       response.status,
       body.code || "REQUEST_FAILED",

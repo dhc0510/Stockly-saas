@@ -30,9 +30,12 @@ public class AuthService {
     private final SecurityContextRepository contexts;
     private final String baseUrl;
 
+    private final com.stockly.subscriptions.SubscriptionGuard subscriptions;
     public AuthService(AccountRepository accounts, CompanyRepository companies, JdbcTemplate jdbc, PasswordEncoder encoder,
                        EmailDelivery email, SessionRevoker revoker, SecurityContextRepository contexts,
-                       @Value("${stockly.public-base-url:http://localhost:5173}") String baseUrl) {
+                       @Value("${stockly.public-base-url:http://localhost:5173}") String baseUrl,
+                       com.stockly.subscriptions.SubscriptionGuard subscriptions) {
+        this.subscriptions=subscriptions;
         this.accounts=accounts; this.companies=companies; this.jdbc=jdbc; this.encoder=encoder;
         this.email=email; this.revoker=revoker; this.contexts=contexts; this.baseUrl=baseUrl.replaceAll("/$","");
     }
@@ -49,6 +52,7 @@ public class AuthService {
         if(account.mustChangePassword() && (account.temporaryPasswordExpiresAt()==null || account.temporaryPasswordExpiresAt().isBefore(Instant.now())))
             throw new IdentityFailure(401,"INVALID_CREDENTIALS","No se pudo iniciar sesión. Revisa las credenciales o recupera el acceso.");
         account.passwordSucceeded();
+        requireSubscription(account);
         if(isTrusted(account.id(),deviceCookie(request))) {
             establish(account,request,response); return new LoginResult(account.mustChangePassword()?"PASSWORD_CHANGE_REQUIRED":"AUTHENTICATED",null,"Acceso iniciado.");
         }
@@ -79,6 +83,7 @@ public class AuthService {
                 throw new IdentityFailure(429,"CODE_PAUSED","Se alcanzó el límite. Intenta de nuevo en 15 minutos.");
             throw new IdentityFailure(400,"INVALID_CODE","El código no es válido. Revisa el correo e inténtalo de nuevo.");
         }
+        requireSubscription(account);
         jdbc.update("UPDATE auth_challenges SET consumed_at=? WHERE id=?",now,challengeId);
         account.deviceSucceeded(); account.verifyEmail(); accounts.save(account);
         String deviceToken=null;
@@ -213,6 +218,11 @@ public class AuthService {
         return companies.findById(account.companyId()).map(c->c.idleTimeoutMinutes()).orElse(120L);
     }
     private long companyVersion(Account account) { return account.companyId()==null?0:companies.findById(account.companyId()).map(c->c.accessVersion()).orElse(-1L); }
+    /** STK-018: con la contraseña correcta, explica la suspensión por falta de pago (instrucciones solo al administrador). */
+    private void requireSubscription(Account account) {
+        var suspension=subscriptions.suspension(account.companyId());
+        if(suspension.isPresent()) { accounts.save(account); throw subscriptions.loginFailure(suspension.get(),"COMPANY_ADMIN".equals(account.role())); }
+    }
     private boolean validCompany(Account account) {
         return account.companyId()==null || companies.findById(account.companyId()).map(c->c.status().equals("ACTIVE")).orElse(false);
     }

@@ -10,10 +10,10 @@ import static com.stockly.companies.CompanyContracts.*;
 public class CompanyController {
     private final CompanyService service;
     public CompanyController(CompanyService service) { this.service=service; }
-    @GetMapping CompanyPage list(@RequestParam(required=false) String search,@RequestParam(required=false) String status,
+    @GetMapping CompanyPage list(@RequestParam(required=false) String search,@RequestParam(required=false) String status,@RequestParam(required=false) String subscription,
         @RequestParam(required=false) LocalDate registeredFrom,@RequestParam(required=false) LocalDate registeredTo,
         @RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
-        return service.list(search,status,registeredFrom,registeredTo,page,size);
+        return service.list(search,status,subscription,registeredFrom,registeredTo,page,size);
     }
     @GetMapping("/{id}") CompanyView get(@PathVariable String id) { return service.get(id); }
     @PostMapping ResponseEntity<CompanyView> create(@RequestBody CreateCompany request) {
