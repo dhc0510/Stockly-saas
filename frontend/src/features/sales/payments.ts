@@ -17,7 +17,7 @@ export const paymentStateLabels: Record<PaymentState, string> = { paid: "Cobrada
 
 /** Convierte "1.234,5" o "1234.50" en céntimos; null si no es un monto positivo con hasta dos decimales. */
 export function cents(value: string): bigint | null {
-  const clean = value.trim().replace(/\s/g, "");
+  const clean = value.trim().replace(/^₡/, "").replace(/\s/g, "");
   // En Costa Rica la coma es decimal: si aparece, los puntos se toman como separadores de miles.
   const normalized = clean.includes(",") ? clean.replace(/\./g, "").replace(",", ".") : clean;
   if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null;

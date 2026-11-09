@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @PreAuthorize(SaleController.READ)
 public class SaleController {
     static final String READ = "hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_SALES_READ','MODULE_SALES_OPERATE','MODULE_SALES_ADMIN')";
-    private static final String WRITE = "hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_SALES_OPERATE','MODULE_SALES_ADMIN')";
+    static final String WRITE = "hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_SALES_OPERATE','MODULE_SALES_ADMIN')";
     private final SaleService sales;
     private final SalePaymentService payments;
     private final FiscalDocumentService fiscal;

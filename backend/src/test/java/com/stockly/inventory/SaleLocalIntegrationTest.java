@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SaleLocalIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired SaleService sales;
+    @Autowired OfflineSaleService offlineSales;
     @Autowired InventoryService inventory;
     @Autowired ReceiptService receipts;
     @Autowired StockMovementService movements;
@@ -136,6 +137,36 @@ class SaleLocalIntegrationTest {
                     .containsExactlyInAnyOrder("VTA-0002", "SALE_LINE_ERROR");
             }
             assertThat(balance(company, branch, item)).isEqualByComparingTo("0.250");
+
+            var snapshot = offlineSales.prepare(actor, branch);
+            var savedItem = snapshot.items().getFirst();
+            var proofs = java.util.Map.of(item, savedItem.proof());
+            var soldAt = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+            jdbc.update("UPDATE catalog_items SET price=1700 WHERE company_id=? AND id=?", company, item);
+
+            var pending = new OfflineSaleService.Input(snapshot.id(), soldAt,
+                input(id(), branch, item, "1500"), proofs);
+            var synced = offlineSales.sync(actor, pending);
+            assertThat(synced.state()).isEqualTo("SYNCED");
+            var offlineSale = sales.get(actor, synced.folio());
+            assertThat(offlineSale.sale().total()).isEqualByComparingTo("187.50");
+            assertThat(offlineSale.sale().offlineSoldAt()).isEqualTo(soldAt);
+            assertThat(offlineSale.sale().offlineReference()).isEqualTo(synced.reference());
+            assertThat(offlineSale.fiscal()).isEmpty();
+            assertThat(offlineSales.sync(actor, pending).folio()).isEqualTo(synced.folio());
+            assertThat(balance(company, branch, item)).isEqualByComparingTo("0.125");
+
+            var last = new OfflineSaleService.Input(snapshot.id(), soldAt, input(id(), branch, item, "1500"), proofs);
+            assertThat(offlineSales.sync(actor, last).state()).isEqualTo("SYNCED");
+            var excess = new OfflineSaleService.Input(snapshot.id(), soldAt, input(id(), branch, item, "1500"), proofs);
+            var conflict = offlineSales.sync(actor, excess);
+            assertThat(conflict.state()).isEqualTo("REVIEW");
+            assertThat(conflict.issue().fields()).containsKey(item);
+            assertThat(offlineSales.retry(actor, conflict.id()).state()).isEqualTo("REVIEW");
+            var closed = offlineSales.close(actor, conflict.id(), new OfflineSaleService.Closure("Sin existencias", "Efectivo"));
+            assertThat(closed.state()).isEqualTo("CLOSED");
+            assertThat(closed.refundDetail()).isEqualTo("Efectivo");
+            assertThat(balance(company, branch, item)).isEqualByComparingTo("0");
             jdbc.update("DELETE FROM inventory_branch_items WHERE company_id=? AND branch_id=?", company, branch);
             assertThatThrownBy(() -> inventory.deleteBranch(actor, branch))
                 .isInstanceOf(IdentityFailure.class).hasMessageContaining("existencias o historial");

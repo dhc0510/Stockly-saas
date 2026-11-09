@@ -1,4 +1,5 @@
 import { SalesPage } from "../sales/SalesPage";
+import { ownerKey, pendingSales, syncOffline, useOfflineSales } from "../sales/offlineSales";
 import { PaymentMethodsPage, PaymentSummaryPage } from "../sales/PaymentPages";
 import { BillingPage } from "../billing/BillingPage";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -23,6 +24,25 @@ export function CompanyWorkspace() {
   const [menuOpen,setMenuOpen]=useState(false);
   const menuToggle = useRef<HTMLButtonElement>(null);
   const drawerClose = useRef<HTMLButtonElement>(null);
+  const [pendingLogout, setPendingLogout] = useState(0);
+  const [logoutError, setLogoutError] = useState("");
+  const [logoutSyncing, setLogoutSyncing] = useState(false);
+  const logoutDialog = useRef<HTMLDialogElement>(null);
+  const owner = user ? ownerKey(user) : "";
+  const offline = useOfflineSales(owner, !!user?.companyId && !user.mustChangePassword &&
+    (user.role === "COMPANY_ADMIN" || user.modules.some(module => module.moduleKey === "SALES" &&
+      (module.accessLevel === "OPERATE" || module.accessLevel === "ADMIN"))));
+  async function finishLogout() {
+    await logout();
+    navigate("/login");
+  }
+  async function requestLogout() {
+    setLogoutError("");
+    const count = await pendingSales(owner).then(rows => rows.length).catch(() => 0);
+    if (!count) { await finishLogout(); return; }
+    setPendingLogout(count);
+    logoutDialog.current?.showModal();
+  }
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -103,7 +123,26 @@ export function CompanyWorkspace() {
       <div className="sidebar-footer"><span className="avatar"><UserRound size={18}/></span><span><strong>{user.fullName}</strong><br/><small>{user.role === "COMPANY_ADMIN" ? "Administración de empresa" : user.email}</small></span></div>
     </aside>
     {menuOpen&&<button className="mobile-drawer-scrim" type="button" tabIndex={-1} aria-label="Cerrar menú" onClick={closeMenu}/>}
-    <div className="workspace" inert={menuOpen}>{(import.meta.env.MODE === "stk005-demo"||import.meta.env.MODE === "stk007-demo")&&<div className="demo-notice" role="status"><strong>{import.meta.env.MODE==="stk007-demo"?"Simulación STK-007":"Simulación STK-005"}</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button ref={menuToggle} className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span className="topbar-title"><img className="topbar-mark" src="/brand/stockly-caja.svg" alt="Stockly" width="26" height="26" /><span className="topbar-name">Mi empresa</span></span><div className="company-top-actions">{canInventory&&<InventoryBell/>}<button className="session-logout" onClick={async()=>{await logout();navigate("/login");}}><LogOut size={16}/> Cerrar sesión</button></div></header>
+    <div className="workspace" inert={menuOpen}>{(import.meta.env.MODE === "stk005-demo"||import.meta.env.MODE === "stk007-demo")&&<div className="demo-notice" role="status"><strong>{import.meta.env.MODE==="stk007-demo"?"Simulación STK-007":"Simulación STK-005"}</strong><span>Cuenta y datos ficticios · Los cambios se reinician al cerrar el servidor de demostración.</span></div>}<header className="topbar"><button ref={menuToggle} className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Cerrar menú":"Abrir menú"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={19}/>:<Menu size={19}/>}<span>Menú</span></button><span className="topbar-title"><img className="topbar-mark" src="/brand/stockly-caja.svg" alt="Stockly" width="26" height="26" /><span className="topbar-name">Mi empresa</span></span><div className="company-top-actions">{canInventory&&<InventoryBell/>}<button className="session-logout" onClick={() => void requestLogout()}><LogOut size={16}/> Cerrar sesión</button></div></header>
+      <dialog ref={logoutDialog} className="sales-offline-dialog" aria-labelledby="offline-logout-title">
+        <h2 id="offline-logout-title">{pendingLogout === 1 ? "Tienes 1 venta sin sincronizar" : "Tienes " + pendingLogout + " ventas sin sincronizar"}</h2>
+        <p>Las ventas pendientes se conservan en este equipo para tu cuenta y empresa.</p>
+        {logoutError && <p role="alert">{logoutError}</p>}
+        <div className="sales-actions">
+          <button className="button secondary" type="button" onClick={() => logoutDialog.current?.close()}>Volver</button>
+          <button className="button secondary" type="button" disabled={!offline.connected || logoutSyncing} onClick={async () => {
+            setLogoutSyncing(true); setLogoutError("");
+            try {
+              await syncOffline(owner);
+              const remaining = (await pendingSales(owner)).length;
+              setPendingLogout(remaining);
+              if (!remaining) await finishLogout();
+            } catch (failure) { setLogoutError(failure instanceof Error ? failure.message : "No se pudo sincronizar."); }
+            finally { setLogoutSyncing(false); }
+          }}>{logoutSyncing ? "Sincronizando…" : "Sincronizar ahora"}</button>
+          <button className="catalog-primary" type="button" disabled={logoutSyncing} onClick={() => void finishLogout()}>Cerrar sesión</button>
+        </div>
+      </dialog>
       {user.role==="COMPANY_ADMIN"&&<SubscriptionBanner/>}
       <TrialLimitDialog admin={user.role==="COMPANY_ADMIN"}/>
       <main id="main" tabIndex={-1}><Routes>
@@ -119,7 +158,7 @@ export function CompanyWorkspace() {
         {canReceipts&&<Route path="/inventory/receipts/*" element={<ReceiptsPage user={user} access={receipts}/>}/>}
         {canMovements&&<Route path="/inventory/movements/*" element={<MovementsPage user={user} access={movements}/>}/>}
         {canHistory&&<Route path="/inventory/history/*" element={<HistoryPage/>}/>}
-        {canSales && <Route path="/sales/*" element={<SalesPage />} />}
+        {canSales && <Route path="/sales/*" element={<SalesPage offline={offline} />} />}
         {canSales && <Route path="/payments" element={<PaymentSummaryPage />} />}
         {canSales && user.role === "COMPANY_ADMIN" && <Route path="/payments/methods" element={<PaymentMethodsPage />} />}
         {canSales && user.role === "COMPANY_ADMIN" && <Route path="/billing" element={<BillingPage />} />}

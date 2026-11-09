@@ -4,16 +4,18 @@ import { request } from "../../lib/http";
 type BranchOption = { id: string; name: string; location: string | null };
 type Choices = { branches: BranchOption[]; legacy: boolean };
 
-export function useMovementBranch(base: string, selectedId?: string) {
+export function useMovementBranch(base: string, selectedId?: string, enabled = true) {
   const [choices, setChoices] = useState<Choices>();
   const [error, setError] = useState("");
   useEffect(() => {
+    if (!enabled) return;
+    setError("");
     const controller = new AbortController();
     request<Choices>(base + "/branches", { signal: controller.signal }).then(setChoices).catch(failure => {
       if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : "No se pudieron cargar las sucursales.");
     });
     return () => controller.abort();
-  }, [base]);
+  }, [base, enabled]);
   const branches = choices?.branches ?? [];
   const selected = branches.find(branch => branch.id === (selectedId ?? (branches.length === 1 ? branches[0].id : undefined)));
   const problem = error || (!choices ? "Cargando sucursales…" : choices.legacy ? "" :

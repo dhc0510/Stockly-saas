@@ -14,6 +14,8 @@ import { FiscalBadge, FiscalPanel } from "./FiscalPanel";
 import { SaleReturnEditor, SaleReturnReceipt, SaleReturnsSection, useSaleReturns } from "./SaleReturnsPage";
 import "../receipts/receipts.css";
 import "./sales.css";
+import { offlineItems, savedOffline, saveOffline, type OfflineState, type SaleInput } from "./offlineSales";
+import { OfflineReceipt, OfflineReview, OfflineSalesPanel } from "./OfflineSalesPanel";
 
 const api = "/api/sales";
 const path = "/sales";
@@ -31,12 +33,13 @@ type Draft = {
   lines: Line[];
   payments?: PaymentDraft[];
   requestKey?: string;
+  offlineRequestKey?: string;
 };
 type Row = { id: string; folio: string; date: string; branchName: string; customer: string | null; total: number; voided: boolean; payment: PaymentState;
   fiscalType: "01" | "04" | null; fiscalStatus: FiscalStatus | "NONE"; creditStatus: FiscalStatus | null; returnStatus?: "partial" | "complete" | null };
 type Sale = {
   sale: { branchName: string; customer: string | null; customerPhone: string | null; customerEmail: string | null; total: number;
-    customerIdType: string | null; customerIdNumber: string | null };
+    customerIdType: string | null; customerIdNumber: string | null; offlineReference?: string; offlineSoldAt?: string };
   movement: { folio: string; date: string; actor: string; voidId: string | null; voidReason: string | null; voidFolio: string | null };
   lines: { itemId: string; name: string; sku: string; unit: string; quantity: number; unitPrice: number; amount: number }[];
   payments: Payment[];
@@ -45,16 +48,17 @@ type Sale = {
 };
 const toCents = (value: number) => BigInt(Math.round(value * 100));
 /** Medios activos de la empresa; vacío mientras carga. */
-function usePaymentMethods() {
+function usePaymentMethods(enabled = true) {
   const [methods, setMethods] = useState<MethodState[]>();
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    if (!enabled) return;
     request<MethodState[]>(api + "/payment-methods", { signal: controller.signal }).then(setMethods)
       .catch(failure => { if (!controller.signal.aborted) setError(failureMessage(failure)); });
     return () => controller.abort();
-  }, [version]);
+  }, [version, enabled]);
   return { methods, error, reload: () => setVersion(value => value + 1) };
 }
 
@@ -100,7 +104,7 @@ export function PanelHeading({ icon: Icon, title, description }: {
 }
 
 
-export function SalesPage() {
+export function SalesPage({ offline }: { offline: OfflineState }) {
   const { user } = useAuth();
   if (!user) return null;
   const storage = ["stockly", "sale", user.companyId, user.id].join(":");
@@ -109,17 +113,21 @@ export function SalesPage() {
   const canWrite = admin || level === "OPERATE" || level === "ADMIN";
   const canVoid = admin || user.specialPermissions.includes("VOID_SALES");
   const canReturn = admin || user.specialPermissions.includes("REGISTER_SALE_RETURNS");
+  const owner = user.companyId + ":" + user.id;
+  const canReview = admin || level === "ADMIN";
   const canSeeHistory = admin || user.modules.some(module => module.moduleKey === "INVENTORY_HISTORY" && module.accessLevel !== "NONE");
   return <div className="catalog-page sales-page"><Routes>
-    <Route index element={<List storage={storage} canWrite={canWrite} canVoid={canVoid} canReturn={canReturn} />} />
-    {canWrite && <Route path="new" element={<Editor storage={storage} />} />}
+    <Route index element={<List storage={storage} canWrite={canWrite} canVoid={canVoid} canReturn={canReturn} offline={offline} owner={owner} canReview={canReview} />} />
+    {canWrite && <Route path="new" element={<Editor storage={storage} offline={offline} owner={owner} />} />}
+    <Route path="offline/:id" element={<OfflineReceipt offline={offline} />} />
+    {canReview && <Route path="offline/review" element={<OfflineReview />} />}
     <Route path=":folio" element={<Document canVoid={canVoid} canWrite={canWrite} canReturn={canReturn} />} />
     {canReturn && <Route path=":folio/returns/new" element={<SaleReturnEditor storage={storage} />} />}
     <Route path=":folio/returns/:returnFolio" element={<SaleReturnReceipt canSeeHistory={canSeeHistory} />} />
   </Routes></div>;
 }
 
-function List({ storage, canWrite, canVoid, canReturn }: { storage: string; canWrite: boolean; canVoid: boolean; canReturn: boolean }) {
+function List({ storage, canWrite, canVoid, canReturn, offline, owner, canReview }: { storage: string; canWrite: boolean; canVoid: boolean; canReturn: boolean; offline: OfflineState; owner: string; canReview: boolean }) {
   const draft = load(storage);
   const [hasDraft, setHasDraft] = useState(!!(draft.lines.length || draft.customer.trim() || draft.customerPhone?.trim() || draft.customerEmail?.trim()));
   const [discard, setDiscard] = useState(false);
@@ -131,16 +139,17 @@ function List({ storage, canWrite, canVoid, canReturn }: { storage: string; canW
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<{ entries: Row[]; hasMore: boolean }>();
   const [error, setError] = useState("");
-  const { branches } = useMovementBranch(api);
+  const { branches } = useMovementBranch(api, undefined, offline.connected);
   useEffect(() => {
     const controller = new AbortController();
     setError("");
     setResult(undefined);
+    if (!offline.connected) return;
     const params = new URLSearchParams({ search, branchId, status, payment, fiscal, page: String(page) });
     request<{ entries: Row[]; hasMore: boolean }>(api + "?" + params, { signal: controller.signal }).then(setResult)
       .catch(failure => { if (!controller.signal.aborted) setError(failureMessage(failure)); });
     return () => controller.abort();
-  }, [search, branchId, status, payment, fiscal, page]);
+  }, [search, branchId, status, payment, fiscal, page, offline.connected]);
 
   return <>
     <Heading title="Ventas" description="Registra ventas y consulta sus comprobantes por sucursal.">
@@ -148,6 +157,7 @@ function List({ storage, canWrite, canVoid, canReturn }: { storage: string; canW
         <Plus size={18} aria-hidden="true" /> Nueva venta
       </Link>}
     </Heading>
+    {(canWrite || offline.queue.length > 0) && <OfflineSalesPanel offline={offline} owner={owner} canReview={canReview} />}
     {canWrite && hasDraft && <aside className="sales-draft" aria-labelledby="sales-draft-title">
       <div className="sales-draft-copy">
         <span className="sales-icon" aria-hidden="true"><ClipboardList size={20} /></span>
@@ -167,7 +177,8 @@ function List({ storage, canWrite, canVoid, canReturn }: { storage: string; canW
         <Link className="button secondary" to={path + "/new"}>Continuar <ArrowRight size={16} aria-hidden="true" /></Link>
       </div>}
     </aside>}
-    <section className="sales-panel sales-register" aria-label="Historial de ventas">
+    {!offline.connected && <p className="sales-hint">Conéctate para consultar el historial completo.</p>}
+    <section hidden={!offline.connected} className="sales-panel sales-register" aria-label="Historial de ventas">
       <div className="sales-register-tools">
         <PanelHeading icon={ReceiptText} title="Historial de ventas" description="Busca por folio o cliente, o acota por sucursal y estado." />
         <div className="sales-filters">
@@ -246,7 +257,7 @@ function lineCents(line: Line) {
   return (thousandths * BigInt(Math.round(line.price * 100)) + 500n) / 1000n;
 }
 
-function Editor({ storage }: { storage: string }) {
+function Editor({ storage, offline, owner }: { storage: string; offline: OfflineState; owner: string }) {
   const navigate = useNavigate();
   const [draft, setDraft] = useState(() => load(storage));
   const [review, setReview] = useState(!!draft.requestKey);
@@ -260,24 +271,34 @@ function Editor({ storage }: { storage: string }) {
   const emailInput = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [discard, setDiscard] = useState(false);
-  const branch = useMovementBranch(api, draft.branchId);
+  const liveBranch = useMovementBranch(api, draft.branchId, offline.connected);
+  const offlineBranches = offline.branches.map(item => item.branch);
+  const selected = offlineBranches.find(item => item.id === (draft.branchId ?? (offlineBranches.length === 1 ? offlineBranches[0].id : undefined)));
+  const snapshot = offline.branches.find(item => item.branch.id === selected?.id);
+  const branch = offline.connected ? liveBranch : {
+    branches: offlineBranches, selected, legacy: false,
+    problem: !selected ? "Selecciona una sucursal preparada." : !snapshot || Date.parse(snapshot.expiresAt) <= Date.now()
+      ? "El acceso sin internet venció. Reconecta para seguir vendiendo." : "",
+  };
   const branchId = branch.selected?.id;
   const pending = !!draft.requestKey;
   const total = draft.lines.reduce((sum, line) => sum + lineCents(line), 0n);
   const payments = draft.payments ?? [];
-  const paymentMethods = usePaymentMethods();
+  const onlineMethods = usePaymentMethods(offline.connected);
+  const paymentMethods = offline.connected ? onlineMethods : { ...onlineMethods, methods: snapshot?.methods, error: "" };
   const [paymentIssues, setPaymentIssues] = useState<Record<string, string>>({});
   const covered = payments.length > 0 && balance(total, payments).due === 0n;
   useEffect(() => {
     const controller = new AbortController();
     setResults([]);
     if (!branchId || branch.problem || !search.trim() || review) return;
+    if (!offline.connected) { setResults(offlineItems(snapshot, offline.queue, search)); return; }
     const timer = window.setTimeout(() => {
       request<Product[]>(api + "/items?" + new URLSearchParams({ branchId, search: search.trim() }), { signal: controller.signal })
         .then(setResults).catch(failure => { if (!controller.signal.aborted) setError(failureMessage(failure)); });
     }, 180);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [branchId, branch.problem, search, review]);
+  }, [branchId, branch.problem, search, review, offline.connected, snapshot, offline.queue]);
 
   function persist(next: Draft) {
     try { localStorage.setItem(storage, JSON.stringify(next)); }
@@ -312,12 +333,24 @@ function Editor({ storage }: { storage: string }) {
   }
   async function confirm() {
     if (saving || (!draft.branchId && !branchId)) return;
-    const attempt = { ...draft, branchId: draft.branchId ?? branchId, requestKey: draft.requestKey ?? crypto.randomUUID() };
-    if (!persist(attempt)) return;
+    const chosen = draft.branchId ?? branchId;
+    if (!chosen) return;
+    if (!offline.connected && pending) {
+      setError("Hay una confirmación en línea pendiente. Reconecta para consultar el resultado.");
+      return;
+    }
+    const key = draft.requestKey ?? draft.offlineRequestKey ?? crypto.randomUUID();
+    const attempt = { ...draft, branchId: chosen, requestKey: key };
+    if (!offline.connected && !persist({ ...draft, branchId: chosen, offlineRequestKey: key })) return;
     setSaving(true);
     setError("");
     try {
-      const sale = await request<Sale>(api, { method: "POST", body: JSON.stringify({
+      if (draft.offlineRequestKey && await savedOffline(owner, draft.offlineRequestKey)) {
+        localStorage.removeItem(storage);
+        navigate(path + "/offline/" + draft.offlineRequestKey, { replace: true });
+        return;
+      }
+      const payload: SaleInput = {
         requestKey: attempt.requestKey, branchId: attempt.branchId, customer: attempt.customer,
         customerPhone: attempt.customerPhone, customerEmail: attempt.customerEmail,
         customerIdType: attempt.customerIdType || null,
@@ -327,12 +360,23 @@ function Editor({ storage }: { storage: string }) {
           method: payment.method, amount: toAmount(cents(payment.amount) ?? 0n),
           reference: payment.method === "CASH" ? null : payment.reference.trim() || null,
         })),
-      }) });
+      };
+      if (!offline.connected) {
+        const id = await saveOffline(owner, payload);
+        localStorage.removeItem(storage);
+        navigate(path + "/offline/" + id, { replace: true });
+        return;
+      }
+      if (!persist({ ...attempt, offlineRequestKey: undefined })) return;
+      const sale = await request<Sale>(api, { method: "POST", body: JSON.stringify(payload) });
       localStorage.removeItem(storage);
       navigate(path + "/" + sale.movement.folio, { replace: true });
     } catch (failure) {
       setError(failureMessage(failure));
-      if (failure instanceof ApiError && failure.code === "SALE_PRICE_CHANGED") {
+      if (failure instanceof ApiError && failure.code === "OFFLINE_LINES") {
+        setIssues(failure.fieldErrors);
+        setReview(false);
+      } else if (failure instanceof ApiError && failure.code === "SALE_PRICE_CHANGED") {
         const notes: Record<string, string> = {};
         const lines = draft.lines.map(line => {
           const price = failure.fieldErrors[line.article.id];
@@ -363,6 +407,8 @@ function Editor({ storage }: { storage: string }) {
     <Heading title={review ? "Revisar y cobrar" : "Nueva venta"} description={review ? "Verifica la venta y registra cómo pagó el cliente." : "Elige la sucursal y agrega los artículos de la venta."}>
       <Link className="button secondary sales-back" to={path}><ArrowLeft size={16} aria-hidden="true" /> Volver a ventas</Link>
     </Heading>
+    {!offline.connected && <p className="sales-offline-notice" role="status">{branch.problem ||
+      "Sin conexión · Saldo estimado con datos guardados " + (snapshot ? receiptDate(snapshot.issuedAt) : "")}</p>}
     {error && <p className="notice error" role="alert">{error}</p>}
     <section className="sales-panel sales-work-panel">
       {review ? <>
@@ -370,7 +416,7 @@ function Editor({ storage }: { storage: string }) {
         <dl className="sales-details">
           <div><dt>Cliente</dt><dd>{draft.customer.trim() || "Público general"}</dd></div>
           {draft.customerIdType && <div><dt>{idTypeLabel(draft.customerIdType)}</dt><dd>{draft.customerIdNumber}</dd></div>}
-          <div><dt>Comprobante</dt><dd>{draft.customerIdType ? "Factura electrónica" : "Tiquete electrónico"}</dd></div>
+          <div><dt>Comprobante</dt><dd>{!offline.connected ? "Constancia interna" : draft.customerIdType ? "Factura electrónica" : "Tiquete electrónico"}</dd></div>
           {draft.customerPhone?.trim() && <div><dt>Teléfono</dt><dd>{draft.customerPhone.trim()}</dd></div>}
           {draft.customerEmail?.trim() && <div><dt>Correo electrónico</dt><dd>{draft.customerEmail.trim()}</dd></div>}
         </dl>
@@ -398,7 +444,7 @@ function Editor({ storage }: { storage: string }) {
             {idError && <small id="sales-id-error" role="alert">{idError}</small>}
           </label>
         </div>
-        <p className="sales-doc-type" aria-live="polite"><FileText size={16} aria-hidden="true" />{draft.customerIdType
+        <p className="sales-doc-type" aria-live="polite"><FileText size={16} aria-hidden="true" />{!offline.connected ? <span>Se guardará una constancia interna en este equipo.</span> : draft.customerIdType
           ? <span><strong>Se emitirá una factura electrónica.</strong> Hacienda exige el nombre y una identificación válida.</span>
           : <span><strong>Se emitirá un tiquete electrónico.</strong> Para factura, indica el tipo y el número de identificación.</span>}</p></>}
     </section>
@@ -448,7 +494,7 @@ function Editor({ storage }: { storage: string }) {
       <div className="sales-actions">
         <button className="button secondary" type="button" disabled={saving || pending} onClick={() => { setReview(false); setIssues({}); setError(""); }}>Volver a editar</button>
         <button className="catalog-primary" type="button" disabled={saving || (!pending && (!branchId || !!branch.problem || !covered))}
-          onClick={() => void confirm()}>{saving ? "Confirmando…" : pending ? "Consultar y reintentar" : "Confirmar venta y cobro"}</button>
+          onClick={() => void confirm()}>{saving ? "Confirmando…" : pending ? "Consultar y reintentar" : !offline.connected ? "Confirmar sin internet" : "Confirmar venta y cobro"}</button>
       </div>
       {!pending && !covered && <p className="sales-hint">Registra el pendiente para poder confirmar.</p>}
     </section>}
@@ -558,7 +604,8 @@ function Document({ canVoid, canWrite, canReturn }: { canVoid: boolean; canWrite
           {sale.movement.voidId ? <a className="sales-status-link" href="#anulacion"><SaleStatus voided /></a> : <SaleStatus voided={false} returnStatus={returnStatus} />}</div>
         <dl className="sales-details">
           <div><dt>Sucursal</dt><dd>{sale.sale.branchName}</dd></div>
-          <div><dt>Fecha y hora</dt><dd><time className="sales-date">{receiptDate(sale.movement.date)}</time></dd></div>
+          <div><dt>Fecha y hora</dt><dd><time className="sales-date">{receiptDate(sale.sale.offlineSoldAt ?? sale.movement.date)}</time></dd></div>
+          {sale.sale.offlineReference && <div><dt>Referencia local</dt><dd className="sales-offline-ref">{sale.sale.offlineReference}</dd></div>}
           <div><dt>Responsable</dt><dd>{sale.movement.actor}</dd></div>
           {sale.sale.customer && <div><dt>Cliente</dt><dd>{sale.sale.customer}</dd></div>}
           {sale.sale.customerIdType && <div><dt>{idTypeLabel(sale.sale.customerIdType)}</dt><dd>{sale.sale.customerIdNumber}</dd></div>}
@@ -578,9 +625,10 @@ function Document({ canVoid, canWrite, canReturn }: { canVoid: boolean; canWrite
       <PaymentSummary sale={sale} />
       {returnState.error && <p className="notice error" role="alert">{returnState.error}</p>}
       {returnContext?.returns && <SaleReturnsSection context={returnContext} canReturn={canReturn} />}
+      {sale.sale.offlineReference ? <p className="sales-offline-notice">Venta sincronizada. Emisión fiscal de contingencia pendiente.</p> :
       <FiscalPanel api={api} folio={sale.movement.folio} documents={sale.fiscal ?? []} voided={!!sale.movement.voidId} canWrite={canWrite}
         hasEmail={!!sale.sale.customerEmail} onChange={next => setSale(next as Sale)}
-        customer={{ name: sale.sale.customer, idType: sale.sale.customerIdType, idNumber: sale.sale.customerIdNumber }} />
+        customer={{ name: sale.sale.customer, idType: sale.sale.customerIdType, idNumber: sale.sale.customerIdNumber }} />}
       {!sale.movement.voidId && canVoid && returnContext && !returnStatus && (voiding
         ? <VoidForm sale={sale} url={url} onCancel={() => setVoiding(false)} onVoided={next => { setSale(next); setVoiding(false); returnState.reload(); }} />
         : <div className="sales-actions"><button type="button" className="button danger" onClick={() => setVoiding(true)}>Anular venta</button></div>)}

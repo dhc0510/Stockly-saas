@@ -9,6 +9,9 @@ describe("cobros", () => {
     expect(cents("13.251,75")).toBe(1325175n);
     expect(cents("13251.75")).toBe(1325175n);
     expect(cents(" 5000 ")).toBe(500000n);
+    expect(cents("₡10 500,00")).toBe(1050000n);
+    expect(cents("₡10\u202f500,25")).toBe(1050025n);
+    expect(cents("10₡500,00")).toBeNull();
     expect(cents("0")).toBeNull();
     expect(cents("10,001")).toBeNull();
     expect(cents("-5")).toBeNull();

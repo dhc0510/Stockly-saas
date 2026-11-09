@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venta sin internet · Stockly · STK-014</title>
+<style>
+:root{color-scheme:light;--ink:#18181b;--muted:#52525b;--border:#e4e4e7;--orange:#f97316;--rust:#9a3412;--warm:#fff4ea;font:14px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:#f6f5f4}
+*{box-sizing:border-box}body,h1,h2,p,dl,dd{margin:0}
+button,input,select,textarea{font:inherit;color:inherit;min-height:44px;padding:8px 12px;border:1px solid #d4d4d8;border-radius:8px;background:#fff}
+button{font-weight:650;cursor:pointer}button:hover{background:#f4f4f5}button:disabled{opacity:.58;cursor:default}
+button.primary{background:var(--orange);border-color:var(--orange)}button.primary:hover{background:#fb923c}
+:focus-visible{outline:2px solid var(--rust);outline-offset:3px}
+h1{font-size:clamp(26px,4cqi,32px);line-height:1.15;letter-spacing:-.035em}h2{font-size:18px;letter-spacing:-.015em}
+small,.muted,dt{color:var(--muted)}small,dt{font-size:12px}time,.number{white-space:nowrap;font-variant-numeric:tabular-nums}
+.preview{max-width:1440px;margin:auto;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.controls,.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.controls button[aria-pressed=true]{background:var(--warm);border-color:#eab68e;color:var(--rust)}
+.frame{max-width:1440px;margin:0 auto 24px;container:stockly/inline-size;border:1px solid #ece3dc;border-radius:12px;overflow:clip;background:#fffcfa}.frame.mobile{max-width:375px}
+.shell{min-height:640px;display:grid;grid-template-columns:195px minmax(0,1fr)}
+.sidebar,.topbar{background:#fff}.sidebar{padding:24px 16px;border-right:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800;letter-spacing:-.05em}.brand img{width:24px;height:24px}.brand b{color:var(--orange)}
+.nav-label,.eyebrow{font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--rust)}
+.nav-label{margin:24px 0 8px;color:var(--muted)}.nav{padding:10px 12px;border-radius:8px;color:var(--muted)}.nav.current{background:var(--warm);color:var(--rust);font-weight:750}
+.topbar{padding:12px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px}.topbar .brand{display:none}
+main{max-width:1160px;margin:auto;padding:clamp(14px,3cqi,36px)}
+.hero,.banner,.panel{border:1px solid var(--border);border-radius:12px;padding:clamp(14px,2.4cqi,24px);background:#fff}
+.hero{background:linear-gradient(110deg,#fff 35%,#fff1e5);border-color:#f1d8c6}
+.hero p+p,.hero h1+p{margin-top:6px}.eyebrow{margin-bottom:7px}
+.hero,.banner,.heading,.entry,.total{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.banner{margin:12px 0}.banner strong,.entry strong{display:block}.banner p{margin-top:3px}
+.banner.warn{border-color:#f0d1a3;background:#fff8eb}.banner.ready{border-color:#c6e5ce;background:#f1fbf4}
+.content{display:grid;gap:12px;margin-top:12px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,300px);align-items:start;gap:12px}
+.heading{margin-bottom:12px}.heading p{margin-top:4px}
+.badge{display:inline-flex;width:fit-content;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:750;background:#f4f4f5;color:#3f3f46}
+.badge.good{background:#dcfce7;color:#166534}.badge.warn{background:#ffedd5;color:#85410f}.badge.error{background:#fef2f2;color:#991b1b}
+.entry{padding:12px 0;border-top:1px solid var(--border)}.entry:last-child{padding-bottom:0}
+.entry small{display:block;margin-top:3px}.entry button{width:auto}
+.sale-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center}
+.facts{display:grid;gap:8px;margin-bottom:12px}.facts div{display:flex;justify-content:space-between;gap:12px}.facts dd{font-weight:650;text-align:right}
+.total{border-top:1px solid var(--border);padding-top:12px;margin-top:12px}.total strong{font-size:22px}
+.field{display:grid;gap:6px;font-weight:650}.field textarea{resize:vertical;width:100%}
+.panel .actions{margin-top:14px}.stack{display:grid;gap:12px}.error-text{color:#991b1b}
+@container stockly (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+@container stockly (max-width:650px){
+  .shell{display:block;min-height:0}.sidebar,.topbar>strong{display:none}.topbar .brand{display:flex;font-size:20px}.topbar{padding:10px 14px}
+  .hero .actions,.banner .actions{width:100%}.actions button{flex:1}.sale-row{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}.sale-row .line-stock{grid-column:1/-1}
+  select,textarea{font-size:16px}.facts dt{min-width:0}
+}
+</style>
+</head>
+<body>
+<header class="preview">
+  <div><strong>Mockup STK-014</strong> <small>· Datos ficticios</small></div>
+  <div class="controls">
+    <button type="button" id="desktop" aria-pressed="true">Escritorio</button>
+    <button type="button" id="mobile" aria-pressed="false">Celular</button>
+    <label for="scenario">Escenario</label>
+    <select id="scenario">
+      <option value="offline">Venta sin internet</option>
+      <option value="receipt">Comprobante provisional</option>
+      <option value="pending">Ventas pendientes</option>
+      <option value="conflict">Faltante al sincronizar</option>
+      <option value="synced">Venta sincronizada</option>
+      <option value="ready">Equipo preparado</option>
+      <option value="incomplete">Equipo sin preparar</option>
+      <option value="expired">Acceso vencido</option>
+      <option value="logout">Cerrar sesión</option>
+    </select>
+  </div>
+</header>
+<div class="frame" id="frame">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<b>.</b></span></div>
+      <p class="nav-label">Inventario</p><div class="nav">Existencias</div><div class="nav">Historial</div>
+      <p class="nav-label">Operación comercial</p><div class="nav current">Ventas</div><div class="nav">Cobros</div>
+    </aside>
+    <div>
+      <div class="topbar">
+        <div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<b>.</b></span></div>
+        <strong>Mi empresa</strong><span class="muted">Sucursal Centro</span>
+      </div>
+      <main id="app"></main>
+    </div>
+  </div>
+</div>
+<script>
+const app = document.getElementById("app");
+const frame = document.getElementById("frame");
+const scenario = document.getElementById("scenario");
+const desktop = document.getElementById("desktop");
+const mobile = document.getElementById("mobile");
+
+function setSize(isMobile) {
+  frame.classList.toggle("mobile", isMobile);
+  desktop.setAttribute("aria-pressed", String(!isMobile));
+  mobile.setAttribute("aria-pressed", String(isMobile));
+}
+
+const badge = (text, tone = "") => '<span class="badge ' + tone + '">' + text + '</span>';
+const button = (text, next, primary = false) =>
+  '<button type="button" data-next="' + next + '"' + (primary ? ' class="primary"' : '') + '>' + text + '</button>';
+const hero = (title, subtitle, actions = "") =>
+  '<section class="hero"><div><p class="eyebrow">Operación comercial / Ventas</p><h1 tabindex="-1">' +
+  title + '</h1><p class="muted">' + subtitle + '</p></div>' +
+  (actions ? '<div class="actions">' + actions + '</div>' : '') + '</section>';
+const banner = (title, copy, tone = "", actions = "") =>
+  '<section class="banner ' + tone + '"><div><strong>' + title + '</strong><p>' + copy +
+  '</p></div>' + (actions ? '<div class="actions">' + actions + '</div>' : '') + '</section>';
+const panels = (primary, secondary) => '<div class="content cols">' + primary + secondary + '</div>';
+const listTitle = (title, detail) =>
+  '<div class="heading"><div><h2>' + title + '</h2><p class="muted">' + detail + '</p></div></div>';
+const amount = '<div class="total"><span>Total</span><strong class="number">₡8.500,00</strong></div>';
+const reference = 'LOCAL-7F3A';
+const saleDate = '<time datetime="2026-11-08T10:12:00-06:00">8 nov 2026, 10:12 a. m.</time>';
+
+const screens = {
+  offline: () =>
+    hero("Nueva venta", "Sucursal Centro · Venta sin internet") +
+    banner("Sin conexión", "Existencias estimadas con datos guardados a las 10:02 a. m. Incluyen las ventas pendientes de este equipo.", "warn") +
+    panels(
+      '<section class="panel">' + listTitle("Artículos", "2 artículos en esta venta") +
+      '<div class="entry sale-row"><div><strong>Clavos a granel</strong><small>CLV-001</small></div><span class="number">2 kg</span><span class="line-stock">6 kg disponibles</span></div>' +
+      '<div class="entry sale-row"><div><strong>Guantes de trabajo</strong><small>GUA-002</small></div><span class="number">1 unidad</span><span class="line-stock">3 unidades disponibles</span></div></section>',
+      '<section class="panel">' + listTitle("Cobro", "Efectivo registrado") +
+      '<dl class="facts"><div><dt>Recibido</dt><dd>₡10.000,00</dd></div><div><dt>Vuelto</dt><dd>₡1.500,00</dd></div></dl>' +
+      amount + '<div class="actions">' + button("Confirmar sin internet", "receipt", true) + '</div></section>'
+    ),
+  receipt: () =>
+    hero("Comprobante provisional", "Guardado en este equipo", button("Ver ventas pendientes", "pending")) +
+    banner("Pendiente de sincronización", "Stockly enviará la venta y su cobro cuando recupere conexión.", "warn") +
+    panels(
+      '<section class="panel">' + listTitle("Detalle de venta", "Sucursal Centro") +
+      '<dl class="facts"><div><dt>Referencia local</dt><dd>' + reference + '</dd></div><div><dt>Fecha de venta</dt><dd>' + saleDate + '</dd></div></dl>' +
+      '<div class="entry"><strong>Clavos a granel · 2 kg</strong><span class="number">₡5.000,00</span></div>' +
+      '<div class="entry"><strong>Guantes de trabajo · 1 unidad</strong><span class="number">₡3.500,00</span></div></section>',
+      '<section class="panel">' + listTitle("Resumen", "Cobro en efectivo") + amount +
+      '<p class="muted">Constancia interna. Emisión fiscal de contingencia pendiente.</p></section>'
+    ),
+  pending: () =>
+    hero("Ventas", "Consulta tus ventas y los registros por sincronizar.") +
+    banner("2 ventas pendientes", "La conexión volvió. Las ventas se sincronizarán automáticamente.", "warn", button("Sincronizar ahora", "conflict", true)) +
+    '<section class="panel">' + listTitle("Pendientes en este equipo", "Sucursal Centro") +
+    '<div class="entry"><div><strong>' + reference + '</strong><small>' + saleDate + ' · ₡8.500,00</small></div>' +
+    badge("Pendiente de sincronización", "warn") + button("Ver comprobante", "receipt") + '</div>' +
+    '<div class="entry"><div><strong>LOCAL-8B2D</strong><small>8 nov 2026, 10:15 a. m. · ₡3.500,00</small></div>' +
+    badge("Pendiente de sincronización", "warn") + '</div></section>',
+  conflict: () =>
+    hero("Venta requiere revisión", reference + " · Sucursal Centro", button("Volver a Ventas", "pending")) +
+    banner("Faltan existencias", "El servidor recibió la venta y su cobro. El descuento de inventario y el comprobante fiscal siguen pendientes.", "warn") +
+    panels(
+      '<section class="panel">' + listTitle("Artículo afectado", "Saldo verificado al reconectar") +
+      '<div class="entry"><div><strong>Clavos a granel</strong><small>CLV-001 · Solicitado 2 kg · Disponible 1 kg</small></div>' +
+      badge("Falta 1 kg", "error") + '</div></section>',
+      '<section class="panel">' + listTitle("Resolver venta", "Conserva las cantidades y el cobro original.") + amount +
+      '<div class="actions">' + button("Reintentar", "synced", true) + '<button type="button" id="show-close">Cerrar con motivo</button></div>' +
+      '<form class="stack content" id="close-form" hidden><label class="field">Motivo del cierre<textarea required rows="2"></textarea></label>' +
+      '<label class="field">Detalle del reintegro<textarea rows="2" placeholder="Si hubo reintegro, indica cómo se realizó"></textarea></label>' +
+      '<div class="actions"><button type="button" id="cancel-close">Cancelar</button><button class="primary">Confirmar cierre</button></div></form></section>'
+    ),
+  synced: () =>
+    hero("VTA-0042", "Sucursal Centro · " + reference) +
+    banner("Venta sincronizada", "La venta y el cobro quedaron registrados. La emisión fiscal de contingencia sigue pendiente.", "ready") +
+    '<section class="panel">' + listTitle("Comprobante de venta", "Referencia local conservada") +
+    '<dl class="facts"><div><dt>Fecha de venta</dt><dd>' + saleDate + '</dd></div><div><dt>Estado fiscal de ejemplo</dt><dd>' +
+    badge("Emisión de contingencia pendiente", "warn") + '</dd></div></dl>' + amount + '</section>',
+  closed: () =>
+    hero("Venta cerrada", reference + " · Sucursal Centro") +
+    banner("Cierre registrado", "El motivo y el reintegro, si se indicó, quedan en el historial. El inventario de la sucursal conserva su saldo.", "ready"),
+  ready: () =>
+    hero("Ventas", "Sucursal Centro", button("Ver venta sin internet", "offline", true)) +
+    banner("Listo para vender sin internet", "Catálogo, precios, existencias y medios de pago guardados. Actualizado a las 10:02 a. m.", "ready") +
+    '<section class="panel">' + listTitle("Ventas pendientes", "Este equipo está al día.") + badge("0 pendientes", "good") + '</section>',
+  incomplete: () =>
+    hero("Ventas", "Sucursal Centro") +
+    banner("Falta preparar este equipo", "Todavía faltan los medios de pago de la sucursal. Conéctate para completar la preparación.", "warn") +
+    '<section class="panel">' + listTitle("Preparación para vender sin internet", "El estado se actualiza al recibir los datos de la sucursal.") +
+    '<div class="entry"><strong>Catálogo, precios y existencias</strong>' + badge("Guardados", "good") + '</div>' +
+    '<div class="entry"><strong>Medios de pago</strong>' + badge("Pendientes", "warn") + '</div></section>',
+  expired: () =>
+    hero("Ventas", "Sucursal Centro") +
+    banner("El acceso sin internet venció", "Han pasado 24 horas desde la última verificación. Reconecta para registrar nuevas ventas. Las ventas guardadas se conservan.", "warn") +
+    '<section class="panel">' + listTitle("Ventas pendientes", "Las ventas de este equipo siguen disponibles para sincronizar.") +
+    button("Ver pendientes", "pending") + '</section>',
+  logout: () =>
+    hero("Cerrar sesión", "Sucursal Centro") +
+    banner("Tienes 2 ventas sin sincronizar", "Si cierras sesión, se conservarán en este equipo para tu cuenta y empresa.", "warn") +
+    '<section class="panel"><div class="actions">' + button("Volver a Ventas", "pending") +
+    button("Sincronizar ahora", "pending", true) + button("Cerrar sesión", "loggedOut") + '</div></section>',
+  loggedOut: () =>
+    hero("Sesión cerrada", "Las ventas pendientes se conservan en este equipo.")
+};
+
+function render(name, focusTitle = false) {
+  app.innerHTML = screens[name]();
+  const optionExists = Array.from(scenario.options).some(option => option.value === name);
+  if (optionExists) scenario.value = name;
+  if (focusTitle) app.querySelector("h1").focus();
+}
+
+desktop.addEventListener("click", () => setSize(false));
+mobile.addEventListener("click", () => setSize(true));
+scenario.addEventListener("change", () => render(scenario.value));
+app.addEventListener("click", event => {
+  const action = event.target.closest("button");
+  if (!action) return;
+  if (action.dataset.next) render(action.dataset.next, true);
+  if (action.id === "show-close") {
+    const form = document.getElementById("close-form");
+    form.hidden = false;
+    form.querySelector("textarea").focus();
+  }
+  if (action.id === "cancel-close") {
+    document.getElementById("close-form").hidden = true;
+    document.getElementById("show-close").focus();
+  }
+});
+app.addEventListener("submit", event => {
+  event.preventDefault();
+  render("closed", true);
+});
+render("offline");
+</script>
+</body>
+</html>

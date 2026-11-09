@@ -8,6 +8,10 @@ import "@fontsource/inter/latin-700.css";
 import { App } from "./App";
 import "./styles.css";
 
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  void navigator.serviceWorker.register("/stockly-offline-worker.js").catch(() => undefined);
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>

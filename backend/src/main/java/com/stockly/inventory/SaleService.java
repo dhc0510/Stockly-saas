@@ -70,7 +70,7 @@ public class SaleService {
         // Estado del cobro: sin filas en sale_payments la venta es anterior a STK-012.
         var rows = jdbc.query("""
             SELECT * FROM (
-            SELECT s.id,m.folio,m.created_at,s.branch_name,s.customer_name,s.total,r.id IS NOT NULL AS voided,
+            SELECT s.id,m.folio,COALESCE(s.offline_sold_at,m.created_at) AS created_at,s.branch_name,s.customer_name,s.total,r.id IS NOT NULL AS voided,
               CASE WHEN NOT EXISTS (SELECT 1 FROM sale_payments p WHERE p.company_id=s.company_id AND p.sale_id=s.id) THEN 'none'
                    WHEN r.id IS NOT NULL THEN 'voided' ELSE 'paid' END AS payment,
               f.doc_type AS fiscal_type, COALESCE(f.status,'NONE') AS fiscal_status,
@@ -93,7 +93,7 @@ public class SaleService {
             """ + InventoryScope.VISIBLE_MOVEMENT + """
             AND (?='' OR s.branch_id=?)
             AND (m.folio COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!' OR COALESCE(s.customer_name,'') COLLATE utf8mb4_0900_ai_ci LIKE ? ESCAPE '!'
-              OR COALESCE(s.customer_id_number,'') LIKE ? ESCAPE '!')
+              OR COALESCE(s.customer_id_number,'') LIKE ? ESCAPE '!' OR COALESCE(s.offline_reference,'') LIKE ? ESCAPE '!')
 
             ) sale WHERE (?='' OR (?='confirmed' AND NOT sale.voided AND sale.return_status IS NULL)
               OR (?='voided' AND sale.voided) OR sale.return_status=?)
@@ -102,7 +102,7 @@ public class SaleService {
             """, (rs, row) -> new SaleRow(rs.getString(1), rs.getString(2), rs.getTimestamp(3).toInstant(),
             rs.getString(4), rs.getString(5), rs.getBigDecimal(6), rs.getBoolean(7), rs.getString(8), rs.getString(9), rs.getString(10),
             rs.getString(11), rs.getString(12), rs.getString(13)),
-            company, InventoryScope.administrator(actor), actor.accountId(), branchId, branchId, term, term, term, status, status,
+            company, InventoryScope.administrator(actor), actor.accountId(), branchId, branchId, term, term, term, term, status, status,
             status, status, payment, payment, fiscal, fiscal, fiscalType, fiscalType, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
         return new SalePage(rows.stream().limit(PAGE_SIZE).toList(), rows.size() > PAGE_SIZE);
     }
@@ -110,6 +110,14 @@ public class SaleService {
 
     @Transactional
     public Sale confirm(StocklyPrincipal actor, SaleInput input) {
+        return confirm(actor, input, null, null);
+    }
+
+    Sale confirmOffline(StocklyPrincipal actor, SaleInput input, String reference, java.time.Instant soldAt) {
+        return confirm(actor, input, reference, soldAt);
+    }
+
+    private Sale confirm(StocklyPrincipal actor, SaleInput input, String reference, java.time.Instant soldAt) {
         String company = company(actor);
         String request = RULES.uuid(input.requestKey(), "Identificador de confirmación inválido.");
         String branchId = RULES.uuid(input.branchId(), "Selecciona una sucursal.");
@@ -132,6 +140,7 @@ public class SaleService {
         if (!requestedPayments.isEmpty())
             hash = InventoryLedger.hash(hash, "PAYMENTS", SalePaymentService.fingerprint(requestedPayments));
 
+        if (reference != null) hash = InventoryLedger.hash(hash, "OFFLINE", reference, soldAt.toString());
         ledger.lockLocation(company);
         var existing = ledger.registered(company, request, hash, RULES);
         if (existing.isPresent()) return get(actor, existing.get());
@@ -164,7 +173,7 @@ public class SaleService {
             }
 
             Article article = product.get().article();
-            BigDecimal price = product.get().price();
+            BigDecimal price = reference == null ? product.get().price() : entry.getValue().expectedPrice();
             if ("unidad".equals(article.unit()) && quantity.scale() > 0) {
                 errors.put(itemId, "Para unidad solo se aceptan números enteros.");
                 continue;
@@ -175,7 +184,7 @@ public class SaleService {
             }
             BigDecimal available = ledger.balance(company, branch.location(), itemId);
             if (available.compareTo(quantity) < 0) {
-                errors.put(itemId, "Existencia disponible: " + available.stripTrailingZeros().toPlainString().replace('.', ',')
+                errors.put(itemId, (reference == null ? "" : article.name() + " · Solicitado: " + quantity.toPlainString() + " " + article.unit() + " · ") + "Existencia disponible: " + available.stripTrailingZeros().toPlainString().replace('.', ',')
                     + " " + article.unit() + ".");
                 continue;
             }
@@ -196,17 +205,18 @@ public class SaleService {
         var applied = payments.apply(company, total, requestedPayments);
 
         String id = UUID.randomUUID().toString();
-        ledger.record(actor, branch.location(), id, "SALE", Series.SALE, "Venta", null, request, hash, lines);
+        ledger.record(actor, branch.location(), id, "SALE", Series.SALE, "Venta", reference, request, hash, lines);
         jdbc.update("""
-            INSERT INTO sales(company_id,id,branch_id,branch_name,customer_name,customer_phone,customer_email,total,customer_id_type,customer_id_number)
-            VALUES (?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO sales(company_id,id,branch_id,branch_name,customer_name,customer_phone,customer_email,total,customer_id_type,customer_id_number,offline_reference,offline_sold_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
             """,
-            company, id, branchId, branch.name(), customer, customerPhone, customerEmail, total, fiscalCustomer.type(), fiscalCustomer.number());
+            company, id, branchId, branch.name(), customer, customerPhone, customerEmail, total, fiscalCustomer.type(), fiscalCustomer.number(),
+            reference, soldAt == null ? null : java.sql.Timestamp.from(soldAt));
         for (Price price : prices)
             jdbc.update("INSERT INTO sale_line_prices(company_id,sale_id,item_id,unit_price,amount) VALUES (?,?,?,?,?)",
                 company, id, price.itemId(), price.unitPrice(), price.amount());
         payments.record(company, id, applied);
-        fiscal.issueForSale(company, id);
+        if (reference == null) fiscal.issueForSale(company, id);
         return get(actor, id);
     }
 
@@ -218,9 +228,9 @@ public class SaleService {
             """, String.class, company, id).stream().findFirst().orElseThrow(SaleService::missing)
             : RULES.uuid(id, "Identificador de venta inválido.");
         var header = jdbc.query("""
-            SELECT branch_id,branch_name,customer_name,customer_phone,customer_email,total,customer_id_type,customer_id_number FROM sales WHERE company_id=? AND id=?
+            SELECT branch_id,branch_name,customer_name,customer_phone,customer_email,total,customer_id_type,customer_id_number,offline_reference,offline_sold_at FROM sales WHERE company_id=? AND id=?
             """, (rs, row) -> new SaleHeader(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getBigDecimal(6),
-            rs.getString(7), rs.getString(8)), company, saleId)
+            rs.getString(7), rs.getString(8), rs.getString(9), rs.getTimestamp(10) == null ? null : rs.getTimestamp(10).toInstant()), company, saleId)
             .stream().findFirst().orElseThrow(SaleService::missing);
         branch(actor, header.branchId());
         var movement = ledger.document(company, saleId, "m.kind='SALE'").orElseThrow(SaleService::missing);
@@ -281,7 +291,7 @@ public class SaleService {
             .stream().findFirst().orElseThrow(SaleService::missing);
     }
 
-    private static SortedMap<String, LineInput> validateLines(List<LineInput> lines) {
+    static SortedMap<String, LineInput> validateLines(List<LineInput> lines) {
         if (lines == null || lines.isEmpty()) throw RULES.invalid("Agrega al menos un artículo.");
         var result = new TreeMap<String, LineInput>();
         for (LineInput line : lines) {
@@ -297,7 +307,7 @@ public class SaleService {
         return result;
     }
 
-    private static String company(StocklyPrincipal actor) {
+    static String company(StocklyPrincipal actor) {
         if (actor == null || actor.companyId() == null || actor.mustChangePassword())
             throw new IdentityFailure(403, "FORBIDDEN", "No tienes acceso a ventas.");
         return actor.companyId();
@@ -330,7 +340,8 @@ public class SaleService {
     public record Refunded(java.time.Instant date, String actor, List<SalePaymentService.Refund> lines) {}
     public record LineInput(String itemId, BigDecimal quantity, BigDecimal expectedPrice) {}
     public record SaleHeader(String branchId, String branchName, String customer, String customerPhone,
-                             String customerEmail, BigDecimal total, String customerIdType, String customerIdNumber) {}
+                             String customerEmail, BigDecimal total, String customerIdType, String customerIdNumber,
+                             String offlineReference, java.time.Instant offlineSoldAt) {}
     public record SaleLine(String itemId, String name, String sku, String unit, BigDecimal quantity,
                            BigDecimal unitPrice, BigDecimal amount) {}
     public record Sale(SaleHeader sale, Summary movement, List<SaleLine> lines,
