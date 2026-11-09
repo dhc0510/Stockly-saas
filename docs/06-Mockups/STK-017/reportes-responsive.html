@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reportes · Stockly · STK-017</title>
+<style>
+:root{color-scheme:light;--ink:#18181b;--muted:#52525b;--edge:#e4e4e7;--orange:#f97316;--bar:#ea580c;--rust:#9a3412;--warm:#fff4ea;--back:#f7f6f4;--green:#166534;--red:#991b1b;font:14px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:var(--back)}
+*{box-sizing:border-box}body{margin:0}button,select,input{font:inherit;color:inherit;min-height:44px;border:1px solid #d4d4d8;border-radius:8px;background:#fff;padding:8px 12px}button{font-weight:650;cursor:pointer}button:hover{background:#faf7f3}button:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--orange);border-color:var(--orange)}.quiet{border-color:transparent;background:transparent;color:var(--rust);padding-inline:6px}:focus-visible{outline:2px solid var(--rust);outline-offset:3px}[hidden]{display:none!important}
+h1,h2,h3,p{margin:0}h1{font-size:clamp(25px,4cqi,32px);line-height:1.15;letter-spacing:-.035em}h2{font-size:17px}.muted,small{color:var(--muted)}small{font-size:12px}.num{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.preview{max-width:1440px;margin:auto;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.preview-title{font-weight:750}.preview-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.preview-controls button[aria-pressed=true]{border-color:#eaa875;background:var(--warm);color:var(--rust)}.preview-controls label{display:flex;align-items:center;gap:6px;font-weight:650}
+.frame{max-width:1440px;margin:0 auto 28px;container:stockly/inline-size;border:1px solid #ece3dc;border-radius:15px;background:#fffcf9;overflow:clip;position:relative}.frame[data-size=mobile]{max-width:375px}
+.shell{min-height:700px;display:grid;grid-template-columns:195px minmax(0,1fr)}.sidebar{padding:23px 16px;border-right:1px solid #eee7e1;background:#fff}.brand{display:flex;align-items:center;gap:8px;font-size:25px;font-weight:800;letter-spacing:-.05em}.brand img{width:24px;height:24px}.brand em{font-style:normal;color:var(--orange)}.nav-label,.eyebrow{font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--rust)}.nav-label{color:#686168;margin:30px 0 9px}.nav-item{display:flex;justify-content:space-between;align-items:center;padding:10px 11px;border-radius:8px;color:var(--muted)}.nav-item.current{background:var(--warm);color:var(--rust);font-weight:700}
+.workspace{min-width:0}.topbar{padding:14px 24px;border-bottom:1px solid #eee7e1;background:#fff;display:flex;justify-content:space-between;gap:12px;align-items:center}.topbar .brand{display:none}.topbar>span{font-size:12px;color:var(--muted)}main{padding:clamp(16px,3cqi,32px);max-width:1180px;margin:auto}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:4px 0 14px}.hero p.muted{margin-top:6px;max-width:620px}.actions{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+.menu{position:absolute;right:0;top:50px;z-index:5;min-width:230px;background:#fff;border:1px solid var(--edge);border-radius:10px;box-shadow:0 12px 30px #0000001a;padding:6px}.menu button{display:block;width:100%;text-align:left;border:0;font-weight:600}.menu small{display:block;font-weight:400}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:#fff;border:1px solid var(--edge);border-radius:12px;padding:12px;margin-bottom:14px}.chips{display:flex;flex-wrap:wrap;gap:6px}.chips button{min-height:40px;padding:6px 12px;border-radius:999px}.chips button[aria-pressed=true]{background:var(--warm);border-color:#eaa875;color:var(--rust)}.filters label{display:grid;gap:4px;font-size:12px;font-weight:650;color:var(--muted)}.filters label input,.filters label select{color:var(--ink);font-size:14px;font-weight:500}.range{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}.field-error{color:#b91c1c;font-size:12px;font-weight:600;flex-basis:100%}.invalid{border-color:#b91c1c}.filters .branch{margin-left:auto;min-width:200px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--edge);margin-bottom:14px;overflow-x:auto;scrollbar-width:thin}.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--muted);white-space:nowrap;padding:8px 14px}.tabs button[aria-selected=true]{color:var(--rust);border-bottom-color:var(--orange)}.tab-select{display:none;gap:4px;font-size:12px;font-weight:650;color:var(--muted);margin-bottom:14px}.tab-select select{width:100%;color:var(--ink);font-weight:650;border-color:#eaa875;background:var(--warm)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.kpi{background:#fff;border:1px solid var(--edge);border-radius:12px;padding:12px 14px;display:grid;gap:3px}.kpi span{font-weight:650;color:var(--muted);font-size:13px}.kpi strong{font-size:24px;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-.02em}.delta{font-size:12px;font-weight:650}.delta.up{color:var(--green)}.delta.down{color:var(--red)}.delta.flat{color:var(--muted)}
+.panel{background:#fff;border:1px solid var(--edge);border-radius:12px;padding:14px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}.grid2 .panel{margin-bottom:0}
+.chart{position:relative}.chart svg{display:block;width:100%;height:auto;overflow:visible}.chart .gl{stroke:#ececee}.chart .ax{fill:var(--muted);font-size:11px}.chart .bar{fill:var(--bar)}.chart .hit{fill:transparent;cursor:pointer}.chart .hit:hover+.bar,.chart g:focus-within .bar{fill:#c2410c}.tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;border-radius:8px;padding:7px 10px;font-size:12px;white-space:nowrap;transform:translate(-50%,-100%);box-shadow:0 6px 18px #0003}.tip strong{display:block;font-size:13px}
+.lines{display:grid;gap:0}.line{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--edge)}.line:first-child{border-top:0}.line.total{font-weight:750;border-top:2px solid var(--ink)}.line.sub{color:var(--muted);font-size:13px}
+table{width:100%;border-collapse:collapse}th,td{padding:10px 12px;text-align:left;border-top:1px solid var(--edge);vertical-align:middle}th{font-size:12px;color:var(--muted);font-weight:650;border-top:0;background:#fafafa}th button{border:0;background:none;min-height:0;padding:0;color:inherit;font-weight:650;font-size:12px}td strong{display:block}td small{display:block}tfoot td{font-weight:750;border-top:2px solid var(--ink)}
+.meter{height:8px;border-radius:4px;background:#f4f4f5;min-width:60px;overflow:hidden}.meter i{display:block;height:100%;border-radius:4px;background:var(--bar)}
+.table-wrap{background:#fff;border:1px solid var(--edge);border-radius:12px;overflow:hidden}.table-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;border-bottom:1px solid var(--edge)}.table-tools input[type=search]{flex:1 1 240px;min-width:0}.table-tools select{flex:0 1 200px;min-width:0}
+.cards{display:none}.card{border-top:1px solid var(--edge);padding:12px;display:grid;gap:6px}.card:first-child{border-top:0}.card-head{display:flex;justify-content:space-between;gap:8px;align-items:start}.card dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0}.card dt{font-size:11px;color:var(--muted)}.card dd{margin:0;font-weight:650;font-variant-numeric:tabular-nums}
+.note{margin-top:10px;font-size:12px;color:var(--muted)}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap;background:#f4f4f5;color:#3f3f46}.badge.void{background:#fef2f2;color:var(--red)}
+.state-panel{background:#fff;border:1px solid var(--edge);border-radius:12px;padding:40px 20px;text-align:center;display:grid;gap:8px;justify-items:center}.state-panel .icon{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:var(--warm);color:var(--rust)}.state-panel.error .icon{background:#fef2f2;color:var(--red)}
+.skel{background:linear-gradient(90deg,#f1f1f2 25%,#e7e7e9 50%,#f1f1f2 75%);background-size:200% 100%;animation:sh 1.2s infinite;border-radius:8px}@keyframes sh{to{background-position:-200% 0}}@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+.toast{position:absolute;right:20px;bottom:20px;background:var(--ink);color:#fff;border-radius:10px;padding:11px 14px;box-shadow:0 10px 30px #0003;font-weight:600;max-width:calc(100% - 40px)}
+.sheet{background:#fff;max-width:794px;margin:0 auto;padding:36px 40px;border:1px solid var(--edge);border-radius:4px;box-shadow:0 6px 24px #0000000f;color:#000}.sheet header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px;gap:12px}.sheet h1{font-size:22px}.sheet h3{font-size:13px;margin:16px 0 4px}.sheet th{background:none;color:#000;border-bottom:1px solid #000}.sheet td,.sheet th{padding:6px;font-size:12px}.sheet footer{margin-top:16px;font-size:11px;color:#444}
+.roles{display:grid;grid-template-columns:minmax(0,1fr);gap:0}.role-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--edge)}.role-row:first-child{border-top:0}.role-row.new{background:var(--warm);margin:0 -14px;padding:10px 14px}.role-row select{min-width:170px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@container stockly (max-width:1000px){.shell{grid-template-columns:160px minmax(0,1fr)}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.grid2 .panel+.panel{margin-top:0}}
+@container stockly (max-width:680px){.shell{display:block;min-height:0}.sidebar{display:none}.topbar{padding:12px 14px}.topbar .brand{display:flex;font-size:21px}.topbar .brand img{width:19px;height:19px}.topbar strong{display:none}.kpis{gap:6px}.kpi{padding:10px}.kpi strong{font-size:19px}.actions{width:100%}.actions>button{flex:1}.menu{left:0;right:auto;width:100%}.filters .branch{margin-left:0;flex:1 1 100%}.filters .branch select{width:100%}.range label{flex:1 1 130px}.range input{width:100%}table.wide{display:none}.cards{display:block}.table-tools select{flex:1 1 100%}input,select{font-size:16px!important}.sheet{padding:18px 14px;overflow-x:auto}.tabs{display:none}.tab-select{display:grid}}
+@media(max-width:480px){.frame{border-radius:0;margin-bottom:0}.preview{padding:10px 12px}}
+</style>
+</head>
+<body>
+<header class="preview">
+  <div><span class="preview-title">Mockup STK-017 · Reportes</span> <small>· Datos ficticios</small></div>
+  <div class="preview-controls">
+    <button type="button" data-size="desktop" aria-pressed="true">Escritorio</button>
+    <button type="button" data-size="mobile" aria-pressed="false">Celular</button>
+    <label>Escenario<select id="scenario">
+      <option value="summary">Resumen</option>
+      <option value="products">Productos y categorías</option>
+      <option value="payments">Cobros por medio de pago</option>
+      <option value="sellers">Ventas por vendedor</option>
+      <option value="idle">Productos sin ventas</option>
+      <option value="range">Rango personalizado</option>
+      <option value="rangeError">Rango con error</option>
+      <option value="cashier">Usuario con una sucursal</option>
+      <option value="loading">Cargando</option>
+      <option value="empty">Sin ventas en el período</option>
+      <option value="error">Error de carga</option>
+      <option value="print">Vista para imprimir</option>
+      <option value="roles">Permiso en Roles</option>
+    </select></label>
+  </div>
+</header>
+<div class="frame" id="frame" data-size="desktop">
+  <div class="shell">
+    <aside class="sidebar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div>
+      <p class="nav-label">Inventario</p><div class="nav-item">Existencias</div><div class="nav-item">Por reponer</div><div class="nav-item">Historial</div>
+      <p class="nav-label">Operación comercial</p><div class="nav-item">Ventas</div><div class="nav-item">Cobros</div><div class="nav-item current" id="navReports">Reportes</div>
+      <p class="nav-label">Administración</p><div class="nav-item" id="navRoles">Roles y permisos</div>
+    </aside>
+    <div class="workspace"><div class="topbar"><div class="brand"><img src="../../../frontend/public/brand/stockly-caja.svg" alt=""><span>Stockly<em>.</em></span></div>
+      <strong>Ferretería La Esquina</strong><span id="topUser">Ana Mora · Administradora</span></div><main id="app"></main></div>
+  </div>
+  <div id="overlay"></div>
+</div>
+<script>
+const app=document.getElementById("app"),frame=document.getElementById("frame"),overlay=document.getElementById("overlay");
+const crc=new Intl.NumberFormat("es-CR",{style:"currency",currency:"CRC",minimumFractionDigits:0,maximumFractionDigits:0});
+const n2=new Intl.NumberFormat("es-CR",{maximumFractionDigits:2});
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct=(a,b)=>b?Math.round((a-b)/b*100):0;
+// Últimos 7 días: 02/11 a 08/11/2026. Montos en colones, tal como se cobraron.
+const days=[{d:"Lun 02",gross:412500,ret:0,count:21},{d:"Mar 03",gross:368900,ret:12500,count:18},{d:"Mié 04",gross:455200,ret:0,count:24},{d:"Jue 05",gross:298400,ret:8900,count:15},{d:"Vie 06",gross:612750,ret:24000,count:31},{d:"Sáb 07",gross:734100,ret:0,count:38},{d:"Dom 08",gross:186300,ret:6500,count:9}];
+const prev={gross:2749800,ret:61200,count:142,voids:{n:4,amount:38600}};
+const voids={n:2,amount:21400},laterVoids=0;
+const sum=k=>days.reduce((s,x)=>s+x[k],0);
+const gross=sum("gross"),ret=sum("ret"),net=gross-ret,count=sum("count"),avg=Math.round(gross/count);
+const products=[
+ {name:"Cemento gris 50 kg",sku:"CEM-50",cat:"Construcción",unit:"saco",qty:96,amount:739200,ret:0},
+ {name:"Pintura acrílica blanca",variant:"Galón",sku:"PIN-AB-GL",cat:"Pinturas",unit:"galón",qty:22,amount:396000,ret:18000},
+ {name:"Cable eléctrico #12",sku:"CAB-12",cat:"Electricidad",unit:"m",qty:415.5,amount:290850,ret:0},
+ {name:"Tubo PVC 1/2\"",sku:"PVC-12",cat:"Fontanería",unit:"unidad",qty:140,amount:252000,ret:5400},
+ {name:"Tornillo para gypsum 1\"",variant:"Caja 100 u",sku:"TOR-G1-100",cat:"Tornillería",unit:"caja",qty:61,amount:213500,ret:0},
+ {name:"Arena fina",sku:"ARE-F",cat:"Construcción",unit:"m³",qty:7.5,amount:187500,ret:0},
+ {name:"Silicón transparente",sku:"SIL-TR",cat:"Adhesivos",unit:"tubo",qty:58,amount:162400,ret:0},
+ {name:"Brocha 2\"",sku:"BRO-2",cat:"Pinturas",unit:"unidad",qty:47,amount:117500,ret:0},
+ {name:"Clavo de acero 2\"",sku:"CLA-2",cat:"Tornillería",unit:"kg",qty:38.25,amount:95625,ret:0},
+ {name:"Guantes de trabajo",variant:"Talla L",sku:"GUA-L",cat:"Seguridad",unit:"par",qty:33,amount:82500,ret:3500}
+];
+const otherProducts={qty:"",amount:gross-products.reduce((s,p)=>s+p.amount,0)};
+const cats=[...Object.values(products.reduce((m,p)=>{(m[p.cat]??={cat:p.cat,amount:0,qty:0,items:0});m[p.cat].amount+=p.amount;m[p.cat].items++;return m},{})).sort((a,b)=>b.amount-a.amount),{cat:"Otras 6 categorías",amount:otherProducts.amount,items:46}];
+const payments=[{m:"Efectivo",paid:1268400,ref:30400,n:84},{m:"Tarjeta",paid:893550,ref:12500,n:41},{m:"SINPE Móvil",paid:679200,ref:9000,n:27},{m:"Transferencia",paid:227000,ref:0,n:4}];
+const sellers=[{name:"Ana Mora",count:52,gross:1087300,ret:12500},{name:"Luis Vargas",count:61,gross:1214650,ret:24000},{name:"Sofía Rojas",count:43,gross:766200,ret:15400}];
+const idle=[{name:"Adorno navideño LED",sku:"NAV-LED",cat:"Temporada",unit:"unidad",available:14,last:"18/01/2026"},{name:"Pintura anticorrosiva roja",variant:"Cuarto",sku:"PIN-AR-CU",cat:"Pinturas",unit:"cuarto",available:6,last:"03/09/2026"},{name:"Llave inglesa 12\"",sku:"LLA-12",cat:"Herramientas",unit:"unidad",available:4,last:"21/10/2026"},{name:"Manguera 1/2\" 15 m",sku:"MAN-15",cat:"Jardín",unit:"rollo",available:9,last:"Nunca vendido"},{name:"Candado 40 mm",sku:"CAN-40",cat:"Seguridad",unit:"unidad",available:0,last:"29/10/2026"}];
+const tabs=[["summary","Resumen"],["products","Productos"],["payments","Cobros"],["sellers","Vendedores"],["idle","Sin ventas"]];
+let state={sc:"summary"};
+function delta(cur,old,invert){const p=pct(cur,old);const cls=p===0?"flat":(p>0)!==!!invert?"up":"down";return `<span class="delta ${cls}">${p>0?"▲":p<0?"▼":"="} ${Math.abs(p)} % vs. 7 días anteriores</span>`}
+function filters(sc){const range=sc==="range"||sc==="rangeError",one=sc==="cashier";
+ return `<div class="filters"><div><div class="sr" id="perLbl">Período</div><div class="chips" role="group" aria-labelledby="perLbl">${["Hoy","Ayer","Últimos 7 días","Este mes","Mes anterior","Personalizado"].map(x=>`<button type="button" aria-pressed="${range?x==="Personalizado":x==="Últimos 7 días"}">${x}</button>`).join("")}</div></div>
+ ${range?`<div class="range"><label>Desde<input type="date" value="${sc==="rangeError"?"2026-11-08":"2026-10-01"}" ${sc==="rangeError"?'class="invalid" aria-invalid="true" aria-describedby="rangeErr"':""}></label><label>Hasta<input type="date" value="${sc==="rangeError"?"2026-11-01":"2026-10-31"}" ${sc==="rangeError"?'class="invalid" aria-invalid="true"':""}></label><button type="button" class="primary" ${sc==="rangeError"?"disabled":""}>Aplicar</button>${sc==="rangeError"?'<span class="field-error" id="rangeErr" role="alert">La fecha «Desde» debe ser igual o anterior a «Hasta».</span>':""}</div>`:""}
+ <label class="branch">Sucursal<select ${one?"disabled":""}>${one?"<option>Sucursal Centro</option>":"<option>Todas mis sucursales</option><option>Sucursal Centro</option><option>Sucursal Norte</option>"}</select>${one?"<small style='font-weight:400'>Solo tienes acceso a esta sucursal</small>":""}</label></div>`}
+function head(sc,disabled){const tab=tabs.find(t=>t[0]===state.tab)?.[1]??"Resumen";
+ return `<div class="hero"><div><p class="eyebrow">Operación comercial</p><h1>Reportes</h1><p class="muted">Ventas, cobros y productos del período, por sucursal. ${sc==="range"?"01/10/2026 al 31/10/2026":"02/11/2026 al 08/11/2026"} · hora de Costa Rica.</p></div>
+ <div class="actions"><button type="button" id="exportBtn" ${disabled?"disabled":""} aria-haspopup="menu" aria-expanded="false">Exportar ▾</button><button type="button" id="printBtn" ${disabled?"disabled":""}>Imprimir</button>
+ <div class="menu" role="menu" hidden id="menu"><button role="menuitem" type="button" data-file="xlsx">Excel (.xlsx)<small>Una hoja por reporte</small></button><button role="menuitem" type="button" data-file="csv">CSV<small>Solo la pestaña «${esc(tab)}»</small></button></div></div></div>`}
+function tabBar(){return `<label class="tab-select">Ver reporte<select id="tabSelect">${tabs.map(([k,l])=>`<option value="${k}" ${state.tab===k?"selected":""}>${l}</option>`).join("")}</select></label><div class="tabs" role="tablist" aria-label="Reportes">${tabs.map(([k,l])=>`<button type="button" role="tab" aria-selected="${state.tab===k}" data-tab="${k}">${l}</button>`).join("")}</div>`}
+function chart(){const W=640,H=220,L=56,B=26,T=10,max=800000,bw=(W-L)/days.length;
+ const y=v=>T+(H-T-B)*(1-v/max);
+ const grid=[0,200000,400000,600000,800000].map(v=>`<line class="gl" x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L-8}" y="${y(v)+4}" text-anchor="end">${v?`₡${v/1000} mil`:"₡0"}</text>`).join("");
+ const bars=days.map((d,i)=>{const v=d.gross-d.ret,x=L+i*bw+bw*.2,w=bw*.6,top=y(v),h=y(0)-top;
+  return `<g tabindex="0" data-i="${i}" aria-label="${d.d}: ventas netas ${crc.format(v)}, ${d.count} ventas"><rect class="hit" x="${L+i*bw}" y="${T}" width="${bw}" height="${H-T-B}"/><path class="bar" d="M${x},${y(0)} v${-(h-4)} q0,-4 4,-4 h${w-8} q4,0 4,4 v${h-4} z"/><text class="ax" x="${x+w/2}" y="${H-8}" text-anchor="middle">${d.d}</text></g>`}).join("");
+ return `<div class="chart" id="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ventas netas por día">${grid}${bars}</svg><div class="tip" hidden id="tip"></div></div>
+ <details style="margin-top:8px"><summary class="muted" style="cursor:pointer;font-size:13px">Ver como tabla</summary><table style="margin-top:6px"><thead><tr><th>Día</th><th class="num">Ventas</th><th class="num">Brutas</th><th class="num">Devoluciones</th><th class="num">Netas</th></tr></thead><tbody>${days.map(d=>`<tr><td>${d.d}</td><td class="num">${d.count}</td><td class="num">${crc.format(d.gross)}</td><td class="num">${d.ret?"−"+crc.format(d.ret):"—"}</td><td class="num">${crc.format(d.gross-d.ret)}</td></tr>`).join("")}</tbody></table></details>`}
+function summary(){return `<div class="kpis">
+ <div class="kpi"><span>Ventas netas</span><strong>${crc.format(net)}</strong>${delta(net,prev.gross-prev.ret)}</div>
+ <div class="kpi"><span>Ventas realizadas</span><strong>${count}</strong>${delta(count,prev.count)}</div>
+ <div class="kpi"><span>Venta promedio</span><strong>${crc.format(avg)}</strong>${delta(avg,Math.round(prev.gross/prev.count))}</div>
+ <div class="kpi"><span>Devoluciones</span><strong>${crc.format(ret)}</strong>${delta(ret,prev.ret,true)}</div></div>
+ <div class="grid2"><section class="panel"><div class="panel-head"><h2>Ventas netas por día</h2><small>Pasa el cursor o enfoca una barra</small></div>${chart()}</section>
+ <section class="panel"><div class="panel-head"><h2>Cómo se forma</h2></div><div class="lines">
+ <div class="line"><span>Ventas brutas</span><span class="num">${crc.format(gross)}</span></div>
+ <div class="line"><span>Devoluciones del período</span><span class="num">−${crc.format(ret)}</span></div>
+ <div class="line"><span>Anulaciones de ventas anteriores</span><span class="num">${laterVoids?"−"+crc.format(laterVoids):"—"}</span></div>
+ <div class="line total"><span>Ventas netas</span><span class="num">${crc.format(net)}</span></div>
+ <div class="line sub"><span>Ventas anuladas <span class="badge void">No suman</span></span><span class="num">${voids.n} · ${crc.format(voids.amount)}</span></div></div>
+ <p class="note">Las devoluciones y las anulaciones de ventas de otros días restan el día en que se hicieron. Las anuladas el mismo día no cuentan.</p>
+ <div class="panel-head" style="margin-top:14px"><h2>Más vendidos</h2><button class="quiet" type="button" data-tab="products">Ver todos</button></div>
+ <div class="lines">${products.slice(0,3).map((p,i)=>`<div class="line"><span>${i+1}. ${esc(p.name)}</span><span class="num">${crc.format(p.amount)}</span></div>`).join("")}</div></section></div>`}
+function productsView(){const max=products[0].amount;
+ return `<div class="grid2" style="margin-bottom:14px"><section class="panel" style="grid-column:1/-1"><div class="panel-head"><h2>Por categoría</h2><small>Ventas brutas del período</small></div>
+ <table class="wide"><thead><tr><th>Categoría</th><th class="num">Productos vendidos</th><th class="num">Monto</th><th class="num">% del total</th><th style="width:30%"><span class="sr">Proporción</span></th></tr></thead><tbody>${cats.map(c=>`<tr><td>${esc(c.cat)}</td><td class="num">${c.items}</td><td class="num">${crc.format(c.amount)}</td><td class="num">${Math.round(c.amount/gross*100)} %</td><td><div class="meter"><i style="width:${c.amount/cats[0].amount*100}%"></i></div></td></tr>`).join("")}</tbody><tfoot><tr><td>Total</td><td class="num">56</td><td class="num">${crc.format(gross)}</td><td class="num">100 %</td><td></td></tr></tfoot></table>
+ <div class="cards">${cats.map(c=>`<div class="card"><div class="card-head"><strong>${esc(c.cat)}</strong><span class="num">${crc.format(c.amount)}</span></div><div class="meter"><i style="width:${c.amount/cats[0].amount*100}%"></i></div></div>`).join("")}</div></section></div>
+ <div class="table-wrap"><div class="table-tools"><input type="search" aria-label="Buscar producto" placeholder="Nombre, SKU o código"><select aria-label="Categoría"><option>Todas las categorías</option>${cats.map(c=>`<option>${esc(c.cat)}</option>`).join("")}</select><select aria-label="Ordenar por"><option>Mayor monto</option><option>Mayor cantidad</option><option>Menor monto</option></select></div>
+ <table class="wide"><thead><tr><th>#</th><th>Producto</th><th class="num">Cantidad</th><th class="num">Monto bruto</th><th class="num">Devuelto</th><th class="num">% del total</th></tr></thead><tbody>${products.map((p,i)=>`<tr><td>${i+1}</td><td><strong>${esc(p.name)}${p.variant?` · ${esc(p.variant)}`:""}</strong><small>SKU ${esc(p.sku)} · ${esc(p.cat)}</small></td><td class="num">${n2.format(p.qty)} ${esc(p.unit)}</td><td class="num">${crc.format(p.amount)}</td><td class="num">${p.ret?"−"+crc.format(p.ret):"—"}</td><td class="num">${(p.amount/gross*100).toFixed(1).replace(".",",")} %</td></tr>`).join("")}
+ <tr><td></td><td class="muted">Otros 46 productos</td><td class="num">—</td><td class="num">${crc.format(otherProducts.amount)}</td><td class="num">—</td><td class="num">${(otherProducts.amount/gross*100).toFixed(1).replace(".",",")} %</td></tr></tbody>
+ <tfoot><tr><td></td><td>Total del período</td><td class="num">—</td><td class="num">${crc.format(gross)}</td><td class="num">−${crc.format(ret)}</td><td class="num">100 %</td></tr></tfoot></table>
+ <div class="cards">${products.map((p,i)=>`<article class="card"><div class="card-head"><div><strong>${i+1}. ${esc(p.name)}${p.variant?` · ${esc(p.variant)}`:""}</strong><small>SKU ${esc(p.sku)}</small></div><span class="num">${crc.format(p.amount)}</span></div><div class="meter"><i style="width:${p.amount/max*100}%"></i></div><small>${n2.format(p.qty)} ${esc(p.unit)} · ${(p.amount/gross*100).toFixed(1).replace(".",",")} % del total${p.ret?` · devuelto ${crc.format(p.ret)}`:""}</small></article>`).join("")}</div></div>
+ <p class="note">Cantidad en la unidad de venta de cada producto; por eso no se suma entre productos. Los montos son lo cobrado al cliente, sin costos ni ganancia (Stockly no registra costos).</p>`}
+function paymentsView(){const tp=payments.reduce((s,p)=>s+p.paid,0),tr=payments.reduce((s,p)=>s+p.ref,0),max=Math.max(...payments.map(p=>p.paid-p.ref));
+ return `<div class="table-wrap"><table class="wide"><thead><tr><th>Medio de pago</th><th class="num">Pagos</th><th class="num">Cobrado</th><th class="num">Reintegrado</th><th class="num">Neto</th><th style="width:24%"><span class="sr">Proporción</span></th></tr></thead><tbody>${payments.map(p=>`<tr><td><strong>${p.m}</strong></td><td class="num">${p.n}</td><td class="num">${crc.format(p.paid)}</td><td class="num">${p.ref?"−"+crc.format(p.ref):"—"}</td><td class="num"><strong>${crc.format(p.paid-p.ref)}</strong></td><td><div class="meter"><i style="width:${(p.paid-p.ref)/max*100}%"></i></div></td></tr>`).join("")}</tbody>
+ <tfoot><tr><td>Total</td><td class="num">${payments.reduce((s,p)=>s+p.n,0)}</td><td class="num">${crc.format(tp)}</td><td class="num">−${crc.format(tr)}</td><td class="num">${crc.format(tp-tr)}</td><td></td></tr></tfoot></table>
+ <div class="cards">${payments.map(p=>`<article class="card"><div class="card-head"><strong>${p.m}</strong><strong class="num">${crc.format(p.paid-p.ref)}</strong></div><div class="meter"><i style="width:${(p.paid-p.ref)/max*100}%"></i></div><dl><div><dt>Pagos</dt><dd>${p.n}</dd></div><div><dt>Cobrado</dt><dd>${crc.format(p.paid)}</dd></div><div><dt>Reintegrado</dt><dd>${p.ref?"−"+crc.format(p.ref):"—"}</dd></div></dl></article>`).join("")}
+ <article class="card"><div class="card-head"><strong>Total neto</strong><strong class="num">${crc.format(tp-tr)}</strong></div></article></div></div>
+ <p class="note">Neto = cobrado − reintegrado. Es el mismo cálculo del Resumen de cobros: los reintegros de anulaciones y devoluciones cuentan en su fecha. En efectivo se cuenta el monto de la venta, no lo recibido antes del vuelto. Si hay ventas antiguas sin cobro registrado, se muestran aparte.</p>`}
+function sellersView(){return `<div class="table-wrap"><table class="wide"><thead><tr><th>Vendedor</th><th class="num">Ventas</th><th class="num">Brutas</th><th class="num">Devoluciones</th><th class="num">Netas</th><th class="num">Venta promedio</th></tr></thead><tbody>${[...sellers].sort((a,b)=>(b.gross-b.ret)-(a.gross-a.ret)).map(s=>`<tr><td><strong>${esc(s.name)}</strong></td><td class="num">${s.count}</td><td class="num">${crc.format(s.gross)}</td><td class="num">−${crc.format(s.ret)}</td><td class="num"><strong>${crc.format(s.gross-s.ret)}</strong></td><td class="num">${crc.format(Math.round(s.gross/s.count))}</td></tr>`).join("")}</tbody>
+ <tfoot><tr><td>Total</td><td class="num">${count}</td><td class="num">${crc.format(gross)}</td><td class="num">−${crc.format(ret)}</td><td class="num">${crc.format(net)}</td><td class="num">${crc.format(avg)}</td></tr></tfoot></table>
+ <div class="cards">${sellers.map(s=>`<article class="card"><div class="card-head"><strong>${esc(s.name)}</strong><strong class="num">${crc.format(s.gross-s.ret)}</strong></div><dl><div><dt>Ventas</dt><dd>${s.count}</dd></div><div><dt>Promedio</dt><dd>${crc.format(Math.round(s.gross/s.count))}</dd></div><div><dt>Devoluciones</dt><dd>−${crc.format(s.ret)}</dd></div></dl></article>`).join("")}</div></div>
+ <p class="note">La venta se asigna a quien la registró. Cada devolución resta a quien hizo la venta original, en la fecha de la devolución.</p>`}
+function idleView(){return `<div class="table-wrap"><div class="table-tools"><input type="search" aria-label="Buscar producto" placeholder="Nombre, SKU o código"><label class="muted" style="display:flex;align-items:center;gap:8px;font-weight:650;min-height:44px"><input type="checkbox" checked style="width:20px;height:20px;min-height:0;accent-color:var(--orange)">Solo con existencias</label></div>
+ <table class="wide"><thead><tr><th>Producto</th><th>Categoría</th><th class="num">Disponible hoy</th><th>Última venta</th></tr></thead><tbody>${idle.filter(p=>p.available>0).map(p=>`<tr><td><strong>${esc(p.name)}${p.variant?` · ${esc(p.variant)}`:""}</strong><small>SKU ${esc(p.sku)}</small></td><td>${esc(p.cat)}</td><td class="num">${p.available} ${esc(p.unit)}</td><td>${p.last}</td></tr>`).join("")}</tbody></table>
+ <div class="cards">${idle.filter(p=>p.available>0).map(p=>`<article class="card"><div class="card-head"><div><strong>${esc(p.name)}${p.variant?` · ${esc(p.variant)}`:""}</strong><small>SKU ${esc(p.sku)} · ${esc(p.cat)}</small></div></div><dl><div><dt>Disponible</dt><dd>${p.available} ${esc(p.unit)}</dd></div><div style="grid-column:span 2"><dt>Última venta</dt><dd>${p.last}</dd></div></dl></article>`).join("")}</div></div>
+ <p class="note">Productos activos del catálogo que no se vendieron en el período elegido en la sucursal. Ayuda a detectar mercadería quieta; no dice cuánto dinero representa porque Stockly no registra costos.</p>`}
+function loading(){return `<div class="kpis">${"<div class='kpi'><div class='skel' style='height:14px;width:60%'></div><div class='skel' style='height:26px;width:80%'></div><div class='skel' style='height:12px;width:70%'></div></div>".repeat(4)}</div><div class="panel" aria-busy="true"><span class="sr" role="status">Cargando reportes…</span><div class="skel" style="height:220px"></div></div>`}
+function render(sc){
+ overlay.innerHTML="";state.sc=sc;
+ if(["products","payments","sellers","idle"].includes(sc))state.tab=sc;else if(!["summary","range","rangeError","cashier","loading","empty","error"].includes(sc)||sc==="summary")state.tab="summary";
+ document.getElementById("navReports").className="nav-item"+(sc==="roles"?"":" current");document.getElementById("navRoles").className="nav-item"+(sc==="roles"?" current":"");
+ document.getElementById("topUser").textContent=sc==="cashier"?"Luis Vargas · Encargado Centro":"Ana Mora · Administradora";
+ if(sc==="print")return renderPrint();
+ if(sc==="roles")return renderRoles();
+ const dis=sc==="error"||sc==="empty"||sc==="loading"||sc==="rangeError";
+ let body;
+ if(sc==="loading")body=loading();
+ else if(sc==="error")body=`<div class="state-panel error" role="alert"><div class="icon">!</div><h2>No pudimos cargar los reportes</h2><p class="muted">No mostramos cifras incompletas. Revisa la conexión e intenta de nuevo.</p><button type="button">Reintentar</button></div>`;
+ else if(sc==="empty")body=`<div class="state-panel" role="status"><div class="icon">∅</div><h2>No hay ventas en este período</h2><p class="muted">Sucursal Centro no registró ventas, cobros ni devoluciones hoy. Elige otro período o sucursal.</p></div>`;
+ else if(sc==="rangeError")body=`<div class="state-panel" role="status"><div class="icon">📅</div><h2>Corrige las fechas para ver los reportes</h2><p class="muted">El rango puede ser de hasta 366 días.</p></div>`;
+ else body=tabBar()+({summary,products:productsView,payments:paymentsView,sellers:sellersView,idle:idleView}[state.tab])();
+ app.innerHTML=head(sc,dis)+filters(sc)+body;
+ if(sc==="cashier")app.querySelector(".hero p.muted").insertAdjacentHTML("beforeend"," Solo ves la sucursal que tienes asignada.");
+ wire();
+}
+function wire(){
+ const btn=document.getElementById("exportBtn"),menu=document.getElementById("menu");
+ if(btn)btn.onclick=()=>{menu.hidden=!menu.hidden;btn.setAttribute("aria-expanded",String(!menu.hidden));};
+ menu?.querySelectorAll("[data-file]").forEach(b=>b.onclick=()=>{menu.hidden=true;toast(`Descargando reportes-todas-2026-11-02-a-2026-11-08.${b.dataset.file}`)});
+ const pb=document.getElementById("printBtn");if(pb)pb.onclick=()=>{document.getElementById("scenario").value="print";render("print")};
+ const go=(tab,focus)=>{state.tab=tab;const sc=state.sc;app.innerHTML=head(sc,false)+filters(sc)+tabBar()+({summary,products:productsView,payments:paymentsView,sellers:sellersView,idle:idleView}[state.tab])();wire();app.querySelector(focus)?.focus()};
+ app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab,`[data-tab="${b.dataset.tab}"][role=tab]`));
+ const ts=document.getElementById("tabSelect");if(ts)ts.onchange=()=>go(ts.value,"#tabSelect");
+ app.querySelectorAll(".chips button").forEach(b=>b.onclick=()=>{const custom=b.textContent==="Personalizado";const v=custom?"range":"summary";document.getElementById("scenario").value=v;render(v)});
+ const ch=document.getElementById("chart");if(ch){const tip=document.getElementById("tip");
+  const show=g=>{const d=days[+g.dataset.i],r=g.querySelector(".bar").getBoundingClientRect(),c=ch.getBoundingClientRect();tip.innerHTML=`<strong>${d.d} nov.</strong>Netas ${crc.format(d.gross-d.ret)} · ${d.count} ventas${d.ret?`<br>Devoluciones −${crc.format(d.ret)}`:""}`;tip.style.left=(r.left-c.left+r.width/2)+"px";tip.style.top=(r.top-c.top-8)+"px";tip.hidden=false};
+  ch.querySelectorAll("g[data-i]").forEach(g=>{g.onmouseenter=()=>show(g);g.onfocus=()=>show(g);g.onmouseleave=g.onblur=()=>tip.hidden=true});}
+}
+function toast(t){overlay.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;setTimeout(()=>overlay.innerHTML="",2600)}
+function renderPrint(){const tp=payments.reduce((s,p)=>s+p.paid-p.ref,0);
+ app.innerHTML=`<div class="hero"><div><p class="eyebrow">Vista para imprimir</p><h1>Reportes</h1><p class="muted">Se abre el cuadro de impresión del navegador; también permite guardar como PDF. Usa el período y la sucursal elegidos.</p></div><div class="actions"><button type="button" id="back">Volver a reportes</button><button class="primary" type="button">Imprimir</button></div></div>
+ <div class="sheet"><header><div><strong>Ferretería La Esquina</strong><h1>Resumen de ventas</h1><div>Todas mis sucursales · 02/11/2026 al 08/11/2026</div></div><div style="text-align:right">08/11/2026 6:40 p. m.<br>Generado por Ana Mora</div></header>
+ <table><tbody><tr><td>Ventas brutas</td><td class="num">${crc.format(gross)}</td><td>Ventas realizadas</td><td class="num">${count}</td></tr><tr><td>Devoluciones</td><td class="num">−${crc.format(ret)}</td><td>Venta promedio</td><td class="num">${crc.format(avg)}</td></tr><tr><td><strong>Ventas netas</strong></td><td class="num"><strong>${crc.format(net)}</strong></td><td>Anuladas (no suman)</td><td class="num">${voids.n} · ${crc.format(voids.amount)}</td></tr></tbody></table>
+ <h3>Cobros por medio de pago</h3><table><thead><tr><th>Medio</th><th class="num">Cobrado</th><th class="num">Reintegrado</th><th class="num">Neto</th></tr></thead><tbody>${payments.map(p=>`<tr><td>${p.m}</td><td class="num">${crc.format(p.paid)}</td><td class="num">${p.ref?"−"+crc.format(p.ref):"—"}</td><td class="num">${crc.format(p.paid-p.ref)}</td></tr>`).join("")}<tr><td><strong>Total</strong></td><td></td><td></td><td class="num"><strong>${crc.format(tp)}</strong></td></tr></tbody></table>
+ <h3>Ventas por día</h3><table><thead><tr><th>Día</th><th class="num">Ventas</th><th class="num">Netas</th></tr></thead><tbody>${days.map(d=>`<tr><td>${d.d}</td><td class="num">${d.count}</td><td class="num">${crc.format(d.gross-d.ret)}</td></tr>`).join("")}</tbody></table>
+ <h3>Productos más vendidos</h3><table><thead><tr><th>Producto</th><th class="num">Cantidad</th><th class="num">Monto</th></tr></thead><tbody>${products.slice(0,10).map(p=>`<tr><td>${esc(p.name)}${p.variant?` · ${esc(p.variant)}`:""}</td><td class="num">${n2.format(p.qty)} ${esc(p.unit)}</td><td class="num">${crc.format(p.amount)}</td></tr>`).join("")}</tbody></table>
+ <footer>Las devoluciones restan en su fecha; las ventas anuladas no suman. Montos cobrados al cliente; no incluye costos ni ganancia.</footer></div>`;
+ document.getElementById("back").onclick=()=>{document.getElementById("scenario").value="summary";render("summary")};
+}
+function renderRoles(){const mods=[["Catálogo","Operar"],["Existencias y sucursales","Solo lectura"],["Ventas","Operar"],["Historial","Solo lectura"]];
+ app.innerHTML=`<div class="hero"><div><p class="eyebrow">Administración</p><h1>Rol: Encargado de sucursal</h1><p class="muted">Módulos a los que accede este rol. Reportes es nuevo; los roles existentes empiezan sin acceso, salvo el administrador de la empresa.</p></div></div>
+ <section class="panel"><div class="roles">${mods.map(([m,v])=>`<div class="role-row"><span>${m}</span><select aria-label="Acceso a ${m}">${["Sin acceso","Solo lectura","Operar","Administrar"].map(o=>`<option ${o===v?"selected":""}>${o}</option>`).join("")}</select></div>`).join("")}
+ <div class="role-row new"><span><strong>Reportes</strong> <span class="badge">Nuevo</span><br><small>Ver ventas, cobros y productos de las sucursales asignadas, y exportarlos.</small></span><select aria-label="Acceso a Reportes"><option>Sin acceso</option><option selected>Solo lectura</option></select></div></div>
+ <p class="note">Reportes solo ofrece «Solo lectura»: no modifica datos. Quien lo tenga ve únicamente las sucursales que tiene asignadas.</p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button type="button">Cancelar</button><button type="button" class="primary">Guardar rol</button></div></section>`;
+}
+document.querySelectorAll("[data-size]").forEach(b=>b.onclick=()=>{frame.dataset.size=b.dataset.size;document.querySelectorAll("[data-size]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
+document.getElementById("scenario").onchange=e=>render(e.target.value);
+render("summary");
+</script>
+</body>
+</html>

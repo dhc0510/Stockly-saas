@@ -3,13 +3,14 @@ import { PaymentMethodsPage, PaymentSummaryPage } from "../sales/PaymentPages";
 import { BillingPage } from "../billing/BillingPage";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart, BarChart3, Wallet, FileText } from "lucide-react";
+import { KeyRound, LogOut, Shield, Users, Settings2, UserRound, CheckCircle2, History, Menu, Package, PackageMinus, PackagePlus, X, Boxes, MapPin, ShoppingCart, BarChart3, Wallet, FileText, LineChart } from "lucide-react";
 import { CatalogPage, catalogAccess } from "../catalog/CatalogPage";
 import { ReceiptsPage, receiptAccess } from "../receipts/ReceiptsPage";
 import { MovementsPage, movementAccess } from "../movements/MovementsPage";
 import { HistoryPage, historyAccess } from "../history/HistoryPage";
 import { InventoryPage, BranchesPage, InventoryBell } from "../inventory/InventoryPages";
 import { RestockNavLink, RestockPage } from "../inventory/RestockPage";
+import { ReportsPage, reportsAccess } from "../reports/ReportsPage";
 import { useAuth } from "../auth/AuthContext";
 import { identityApi, type AuditPage, type CreatedWorker, type Permission, type Role, type SessionPolicy, type Worker } from "./api";
 
@@ -72,7 +73,8 @@ export function CompanyWorkspace() {
   const salesLevel = user.modules.find(module => module.moduleKey === "SALES")?.accessLevel;
   const canSales = import.meta.env.MODE !== "stk005-demo" && import.meta.env.MODE !== "stk007-demo" &&
     (user.role === "COMPANY_ADMIN" || !!salesLevel && salesLevel !== "NONE");
-  const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":canInventory?"/inventory":canReceipts?"/inventory/receipts":canMovements?"/inventory/movements":canHistory?"/inventory/history":canSales?"/sales":"/account";
+  const canReports = import.meta.env.MODE !== "stk005-demo" && import.meta.env.MODE !== "stk007-demo" && reportsAccess(user);
+  const defaultPath=canUsers?"/users":canRoles?"/roles":canCatalog?"/catalog":canInventory?"/inventory":canReceipts?"/inventory/receipts":canMovements?"/inventory/movements":canHistory?"/inventory/history":canSales?"/sales":canReports?"/reports":"/account";
   const closeMenu=()=>setMenuOpen(false);
   return <div className={`app-shell company-shell${import.meta.env.MODE === "stk005-demo" ? " stk005-demo-shell" : ""}`}>
     <aside className={`sidebar company-sidebar${menuOpen?" sidebar-open":""}`} id="primary-navigation" aria-label="Navegación de empresa"><div className="company-sidebar-heading">
@@ -92,7 +94,9 @@ export function CompanyWorkspace() {
       {canReceipts&&<NavLink className="identity-nav" to="/inventory/receipts" onClick={closeMenu}><PackagePlus size={18}/> Entradas de inventario</NavLink>}
       {canMovements&&<NavLink className="identity-nav" to="/inventory/movements" onClick={closeMenu}><PackageMinus size={18}/> Salidas y ajustes</NavLink>}
       {canHistory&&<NavLink className="identity-nav" to="/inventory/history" onClick={closeMenu}><History size={18}/> Historial</NavLink>}
-      {canSales && <><div className="nav-caption inventory-caption">OPERACIÓN COMERCIAL</div><NavLink className="identity-nav" to="/sales" onClick={closeMenu}><ShoppingCart size={18}/> Ventas</NavLink><NavLink className="identity-nav" to="/payments" end onClick={closeMenu}><BarChart3 size={18}/> Resumen de cobros</NavLink>{user.role === "COMPANY_ADMIN" && <NavLink className="identity-nav" to="/payments/methods" onClick={closeMenu}><Wallet size={18}/> Medios de pago</NavLink>}{user.role === "COMPANY_ADMIN" && <NavLink className="identity-nav" to="/billing" onClick={closeMenu}><FileText size={18}/> Facturación</NavLink>}</>}
+      {(canSales||canReports) && <div className="nav-caption inventory-caption">OPERACIÓN COMERCIAL</div>}
+      {canSales && <><NavLink className="identity-nav" to="/sales" onClick={closeMenu}><ShoppingCart size={18}/> Ventas</NavLink><NavLink className="identity-nav" to="/payments" end onClick={closeMenu}><BarChart3 size={18}/> Resumen de cobros</NavLink>{user.role === "COMPANY_ADMIN" && <NavLink className="identity-nav" to="/payments/methods" onClick={closeMenu}><Wallet size={18}/> Medios de pago</NavLink>}{user.role === "COMPANY_ADMIN" && <NavLink className="identity-nav" to="/billing" onClick={closeMenu}><FileText size={18}/> Facturación</NavLink>}</>}
+      {canReports && <NavLink className="identity-nav" to="/reports" onClick={closeMenu}><LineChart size={18}/> Reportes</NavLink>}
       </nav>
       <div className="sidebar-footer"><span className="avatar"><UserRound size={18}/></span><span><strong>{user.fullName}</strong><br/><small>{user.role === "COMPANY_ADMIN" ? "Administración de empresa" : user.email}</small></span></div>
     </aside>
@@ -114,6 +118,7 @@ export function CompanyWorkspace() {
         {canSales && <Route path="/payments" element={<PaymentSummaryPage />} />}
         {canSales && user.role === "COMPANY_ADMIN" && <Route path="/payments/methods" element={<PaymentMethodsPage />} />}
         {canSales && user.role === "COMPANY_ADMIN" && <Route path="/billing" element={<BillingPage />} />}
+        {canReports && <Route path="/reports" element={<ReportsPage />} />}
         <Route path="/account" element={<AccountPage/>}/>
         <Route path="*" element={<Navigate to={defaultPath} replace/>}/>
       </Routes></main>
@@ -158,7 +163,7 @@ function RolesPage() {
     <Failure error={error}/>
     {showForm&&<section className="panel form-panel identity-form"><h2>{editing?"Editar rol":"Nuevo rol"}</h2><form className="form-grid single-column" onSubmit={save}>
       <label className="field"><span>Nombre del rol</span><input value={name} onChange={e=>setName(e.target.value)} minLength={2} maxLength={80} required/></label>
-      <fieldset className="permission-set"><legend>Permisos por módulo</legend>{modules.length===0?<p className="subtitle">Los módulos aparecerán aquí cuando sus funcionalidades estén aprobadas y registradas.</p>:modules.map(m=><label className="permission-row" key={m.key}><span>{m.label}</span><select value={levels[m.key]||"NONE"} onChange={e=>setLevels(old=>({...old,[m.key]:e.target.value}))}><option value="NONE">Sin acceso</option><option value="READ">Solo lectura</option><option value="OPERATE">Operar</option><option value="ADMIN">Administrar</option></select></label>)}</fieldset>
+      <fieldset className="permission-set"><legend>Permisos por módulo</legend>{modules.length===0?<p className="subtitle">Los módulos aparecerán aquí cuando sus funcionalidades estén aprobadas y registradas.</p>:modules.map(m=><label className="permission-row" key={m.key}><span>{m.label}</span><select value={levels[m.key]||"NONE"} onChange={e=>setLevels(old=>({...old,[m.key]:e.target.value}))}><option value="NONE">Sin acceso</option><option value="READ">Solo lectura</option>{m.key!=="REPORTS"&&<><option value="OPERATE">Operar</option><option value="ADMIN">Administrar</option></>}</select></label>)}</fieldset>
       <fieldset className="permission-set"><legend>Permisos especiales</legend>{special.map(p=><label className="permission-row" key={p.key}><span>{p.label}</span><input type="checkbox" checked={selected.includes(p.key)} onChange={()=>toggle(p.key)}/></label>)}</fieldset>
       <div className="form-actions"><button type="button" className="button secondary" onClick={reset}>Cancelar</button><button className="button primary" disabled={busy}>{busy?"Guardando…":"Guardar rol"}</button></div>
     </form></section>}

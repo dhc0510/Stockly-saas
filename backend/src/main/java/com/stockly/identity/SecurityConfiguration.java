@@ -34,6 +34,8 @@ public class SecurityConfiguration {
                 .requestMatchers("/api/billing/settings", "/api/billing/settings/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/api/sales", "/api/sales/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
                     "MODULE_SALES_READ", "MODULE_SALES_OPERATE", "MODULE_SALES_ADMIN")
+                .requestMatchers("/api/reports", "/api/reports/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
+                    "MODULE_REPORTS_READ", "MODULE_REPORTS_OPERATE", "MODULE_REPORTS_ADMIN")
                 .requestMatchers("/api/inventory/receipts", "/api/inventory/receipts/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",
                     "MODULE_INVENTORY_RECEIPTS_READ", "MODULE_INVENTORY_RECEIPTS_OPERATE", "MODULE_INVENTORY_RECEIPTS_ADMIN")
                 .requestMatchers("/api/inventory/movements", "/api/inventory/movements/**").hasAnyAuthority("ROLE_COMPANY_ADMIN",

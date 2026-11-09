@@ -23,6 +23,7 @@ export function App() {
       : pathname === "/payments/methods" ? "Medios de pago"
       : pathname === "/payments" ? "Resumen de cobros"
       : pathname === "/billing" ? "Facturación electrónica"
+      : pathname === "/reports" ? "Reportes"
       : pathname.startsWith("/catalog") ? "Catálogo de productos"
       : pathname.startsWith("/companies") ? "Empresas"
       : pageTitles[pathname];

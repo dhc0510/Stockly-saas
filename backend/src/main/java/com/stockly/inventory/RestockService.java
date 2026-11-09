@@ -1,20 +1,13 @@
 package com.stockly.inventory;
 
-import com.stockly.identity.IdentityFailure;
 import com.stockly.identity.StocklyPrincipal;
-import org.dhatim.fastexcel.Workbook;
-import org.dhatim.fastexcel.Worksheet;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
-import java.text.Normalizer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -65,14 +58,13 @@ public class RestockService {
 
     @Transactional(readOnly = true)
     public Export export(StocklyPrincipal actor, String format, String branchId, String search, String category, boolean includeLow) {
-        String kind = format == null ? "" : format.strip().toLowerCase(Locale.ROOT);
-        if (!kind.equals("csv") && !kind.equals("xlsx")) throw new IdentityFailure(400, "INVENTORY_INVALID", "Elige Excel o CSV para exportar.");
+        String kind = TabularExport.format(format);
         List<RestockRow> rows = list(actor, branchId, search, category, includeLow).rows();
-        String place = blank(branchId) == null ? "todas" : slug(rows.isEmpty() ? branchName(actor, branchId) : rows.get(0).branchName());
+        String place = blank(branchId) == null ? "todas" : TabularExport.slug(rows.isEmpty() ? branchName(actor, branchId) : rows.get(0).branchName());
         String name = "por-reponer-" + place + "-" + LocalDate.now(COSTA_RICA) + "." + kind;
         return kind.equals("csv")
-            ? new Export(name, "text/csv; charset=UTF-8", csv(rows))
-            : new Export(name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", xlsx(rows));
+            ? new Export(name, TabularExport.CSV, csv(rows))
+            : new Export(name, TabularExport.XLSX, xlsx(rows));
     }
 
     /** Cantidad sugerida exacta, sin redondear (el saldo admite 3 decimales desde STK-008): nivel deseado − disponible; si no hay, mínimo + margen − disponible. */
@@ -106,53 +98,21 @@ public class RestockService {
             .stream().findFirst().orElse("sucursal");
     }
 
-    private static final String[] HEADERS = {"Sucursal","Producto","Variante","SKU","Categoría","Estado","Disponible","Unidad","Mínimo","Nivel deseado","A pedir","Base del cálculo"};
+    private static final List<String> HEADERS = List.of("Sucursal","Producto","Variante","SKU","Categoría","Estado","Disponible","Unidad","Mínimo","Nivel deseado","A pedir","Base del cálculo");
 
-    static byte[] csv(List<RestockRow> rows) {
-        StringBuilder out = new StringBuilder("﻿");
-        line(out, Arrays.stream(HEADERS).map(RestockService::text).toList());
-        for (RestockRow r : rows) line(out, List.of(text(r.branchName()), text(r.productName()), text(r.variantName()), text(r.sku()),
-            text(r.category()), text(STATE_LABEL.get(r.state())), num(r.available()), text(r.unit()), num(r.minimumQuantity()),
-            num(r.targetQuantity()), num(r.toOrder()), text(BASIS_LABEL.get(r.basis()))));
-        return out.toString().getBytes(StandardCharsets.UTF_8);
+    private static List<List<Object>> cells(List<RestockRow> rows) {
+        return rows.stream().map(r -> Arrays.<Object>asList(r.branchName(), r.productName(), r.variantName(), r.sku(), r.category(),
+            STATE_LABEL.get(r.state()), r.available(), r.unit(), r.minimumQuantity(), r.targetQuantity(), r.toOrder(), BASIS_LABEL.get(r.basis()))).toList();
     }
+
+    static byte[] csv(List<RestockRow> rows) { return TabularExport.csv(HEADERS, cells(rows)); }
 
     static byte[] xlsx(List<RestockRow> rows) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            Workbook book = new Workbook(out, "Stockly", "1.0");
-            Worksheet sheet = book.newWorksheet("Por reponer");
-            for (int c = 0; c < HEADERS.length; c++) sheet.value(0, c, HEADERS[c]);
-            sheet.range(0, 0, 0, HEADERS.length - 1).style().bold().set();
-            int r = 1;
-            for (RestockRow row : rows) {
-                Object[] cells = {row.branchName(), row.productName(), row.variantName(), row.sku(), row.category(), STATE_LABEL.get(row.state()),
-                    row.available(), row.unit(), row.minimumQuantity(), row.targetQuantity(), row.toOrder(), BASIS_LABEL.get(row.basis())};
-                for (int c = 0; c < cells.length; c++) {
-                    if (cells[c] instanceof BigDecimal n) sheet.value(r, c, n);
-                    else if (cells[c] != null) sheet.value(r, c, (String) cells[c]);
-                }
-                r++;
-            }
-            sheet.range(1, 6, Math.max(1, r - 1), 10).style().format("#,##0.00").set();
-            book.finish();
-        } catch (IOException e) { throw new IdentityFailure(500, "EXPORT_FAILED", "No pudimos generar el archivo. Intenta de nuevo."); }
-        return out.toByteArray();
+        Map<Integer,String> formats = new LinkedHashMap<>();
+        for (int c = 6; c <= 10; c++) formats.put(c, "#,##0.00");
+        return TabularExport.xlsx(List.of(new TabularExport.Sheet("Por reponer", HEADERS, cells(rows), formats)));
     }
 
-    private static void line(StringBuilder out, List<String> cells) { out.append(String.join(",", cells)).append("\r\n"); }
-    private static String num(BigDecimal value) { return value == null ? "" : value.toPlainString(); }
-    /** Texto entre comillas; si empieza con = + - @ o un control, se antepone ' para que la hoja no lo ejecute como fórmula. */
-    static String text(String value) {
-        String v = value == null ? "" : value;
-        if (!v.isEmpty() && "=+-@\t\r".indexOf(v.charAt(0)) >= 0) v = "'" + v;
-        return "\"" + v.replace("\"", "\"\"") + "\"";
-    }
-    static String slug(String value) {
-        String plain = Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
-        String s = plain.replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
-        return s.isEmpty() ? "sucursal" : s;
-    }
     private static int count(List<StockItem> items, String state) { return (int) items.stream().filter(i -> state.equals(i.state())).count(); }
     private static String blank(String value) { return value == null || value.isBlank() ? null : value; }
 }
