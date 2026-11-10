@@ -143,6 +143,105 @@ class RestockLocalIntegrationTest {
         mvc.perform(get(BASE + "/restock")).andExpect(status().isUnauthorized());
     }
 
+    @Test void showsPreciseAlertsUntilRecoveryAndDismissesOnlyForTheRecipient() throws Exception {
+        var admin = account("Ferretería alertas");
+        String centro = branch(admin, "Centro"), norte = branch(admin, "Norte");
+        String cable = item(admin, "Cable eléctrico", "CAB-007", "metro", "Electricidad");
+        assign(admin, centro, cable, "5", null, "4.875");
+        assign(admin, norte, cable, "5", null, "0");
+        String worker = worker(admin, centro);
+        jdbc.update("""
+            INSERT INTO role_module_permissions(role_id,module_key,access_level)
+            SELECT role_id,'INVENTORY','READ' FROM users WHERE id=?
+            """, worker);
+        jdbc.update("INSERT INTO inventory_branch_users(company_id,branch_id,user_id) VALUES (?,?,?)", company(admin), norte, worker);
+        var reader = as(admin, worker, "MODULE_INVENTORY_READ");
+        var catalogOnly = as(admin, worker, "MODULE_CATALOG_OPERATE");
+        for (String path : List.of("/branches", "/items", "/alerts", "/restock"))
+            mvc.perform(get(BASE + path).with(authentication(catalogOnly))).andExpect(status().isForbidden());
+
+        String adminAlerts = ok(mvc.perform(get(BASE + "/alerts").with(authentication(admin))));
+        assertThat(JsonPath.<List<Number>>read(adminAlerts, "$[?(@.branchName=='Centro')].available")).containsExactly(4.875);
+        String userAlerts = ok(mvc.perform(get(BASE + "/alerts").with(authentication(reader))));
+        String alert = JsonPath.<List<String>>read(userAlerts, "$[?(@.branchName=='Centro')].id").getFirst();
+        mvc.perform(post(BASE + "/alerts/{id}/dismiss", alert).with(authentication(admin)).with(csrf())).andExpect(status().isNotFound());
+        mvc.perform(post(BASE + "/alerts/{id}/dismiss", alert).with(authentication(reader)).with(csrf())).andExpect(status().isNoContent());
+        assertThat(ok(mvc.perform(get(BASE + "/alerts").with(authentication(reader))))).doesNotContain(alert);
+        assertThat(ok(mvc.perform(get(BASE + "/alerts").with(authentication(admin))))).contains("Centro");
+
+        thresholds(admin, centro, cable, "5", "12", null).andExpect(status().isNoContent());
+        assertThat(ok(mvc.perform(get(BASE + "/alerts").with(authentication(reader))))).doesNotContain(alert);
+        jdbc.update("UPDATE inventory_alerts SET last_notified_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE id=?", alert);
+        assertThat(ok(mvc.perform(get(BASE + "/alerts").with(authentication(reader))))).contains(alert);
+
+        jdbc.update("UPDATE inventory_balances SET quantity=5.999 WHERE company_id=? AND location_id=? AND item_id=?", company(admin), centro, cable);
+        assertThat(ok(mvc.perform(get(BASE + "/alerts").with(authentication(reader))))).contains(alert);
+        jdbc.update("UPDATE inventory_balances SET quantity=6 WHERE company_id=? AND location_id=? AND item_id=?", company(admin), centro, cable);
+        assertThat(ok(mvc.perform(get(BASE + "/alerts").with(authentication(reader))))).doesNotContain(alert);
+
+        String northAlert = JsonPath.<List<String>>read(userAlerts, "$[?(@.branchName=='Norte')].id").getFirst();
+        jdbc.update("DELETE FROM inventory_branch_users WHERE company_id=? AND branch_id=? AND user_id=?", company(admin), norte, worker);
+        mvc.perform(get(BASE + "/items").param("branchId", norte).with(authentication(reader))).andExpect(status().isNotFound());
+        assertThat(ok(mvc.perform(get(BASE + "/alerts").with(authentication(reader))))).doesNotContain(northAlert);
+        mvc.perform(post(BASE + "/alerts/{id}/dismiss", northAlert).with(authentication(reader)).with(csrf())).andExpect(status().isNotFound());
+    }
+
+    @Test void managesBranchLifecycleAndFiltersAssignedStock() throws Exception {
+        var admin = account("Ferretería existencias");
+        String branchBody = """
+            {"name":"Centro","code":"C-007","address":"San José","phone":"","contactEmail":"","managerName":""}
+            """;
+        String created = mvc.perform(post(BASE + "/branches").with(authentication(admin)).with(csrf())
+            .contentType("application/json").content(branchBody)).andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        String centro = JsonPath.read(created, "$.id");
+        mvc.perform(post(BASE + "/branches").with(authentication(admin)).with(csrf())
+            .contentType("application/json").content(branchBody)).andExpect(status().isConflict());
+        mvc.perform(put(BASE + "/branches/{id}", centro).with(authentication(admin)).with(csrf())
+            .contentType("application/json").content(branchBody.replace("Centro", "Centro nuevo")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Centro nuevo"));
+        mvc.perform(post(BASE + "/branches/{id}/deactivate", centro).with(authentication(admin)).with(csrf())).andExpect(status().isNoContent());
+        assertThat(ok(mvc.perform(get(BASE + "/branches").with(authentication(admin))))).isEqualTo("[]");
+        mvc.perform(get(BASE + "/branches").param("includeInactive", "true").with(authentication(admin)))
+            .andExpect(status().isOk()).andExpect(jsonPath("$[0].active").value(false));
+        mvc.perform(post(BASE + "/branches/{id}/activate", centro).with(authentication(admin)).with(csrf())).andExpect(status().isNoContent());
+        String worker = worker(admin, centro);
+        var reader = as(admin, worker, "MODULE_INVENTORY_READ");
+        mvc.perform(post(BASE + "/branches").with(authentication(reader)).with(csrf())
+            .contentType("application/json").content(branchBody)).andExpect(status().isForbidden());
+        mvc.perform(put(BASE + "/branches/{id}/access", centro).with(authentication(reader)).with(csrf())
+            .contentType("application/json").content("{}")).andExpect(status().isForbidden());
+        mvc.perform(put(BASE + "/branches/{id}/access", centro).with(authentication(admin)).with(csrf())
+            .contentType("application/json").content("{\"userIds\":[\"" + worker + "\"]}")).andExpect(status().isNoContent());
+        mvc.perform(get(BASE + "/branches/{id}/access", centro).with(authentication(admin)))
+            .andExpect(status().isOk()).andExpect(jsonPath("$[?(@.selected==true)].userId").value(org.hamcrest.Matchers.contains(worker)));
+        mvc.perform(delete(BASE + "/branches/{id}", centro).with(authentication(admin)).with(csrf())).andExpect(status().isNoContent());
+
+        String norte = branch(admin, "Norte"), sur = branch(admin, "Sur");
+        String cable = item(admin, "Cable eléctrico", "CAB-123", "metro", "Electricidad");
+        jdbc.update("UPDATE catalog_items SET barcode='123456789' WHERE company_id=? AND id=?", company(admin), cable);
+        assertThat(ok(mvc.perform(get(BASE + "/pending-items").with(authentication(admin))))).contains("CAB-123");
+        jdbc.update("INSERT INTO inventory_branch_users(company_id,branch_id,user_id) VALUES (?,?,?)", company(admin), norte, worker);
+        var editor = as(admin, worker, "MODULE_INVENTORY_READ", "MODULE_CATALOG_OPERATE");
+        mvc.perform(post(BASE + "/branches/{id}/items", sur).with(authentication(editor)).with(csrf())
+            .contentType("application/json").content("{}")).andExpect(status().isNotFound());
+        mvc.perform(post(BASE + "/branches/{id}/items", norte).with(authentication(editor)).with(csrf())
+            .contentType("application/json").content("{\"itemId\":\"" + cable + "\",\"minimumQuantity\":5}"))
+            .andExpect(status().isCreated());
+        jdbc.update("INSERT INTO inventory_balances(company_id,location_id,item_id,quantity) VALUES (?,?,?,6.125)", company(admin), norte, cable);
+        assign(admin, sur, cable, "5", null, "0");
+        assertThat(ok(mvc.perform(get(BASE + "/pending-items").with(authentication(admin))))).doesNotContain("CAB-123");
+        for (String term : List.of("electrico", "CAB-123", "123456789", "Electricidad"))
+            mvc.perform(get(BASE + "/items").param("search", term).param("category", "Electricidad")
+                .param("status", "AVAILABLE").with(authentication(admin))).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].available").value(6.125)).andExpect(jsonPath("$[0].reserved").value(0));
+        mvc.perform(get(BASE + "/items").param("status", "LOW").with(authentication(admin)))
+            .andExpect(status().isOk()).andExpect(jsonPath("$[0].branchId").value(norte));
+        mvc.perform(get(BASE + "/items").param("status", "EXHAUSTED").with(authentication(admin)))
+            .andExpect(status().isOk()).andExpect(jsonPath("$[0].branchId").value(sur));
+        mvc.perform(delete(BASE + "/branches/{id}", norte).with(authentication(admin)).with(csrf())).andExpect(status().isConflict());
+    }
+
     private ResultActions thresholds(UsernamePasswordAuthenticationToken actor, String branch, String item, String minimum, String target, Boolean paused) throws Exception {
         String body = "{\"minimumQuantity\":%s,\"lowThreshold\":2,\"recoveryMargin\":1,\"exhaustedBasis\":\"AVAILABLE\",\"targetQuantity\":%s,\"restockPaused\":%s}"
             .formatted(minimum, target, paused);

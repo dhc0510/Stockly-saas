@@ -84,8 +84,9 @@ export function CompanyWorkspace() {
   const catalog=catalogAccess(user);
   const canCatalog=catalog.read && import.meta.env.MODE !== "stk005-demo";
   const inventoryLevel=user.modules.find(module=>module.moduleKey==="INVENTORY")?.accessLevel;
-  const canInventory=import.meta.env.MODE!=="stk005-demo"&&(user.role==="COMPANY_ADMIN"||!!inventoryLevel&&inventoryLevel!=="NONE"||catalog.edit);
-  const canBranches=user.role==="COMPANY_ADMIN";
+  const canInventory=import.meta.env.MODE!=="stk005-demo"&&(user.role==="COMPANY_ADMIN"||!!inventoryLevel&&inventoryLevel!=="NONE");
+  const canManageBranches=user.role==="COMPANY_ADMIN";
+  const canBranches=canManageBranches||(canInventory&&catalog.edit);
   const receipts=receiptAccess(user);
   const canReceipts=receipts.read && import.meta.env.MODE !== "stk005-demo";
   const movements=movementAccess(user);
@@ -154,7 +155,7 @@ export function CompanyWorkspace() {
         {canCatalog&&<Route path="/catalog" element={<CatalogPage access={catalog}/>}/>}
         {canInventory&&<Route path="/inventory" element={<InventoryPage canEditCatalog={catalog.edit} isAdmin={user.role==="COMPANY_ADMIN"}/>}/>}
         {canInventory&&<Route path="/inventory/restock" element={<RestockPage canEdit={catalog.edit}/>}/>}
-        {canBranches&&<Route path="/branches" element={<BranchesPage/>}/>}
+        {canBranches&&<Route path="/branches" element={<BranchesPage canManage={canManageBranches}/>}/>}
         {canReceipts&&<Route path="/inventory/receipts/*" element={<ReceiptsPage user={user} access={receipts}/>}/>}
         {canMovements&&<Route path="/inventory/movements/*" element={<MovementsPage user={user} access={movements}/>}/>}
         {canHistory&&<Route path="/inventory/history/*" element={<HistoryPage/>}/>}

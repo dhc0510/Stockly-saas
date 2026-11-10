@@ -1,6 +1,6 @@
 # SPEC — STK-007 | Consulta de existencias, búsqueda, filtros y sucursales
 
-Estado: propuesta para aprobación; todavía no autoriza desarrollo. [Tarjeta de Trello](https://trello.com/c/mfpgKPWG/7-stk-007-consulta-de-existencias-b%C3%BAsqueda-y-filtros) · Mockups aprobados: [escritorio/responsive](../../06-Mockups/STK-007/existencias-responsive.html) y [móvil](../../06-Mockups/STK-007/existencias-mobile.html).
+Estado: [validación local aprobada para publicar](../../04-Testing/STK-007/VALIDACION-LOCAL.md). [Decisión de precisión](../../05-Decisions/ADR-013.md). [Tarjeta de Trello](https://trello.com/c/mfpgKPWG/7-stk-007-consulta-de-existencias-b%C3%BAsqueda-y-filtros) · Mockups aprobados: [escritorio/responsive](../../06-Mockups/STK-007/existencias-responsive.html) y [móvil](../../06-Mockups/STK-007/existencias-mobile.html).
 
 ## 1. Objetivo y actores
 
@@ -21,7 +21,7 @@ Consultar existencias confiables por producto, variante y sucursal; encontrar pr
 
 ## 3. Datos y reglas de stock
 
-- Por producto/variante y sucursal se consulta **existencia física, reservado, disponible, mínimo y estado**. Disponible = existencia física − reservado. Las cantidades se expresan en la unidad base del artículo y aceptan como máximo dos decimales; no se redondean silenciosamente.
+- Por producto/variante y sucursal se consulta **existencia física, reservado, disponible, mínimo y estado**. Disponible = existencia física − reservado. Las cantidades de existencias y reservas se muestran en la unidad base sin redondear: enteros para unidad y hasta tres decimales para kg, litro y metro. Los mínimos, el umbral bajo y el margen de recuperación mantienen su precisión de hasta dos decimales.
 - Reservado corresponde a cantidades comprometidas en pedidos confirmados aún no despachados. Las ventas confirmadas descuentan la existencia de la sucursal indicada; mientras no exista un flujo de pedidos que origine reservas, reservado es 0. STK-007 consulta esos valores, no crea movimientos ni reservas.
 - En productos con variantes, cada variante mantiene su propio saldo, mínimo y estado por sucursal. La ficha agrupadora presenta totales derivados de las variantes y no saldo propio.
 - El mínimo, el umbral de «stock bajo» y el margen de recuperación se configuran por producto/variante y sucursal. Administrador y trabajadores con permiso de edición de ese producto pueden configurarlos. El umbral inicial de stock bajo es 2 unidades base; es configurable. El margen de recuperación también es configurable y no puede ser menor que 1 unidad base.
@@ -69,7 +69,7 @@ Consultar existencias confiables por producto, variante y sucursal; encontrar pr
 - [ ] AC-01 Administrador crea la primera sucursal después del alta de empresa y gestiona sus datos; código único por empresa; solo él puede crear, editar, desactivar, borrar y asignar accesos.
 - [ ] AC-02 Producto/variante está asignado a una o más sucursales; un producto pendiente se identifica en naranja y puede asignarse por el administrador.
 - [ ] AC-03 Consolidado inicial y selector de sucursal respetan acceso; totales, resultados y saldos de otras sucursales solo incluyen ubicaciones autorizadas.
-- [ ] AC-04 Consultar existencia, reservado, disponible, mínimo y estado por sucursal, con hasta dos decimales; disponible resta reservas y conserva el vínculo de unidad de STK-006.
+- [ ] AC-04 Consultar existencia, reservado, disponible, mínimo y estado por sucursal, con la precisión de la unidad base; disponible resta reservas y conserva el vínculo de unidad de STK-006.
 - [ ] AC-05 Variantes tienen saldos, mínimos y estados independientes; totales agrupados derivan de ellas.
 - [ ] AC-06 Buscar por nombre, SKU, código de barras y categoría; filtrar por disponible, bajo, mínimo y agotado; ordenar por opciones visibles de la interfaz.
 - [ ] AC-07 Estados aplican umbrales inclusivos acordados, configurables y con etiqueta además de color; el agotado usa por defecto disponible ≤ 0 y admite el criterio configurable.

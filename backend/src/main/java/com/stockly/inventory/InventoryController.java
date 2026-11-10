@@ -14,7 +14,7 @@ import static com.stockly.inventory.InventoryContracts.*;
 @RequestMapping("/api/inventory")
 @PreAuthorize("hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')")
 public class InventoryController {
-    private static final String READERS = "hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')";
+    private static final String READERS = "hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN')";
     private final InventoryService inventory;
     private final RestockService restock;
     public InventoryController(InventoryService inventory, RestockService restock) { this.inventory = inventory; this.restock = restock; }
@@ -59,7 +59,7 @@ public class InventoryController {
 
 
     @GetMapping("/branches")
-    @PreAuthorize("hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')")
+    @PreAuthorize(READERS)
     List<Branch> branches(Authentication auth,@RequestParam(defaultValue="false") boolean includeInactive) {
         return inventory.branches(principal(auth),includeInactive);
     }
@@ -102,7 +102,7 @@ public class InventoryController {
     }
 
     @GetMapping("/items")
-    @PreAuthorize("hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')")
+    @PreAuthorize(READERS)
     List<StockItem> items(Authentication auth,@RequestParam(required=false) String branchId,
                           @RequestParam(defaultValue="") String search,@RequestParam(defaultValue="") String category,
                           @RequestParam(defaultValue="ALL") String status,@RequestParam(defaultValue="NAME") String sort) {
@@ -135,12 +135,12 @@ public class InventoryController {
     }
 
     @GetMapping("/alerts")
-    @PreAuthorize("hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')")
+    @PreAuthorize(READERS)
     List<Alert> alerts(Authentication auth) { return inventory.alerts(principal(auth)); }
 
     @PostMapping("/alerts/{alertId}/dismiss")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasAnyAuthority('ROLE_COMPANY_ADMIN','MODULE_INVENTORY_READ','MODULE_INVENTORY_OPERATE','MODULE_INVENTORY_ADMIN','MODULE_CATALOG_OPERATE','MODULE_CATALOG_ADMIN')")
+    @PreAuthorize(READERS)
     void dismiss(Authentication auth,@PathVariable String alertId) { inventory.dismissAlert(principal(auth),alertId); }
 
     private StocklyPrincipal principal(Authentication auth) { return (StocklyPrincipal)auth.getPrincipal(); }

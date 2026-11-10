@@ -288,22 +288,27 @@ public class InventoryService {
         String company = company(actor); requireBranchAccess(actor, company, branchId, false);
         ThresholdInput clean = validThresholds(input, false);
         validTarget(input.targetQuantity(), clean.minimumQuantity());
-        Boolean wasPaused = jdbc.query("SELECT restock_paused FROM inventory_branch_items WHERE company_id=? AND branch_id=? AND item_id=? FOR UPDATE",
-            (rs,row)->rs.getBoolean(1), company, branchId, itemId).stream().findFirst().orElseThrow(InventoryService::missing);
-        boolean paused = input.restockPaused() == null ? wasPaused : input.restockPaused();
+        record PreviousThresholds(boolean paused, BigDecimal minimum) {}
+        var previous = jdbc.query("""
+            SELECT restock_paused,minimum_quantity FROM inventory_branch_items WHERE company_id=? AND branch_id=? AND item_id=? FOR UPDATE
+            """, (rs,row)->new PreviousThresholds(rs.getBoolean(1),rs.getBigDecimal(2)), company, branchId, itemId)
+            .stream().findFirst().orElseThrow(InventoryService::missing);
+        boolean paused = input.restockPaused() == null ? previous.paused() : input.restockPaused();
         Instant now = Instant.now();
         jdbc.update("""
             UPDATE inventory_branch_items SET minimum_quantity=?,low_threshold=?,recovery_margin=?,exhausted_basis=?,target_quantity=?,updated_at=?
             WHERE company_id=? AND branch_id=? AND item_id=?
             """, clean.minimumQuantity(), clean.lowThreshold(), clean.recoveryMargin(), clean.exhaustedBasis(), input.targetQuantity(),
             Timestamp.from(now), company, branchId, itemId);
-        if (paused != wasPaused) {
+        if (paused != previous.paused()) {
             jdbc.update("UPDATE inventory_branch_items SET restock_paused=?,restock_paused_by=?,restock_paused_at=? WHERE company_id=? AND branch_id=? AND item_id=?",
                 paused, paused ? actor.accountId() : null, paused ? Timestamp.from(now) : null, company, branchId, itemId);
             audit.record(paused ? "RESTOCK_PAUSED" : "RESTOCK_RESUMED", "INVENTORY_ITEM", itemId);
         }
-        jdbc.update("UPDATE inventory_alerts SET active=FALSE,dismissed_at=NULL,updated_at=? WHERE company_id=? AND branch_id=? AND item_id=?",
-            Timestamp.from(Instant.now()),company,branchId,itemId);
+        BigDecimal minimum = clean.minimumQuantity();
+        boolean minimumChanged = previous.minimum() == null ? minimum != null
+            : minimum == null || previous.minimum().compareTo(minimum) != 0;
+        if (minimumChanged) syncAlertType(company, branchId, itemId, "MINIMUM", false, now);
         syncItemAlerts(company, branchId, itemId, withState(loadOne(company, branchId, itemId)));
     }
 
@@ -324,35 +329,47 @@ public class InventoryService {
         List<StockItem> rows = loadAssignedItems(company, assigned);
         for (StockItem raw : rows) syncItemAlerts(company, raw.branchId(), raw.itemId(), withState(raw));
         Instant now = Instant.now();
-        List<Map<String,Object>> due = jdbc.queryForList("""
-            SELECT id FROM inventory_alerts WHERE company_id=? AND recipient_id=? AND active=TRUE
-              AND (last_notified_at IS NULL OR last_notified_at<=?)
-            """, company, actor.accountId(), Timestamp.from(now.minusSeconds(24 * 60 * 60L)));
-        for (Map<String,Object> row : due) jdbc.update("UPDATE inventory_alerts SET last_notified_at=?,dismissed_at=NULL,updated_at=? WHERE id=?",
-            Timestamp.from(now), Timestamp.from(now), row.get("id"));
+        jdbc.update("""
+            UPDATE inventory_alerts a
+            JOIN inventory_branch_users assignment ON assignment.company_id=a.company_id AND assignment.branch_id=a.branch_id
+              AND assignment.user_id=a.recipient_id
+            JOIN inventory_branches b ON b.company_id=a.company_id AND b.id=a.branch_id AND b.active=TRUE
+            SET a.last_notified_at=?,a.dismissed_at=NULL,a.updated_at=?
+            WHERE a.company_id=? AND a.recipient_id=? AND a.active=TRUE
+              AND (a.last_notified_at IS NULL OR a.last_notified_at<=?)
+            """, Timestamp.from(now), Timestamp.from(now), company, actor.accountId(),
+            Timestamp.from(now.minusSeconds(24 * 60 * 60L)));
         return jdbc.query("""
             SELECT a.id,a.alert_type,p.id,p.name,i.variant_name,i.sku,i.unit,b.id,b.name,
               COALESCE(stock.quantity,0),
               bi.minimum_quantity,a.last_notified_at
             FROM inventory_alerts a
+            JOIN inventory_branch_users assignment ON assignment.company_id=a.company_id AND assignment.branch_id=a.branch_id
+              AND assignment.user_id=a.recipient_id
             JOIN inventory_branch_items bi ON bi.company_id=a.company_id AND bi.branch_id=a.branch_id AND bi.item_id=a.item_id
             JOIN inventory_branches b ON b.company_id=a.company_id AND b.id=a.branch_id AND b.active=TRUE
-            JOIN catalog_items i ON i.company_id=a.company_id AND i.id=a.item_id
-            JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id
+            JOIN catalog_items i ON i.company_id=a.company_id AND i.id=a.item_id AND i.active=TRUE
+            JOIN catalog_products p ON p.company_id=i.company_id AND p.id=i.product_id AND p.active=TRUE
             LEFT JOIN inventory_balances stock ON stock.company_id=b.company_id AND stock.location_id=b.location_id AND stock.item_id=i.id
             WHERE a.company_id=? AND a.recipient_id=? AND a.active=TRUE
-              AND (a.dismissed_at IS NULL OR a.last_notified_at>=?)
+              AND a.dismissed_at IS NULL
             ORDER BY CASE a.alert_type WHEN 'EXHAUSTED' THEN 0 ELSE 1 END,b.name,p.name,i.variant_name
             """, (rs,row)->new Alert(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5),rs.getString(6),
-                rs.getString(7),rs.getString(8),rs.getString(9),ZERO,rs.getBigDecimal(11),instant(rs.getTimestamp(12))), company, actor.accountId(),
-            Timestamp.from(now.minusSeconds(24 * 60 * 60L)));
+                rs.getString(7),rs.getString(8),rs.getString(9),rs.getBigDecimal(10),rs.getBigDecimal(11),instant(rs.getTimestamp(12))), company, actor.accountId());
     }
 
     @Transactional
     public void dismissAlert(StocklyPrincipal actor, String alertId) {
         String company = company(actor);
-        int count = jdbc.update("UPDATE inventory_alerts SET dismissed_at=?,updated_at=? WHERE company_id=? AND recipient_id=? AND id=? AND active=TRUE",
-            Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), company, actor.accountId(), alertId);
+        Timestamp now = Timestamp.from(Instant.now());
+        int count = jdbc.update("""
+            UPDATE inventory_alerts a
+            JOIN inventory_branch_users assignment ON assignment.company_id=a.company_id AND assignment.branch_id=a.branch_id
+              AND assignment.user_id=a.recipient_id
+            JOIN inventory_branches b ON b.company_id=a.company_id AND b.id=a.branch_id AND b.active=TRUE
+            SET a.dismissed_at=?,a.updated_at=?
+            WHERE a.company_id=? AND a.recipient_id=? AND a.id=? AND a.active=TRUE
+            """, now, now, company, actor.accountId(), alertId);
         if (count == 0) throw missing();
     }
 
@@ -370,9 +387,8 @@ public class InventoryService {
             SELECT DISTINCT u.id FROM users u
             JOIN inventory_branch_users a ON a.company_id=u.company_id AND a.user_id=u.id AND a.branch_id=?
             LEFT JOIN role_module_permissions inv ON inv.role_id=u.role_id AND inv.module_key='INVENTORY'
-            LEFT JOIN role_module_permissions cat ON cat.role_id=u.role_id AND cat.module_key='CATALOG'
             WHERE u.company_id=? AND u.active=TRUE AND
-              (u.role='COMPANY_ADMIN' OR inv.access_level IN ('READ','OPERATE','ADMIN') OR cat.access_level IN ('OPERATE','ADMIN'))
+              (u.role='COMPANY_ADMIN' OR inv.access_level IN ('READ','OPERATE','ADMIN'))
             """, (rs,row)->rs.getString(1), branchId, company);
         for (String type : List.of("MINIMUM", "EXHAUSTED")) {
             boolean active = type.equals("MINIMUM") ? minimum : exhausted;

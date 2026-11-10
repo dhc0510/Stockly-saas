@@ -33,6 +33,7 @@
 .inventory-summary strong { font-size: 21px; font-variant-numeric: tabular-nums; }
 .inventory-products { display: grid; gap: 12px; }
 .inventory-product-card { padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: white; }
+.inventory-item-row[data-focused-variant] { outline: 2px solid #c2410c; outline-offset: -2px; }
 .inventory-product-card[data-focused-product="true"] { border-color: #f97316; box-shadow: 0 0 0 2px #fdba7440; scroll-margin-top: 24px; }
 .inventory-product-title { align-items: center; padding-bottom: 11px; }
 .inventory-product-title h2 { margin: 0 0 3px; font-size: 16px; }

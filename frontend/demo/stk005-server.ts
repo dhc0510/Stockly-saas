@@ -27,9 +27,9 @@ const demoProducts:DemoProduct[]=[
   {id:'prod-filtro',name:'Filtro de aceite',category:'Automotriz',description:null,active:true,hasImage:false,items:[{id:'item-filtro',variantName:null,sku:'FIL-010',barcode:null,unit:'unidades',price:4800,active:true,hasMovements:false}]},
 ]
 const demoBalances:DemoBalance[]=[
-  {branchId:'branch-sjo',itemId:'item-cafe',onHand:14,reserved:4,minimumQuantity:10,lowThreshold:2,recoveryMargin:1,exhaustedBasis:'AVAILABLE',dismissedBy:new Set(),lastNotifiedAt:new Date().toISOString()},
+  {branchId:'branch-sjo',itemId:'item-cafe',onHand:13.875,reserved:4,minimumQuantity:10,lowThreshold:2,recoveryMargin:1,exhaustedBasis:'AVAILABLE',dismissedBy:new Set(),lastNotifiedAt:new Date().toISOString()},
   {branchId:'branch-heredia',itemId:'item-cafe',onHand:30,reserved:8,minimumQuantity:15,lowThreshold:2,recoveryMargin:1,exhaustedBasis:'AVAILABLE',dismissedBy:new Set(),lastNotifiedAt:new Date().toISOString()},
-  {branchId:'branch-sjo',itemId:'item-arroz',onHand:6.5,reserved:.5,minimumQuantity:5,lowThreshold:2,recoveryMargin:1,exhaustedBasis:'AVAILABLE',dismissedBy:new Set(),lastNotifiedAt:new Date().toISOString()},
+  {branchId:'branch-sjo',itemId:'item-arroz',onHand:7,reserved:1,minimumQuantity:5,lowThreshold:2,recoveryMargin:1,exhaustedBasis:'AVAILABLE',dismissedBy:new Set(),lastNotifiedAt:new Date().toISOString()},
   {branchId:'branch-heredia',itemId:'item-arroz',onHand:11,reserved:0,minimumQuantity:5,lowThreshold:2,recoveryMargin:1,exhaustedBasis:'AVAILABLE',dismissedBy:new Set(),lastNotifiedAt:new Date().toISOString()},
   {branchId:'branch-sjo',itemId:'item-cam-red',onHand:17,reserved:2,minimumQuantity:10,lowThreshold:2,recoveryMargin:1,exhaustedBasis:'AVAILABLE',dismissedBy:new Set(),lastNotifiedAt:new Date().toISOString()},
   {branchId:'branch-heredia',itemId:'item-cam-red',onHand:10,reserved:2,minimumQuantity:6,lowThreshold:2,recoveryMargin:1,exhaustedBasis:'AVAILABLE',dismissedBy:new Set(),lastNotifiedAt:new Date().toISOString()},
@@ -83,6 +83,7 @@ export function stk005DemoMiddleware(includeInventory=false){
       if(method==='PATCH'){const b=await read(req);role.name=String(b.name).trim();role.modules=b.modules||{};role.specialPermissions=b.specialPermissions||[];for(const w of workers)if(w.roleId===role.id)w.roleName=role.name;addAudit('ROLE_UPDATED','Rol o permisos actualizados','ROLE',role.id,role.name);send(res,200,role);return}
       if(method==='DELETE'){roleCounts();if(role.assignedWorkers){fail(res,409,'ROLE_ASSIGNED','Reasigna los trabajadores antes de eliminar el rol.');return}roles=roles.filter(x=>x.id!==role.id);addAudit('ROLE_DELETED','Rol eliminado','ROLE',role.id,role.name);send(res,204);return}
     }
+    if(includeInventory&&path==='/api/inventory/location-setup'&&method==='GET'){send(res,200,{branches:[],needsPrincipal:false,pending:false});return}
     if(includeInventory&&path==='/api/inventory/branches'&&method==='GET'){send(res,200,demoBranches.filter(b=>url.searchParams.get('includeInactive')==='true'||b.active).map(({userIds,...b})=>b));return}
     if(includeInventory&&path==='/api/inventory/branches'&&method==='POST'){
       const b=await read(req),branch:DemoBranch={id:randomUUID(),name:String(b.name||'').trim(),code:String(b.code||'').trim(),address:String(b.address||''),phone:String(b.phone||''),contactEmail:String(b.contactEmail||''),managerName:String(b.managerName||''),active:true,userIds:[admin.id]};
