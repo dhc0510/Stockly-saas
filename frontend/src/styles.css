@@ -1391,6 +1391,17 @@ h1 {
 .identity-table td select { min-height: 38px; border: 1px solid var(--border); border-radius: 7px; padding: 7px; background: white; }
 .cell-secondary { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
 .identity-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+/* STK-005 · Usuarios en móvil: la tarjeta de Empresas (STK-004) oculta las columnas 3 y 5; aquí son el rol y las acciones. */
+@media (max-width: 640px) {
+  .identity-table-wrap { overflow-x: visible; }
+  .identity-table { min-width: 0; }
+  .identity-table tr { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .identity-table td, .identity-table td:nth-child(n) { display: block; grid-column: 1; grid-row: auto; margin: 0; font-size: 13px; color: inherit; }
+  .identity-table td:nth-child(2) { color: var(--muted); }
+  .identity-table td select { width: 100%; min-height: 44px; font-size: 16px; }
+  .identity-table td.identity-actions { display: flex; gap: 20px; }
+  .identity-actions .text-button { min-height: 44px; }
+}
 .danger-text { color: #b91c1c; }
 .credential-reveal { margin-bottom: 22px; align-items: flex-start; }
 .credential-reveal p { margin: 7px 0; line-height: 1.55; }
