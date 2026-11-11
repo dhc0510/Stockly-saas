@@ -32,3 +32,5 @@ Documentación aprobada por el propietario el 2026-11-07. [SPEC](../../01-Specs/
 
 ## Validación final
 - [x] Aplicación en local aprobada por el propietario el 2026-11-07, con el ajuste del resumen (Entró, Salió y Quedó).
+
+- [x] Reverificación sobre el código actual del 2026-11-11 (recorrido real 44/44, Playwright 40/40 y pruebas de backend), alineación del historial de ventas, verificación móvil emulada aceptada y aprobación final del propietario el 2026-11-11 («Aprobado, publicar»).

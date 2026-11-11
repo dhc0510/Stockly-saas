@@ -141,10 +141,17 @@
 
 .sales-row-grid {
   display: grid;
-  grid-template-columns: minmax(7rem, .9fr) minmax(0, 1.1fr) minmax(0, .8fr) minmax(8.5rem, 1fr) minmax(0, .8fr) max-content max-content minmax(0, 1.1fr) minmax(7.5rem, max-content);
+  /* Columnas que no dependen del contenido de cada fila: así encabezado y filas quedan alineados. */
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.1fr) minmax(0, .8fr) minmax(0, 1.05fr) minmax(0, .95fr)
+    minmax(0, .95fr) minmax(0, .9fr) minmax(0, 1.25fr) minmax(0, 1.1fr);
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
+/* En la fila, las etiquetas largas bajan de línea dentro de su columna en vez de ensancharla. */
+.sales-list .sales-row-grid > .sales-status, .sales-row-fiscal .sales-status { max-width: 100%; white-space: normal; }
+.sales-row-grid .sales-void-link { max-width: 100%; white-space: normal; text-align: center; }
+.sales-list .sales-row-grid > .sales-date { white-space: normal; }
+.sales-list .sales-row-grid > .sales-amount { padding-left: 4px; }
 .sales-register-head {
   padding: 12px 24px;
   border-block: 1px solid var(--sales-border);

@@ -47,5 +47,73 @@ Capturas: [cobro 1440](screenshots/cobro-1440.png) · [cobro 320](screenshots/co
 
 ## Pendiente
 
-- Comunicar a Gabo el contrato de pagos para STK-014.
-- Prueba en un celular físico.
+- Comunicar a Gabo el contrato de pagos para STK-014: hecho el 2026-11-08 en su tarjeta.
+- Prueba en un celular físico: el propietario aceptó el 2026-11-11 la verificación móvil emulada a 375 px.
+
+## Reverificación sobre el código actual — 2026-11-11
+
+Después de la aprobación del 07/11, STK-013, STK-014, STK-016, STK-018 y el ajuste del formulario de anulación (STK-011) tocaron el cobro y la anulación. Se volvió a verificar STK-012 sobre `main` en `1fd9606`, con React, Spring Boot y MySQL 9.7 local.
+
+### Recorrido real
+
+Pasaron 44 de 44 comprobaciones. El script crea dos empresas reales (A y B) y dos sucursales en A (Centro y Norte). Crea tres trabajadores de STK-005: consulta (solo Norte), cajero (solo Centro) y supervisor con permiso de anular (Centro). La suscripción de las empresas de prueba se marcó como pagada para no topar el límite de la prueba gratuita (STK-018).
+
+- **AC-01 (4):**
+  - venta con un medio y con tres medios combinados;
+  - con pendiente no se confirma ni se descuenta;
+  - sin cobro tampoco se confirma.
+- **AC-02 (5):**
+  - ₡13.251,75 pagados con ₡5.000 en tarjeta y ₡10.000 en efectivo dejan el efectivo aplicado en ₡8.251,75 y ₡1.748,25 de vuelto;
+  - tarjeta o SINPE por encima del total se rechazan;
+  - más de dos decimales se rechazan.
+- **AC-03 (3):**
+  - se guarda la referencia;
+  - la tabla de pagos solo tiene empresa, venta, posición, medio, monto, recibido y referencia, sin campos de tarjeta;
+  - una referencia de más de 60 caracteres se rechaza.
+- **AC-04 (6):**
+  - solo el administrador configura los medios, y siempre queda al menos uno activo;
+  - el medio desactivado aparece inactivo, y el servidor lo rechaza (409) sin descontar;
+  - el cambio queda en Actividad.
+- **AC-05 (2):**
+  - el reintento con la misma clave devuelve la misma venta con un solo cobro y sin volver a descontar;
+  - con pagos distintos responde conflicto.
+- **AC-06 (8):**
+  - el cajero no anula;
+  - el motivo es obligatorio y la devolución debe sumar exactamente lo cobrado;
+  - la devolución combinada (tarjeta y efectivo) queda vinculada a la anulación;
+  - el listado muestra «anulado» y filtra por cobro;
+  - no se anula dos veces.
+- **AC-07 (2):** una venta sin cobros, simulada borrando sus pagos en MySQL, aparece como «Sin cobro registrado» y se anula sin devolución.
+- **AC-08 (8):**
+  - el resumen de Centro cuadra por medio: cobrado, devuelto y neto;
+  - el total por día cuadra;
+  - el filtro por sucursal funciona;
+  - se rechazan fechas futuras y un período invertido;
+  - sin acceso a una sucursal se responde 404, y sin filtro solo se suman las sucursales visibles.
+- **AC-09 (6):**
+  - la otra empresa no ve ni anula ventas de A, ni consulta resúmenes de sus sucursales;
+  - los medios son por empresa;
+  - el cajero no ve el resumen de Norte.
+
+### Pruebas automáticas (mismo código, 2026-11-11)
+
+- **Playwright:** 40 de 40 en Edge a 1440 y 375 px. Incluye `payments.spec.ts` (anular desde el listado con devolución combinada, resumen y medios) y Ventas (AC-10).
+- **Vitest:** 28 de 28.
+- **Backend en MySQL aislado:** `SalePaymentLocalIntegrationTest` 2 de 2 y `SaleLocalIntegrationTest` 1 de 1.
+
+### Ajuste de la revisión local
+
+El propietario señaló que las columnas del historial de ventas no coincidían con sus títulos. La causa era que cada fila calculaba el ancho de Estado, Cobro y Acción según su propio contenido.
+
+- Ahora las columnas son proporciones fijas, iguales para el encabezado y todas las filas.
+- Las etiquetas largas, la fecha y el botón bajan de línea dentro de su columna.
+- Medido en Edge a 1440 y 1600 px: cada columna empieza en el mismo punto en el encabezado y en todas las filas, y no hay desbordamiento. A 375 px se mantienen las tarjetas.
+- Después del ajuste pasaron Playwright de ventas, cobros, devoluciones y facturación (8 de 8) y el build.
+
+### Resultado
+
+AC-01 a AC-10 siguen cumpliéndose sobre el código actual. No se encontraron regresiones funcionales.
+
+### Aprobación final
+
+El propietario revisó en local y aprobó el 2026-11-11: «Aprobado, publicar».
