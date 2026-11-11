@@ -25,3 +25,5 @@ Aprobado por el propietario el 2026-11-08. Desarrollo autorizado por el propieta
 
 ## Validación final
 - [x] Aprobación final del propietario el 2026-11-08 e integración en GitHub (`main`) y Trello autorizadas.
+
+- [x] Reverificación sobre el código actual del 2026-11-11 (recorrido real 51/51, Playwright y pruebas de backend) y aprobación final del propietario el 2026-11-11 («aprobado push»).
