@@ -6,6 +6,8 @@ export type FiscalDocument = {
   id: string; docType: FiscalType; environment: "TEST" | "PROD"; consecutive: string; key: string; issuedAt: string;
   status: FiscalStatus; reason: string | null; attempts: number; sentAt: string | null; resolvedAt: string | null;
   referenceId: string | null; replacesId: string | null; mailStatus: "NONE" | "PENDING" | "SENT" | "FAILED"; branchCode: string;
+  /** Situación de la clave: "1" normal, "3" sin internet (SPEC §13). */
+  situation?: "1" | "2" | "3"; lateSubmission?: boolean;
 };
 
 export const fiscalTypeLabels: Record<FiscalType, string> = { "01": "Factura electrónica", "03": "Nota de crédito", "04": "Tiquete electrónico" };

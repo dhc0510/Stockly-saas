@@ -25,6 +25,22 @@ class FiscalDocumentXmlTest {
         assertThatThrownBy(() -> FiscalNumbers.consecutive("000a", "01", 1)).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test void offlineKeyUsesSituation3AndTwoBusinessDayDeadline() {
+        String consecutive = FiscalNumbers.consecutive("001", "04", 7);
+        String key = FiscalNumbers.key(ISSUED, "3101123456", consecutive, '3', "12345678");
+        assertThat(FiscalNumbers.situation(key)).isEqualTo('3');
+        assertThat(FiscalNumbers.situation(FiscalNumbers.key(ISSUED, "3101123456", consecutive, '1', "12345678"))).isEqualTo('1');
+        // Viernes 13/11 en Costa Rica (UTC-6): los dos días hábiles son lunes 16 y martes 17.
+        Instant friday = Instant.parse("2026-11-13T16:00:00Z");
+        assertThat(FiscalNumbers.lateOfflineSubmission(friday, Instant.parse("2026-11-14T18:00:00Z"))).isFalse();
+        assertThat(FiscalNumbers.lateOfflineSubmission(friday, Instant.parse("2026-11-18T05:59:00Z"))).isFalse(); // martes 23:59
+        assertThat(FiscalNumbers.lateOfflineSubmission(friday, Instant.parse("2026-11-18T06:00:00Z"))).isTrue();  // miércoles 00:00
+        // Miércoles 11/11: jueves 12 y viernes 13; el sábado ya es tarde.
+        Instant wednesday = Instant.parse("2026-11-11T20:00:00Z");
+        assertThat(FiscalNumbers.lateOfflineSubmission(wednesday, Instant.parse("2026-11-14T05:00:00Z"))).isFalse(); // viernes 23:00
+        assertThat(FiscalNumbers.lateOfflineSubmission(wednesday, Instant.parse("2026-11-14T15:00:00Z"))).isTrue();  // sábado
+    }
+
     @Test void splitsTaxSoTheLineAddsUpToWhatTheCustomerPaid() {
         var coffee = FiscalDraft.breakdown(line("11400.00", "3", "08"));
         assertThat(coffee.subtotal()).isEqualByComparingTo("10088.50");

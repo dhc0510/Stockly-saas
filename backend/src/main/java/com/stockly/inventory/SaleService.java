@@ -73,7 +73,7 @@ public class SaleService {
             SELECT s.id,m.folio,COALESCE(s.offline_sold_at,m.created_at) AS created_at,s.branch_name,s.customer_name,s.total,r.id IS NOT NULL AS voided,
               CASE WHEN NOT EXISTS (SELECT 1 FROM sale_payments p WHERE p.company_id=s.company_id AND p.sale_id=s.id) THEN 'none'
                    WHEN r.id IS NOT NULL THEN 'voided' ELSE 'paid' END AS payment,
-              f.doc_type AS fiscal_type, COALESCE(f.status,'NONE') AS fiscal_status,
+              f.doc_type AS fiscal_type, COALESCE(f.status,'NONE') AS fiscal_status, COALESCE(f.late_submission,FALSE) AS fiscal_late,
               (SELECT c.status FROM fiscal_documents c WHERE c.company_id=f.company_id AND c.reference_id=f.id ORDER BY c.created_at DESC LIMIT 1) AS credit_status,
               s.customer_id_number,
               CASE WHEN NOT EXISTS(SELECT 1 FROM sale_returns sr WHERE sr.company_id=s.company_id AND sr.sale_id=s.id) THEN NULL
@@ -101,7 +101,7 @@ public class SaleService {
             ORDER BY sale.created_at DESC,sale.id DESC LIMIT ? OFFSET ?
             """, (rs, row) -> new SaleRow(rs.getString(1), rs.getString(2), rs.getTimestamp(3).toInstant(),
             rs.getString(4), rs.getString(5), rs.getBigDecimal(6), rs.getBoolean(7), rs.getString(8), rs.getString(9), rs.getString(10),
-            rs.getString(11), rs.getString(12), rs.getString(13)),
+            rs.getString(12), rs.getString(13), rs.getString(14), rs.getBoolean(11)),
             company, InventoryScope.administrator(actor), actor.accountId(), branchId, branchId, term, term, term, term, status, status,
             status, status, payment, payment, fiscal, fiscal, fiscalType, fiscalType, PAGE_SIZE + 1, (long) page * PAGE_SIZE);
         return new SalePage(rows.stream().limit(PAGE_SIZE).toList(), rows.size() > PAGE_SIZE);
@@ -216,7 +216,7 @@ public class SaleService {
             jdbc.update("INSERT INTO sale_line_prices(company_id,sale_id,item_id,unit_price,amount) VALUES (?,?,?,?,?)",
                 company, id, price.itemId(), price.unitPrice(), price.amount());
         payments.record(company, id, applied);
-        if (reference == null) fiscal.issueForSale(company, id);
+        fiscal.issueForSale(company, id); // STK-013 §13: también la venta sin internet al sincronizarse
         return get(actor, id);
     }
 
@@ -323,7 +323,7 @@ public class SaleService {
     public record SaleArticle(Article article, BigDecimal price) {}
     public record SaleRow(String id, String folio, java.time.Instant date, String branchName, String customer,
                           BigDecimal total, boolean voided, String payment, String fiscalType, String fiscalStatus,
-                          String creditStatus, String customerIdNumber, String returnStatus) {}
+                          String creditStatus, String customerIdNumber, String returnStatus, boolean fiscalLate) {}
     public record SalePage(List<SaleRow> entries, boolean hasMore) {}
     public record SaleInput(String requestKey, String branchId, String customer, String customerPhone,
                             String customerEmail, List<LineInput> lines, List<SalePaymentService.PaymentInput> payments,

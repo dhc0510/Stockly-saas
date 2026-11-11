@@ -112,3 +112,20 @@ Aprobadas por el propietario el 2026-11-08 y registradas en [ADR-007](../../05-D
   - `features/billing/` (configuración);
   - `features/sales/SalesPage.tsx` y nuevos componentes fiscales;
   - catálogo, `CompanyWorkspace.tsx` y `App.tsx`.
+
+## 9. Ajuste del 2026-11-11: venta sin internet (aprobado por el propietario el 2026-11-11)
+
+Implementa la parte de SPEC §13 añadida el 2026-11-11 (AC-13).
+
+- **Backend:**
+  - `FiscalDocumentService.create` recibe la situación (`'1'` o `'3'`) y la fecha de emisión, en lugar de usar siempre `'1'` y la hora actual.
+  - `issueForSale` usa la situación 3 y `sales.offline_sold_at` cuando la venta tiene `offline_reference`.
+  - `SaleService.confirm` deja de omitir la emisión de las ventas sincronizadas; solo se emite cuando el servidor confirma la venta.
+  - Las correcciones y notas de crédito siguen en situación 1.
+- **Plazo:** una función pura calcula si la sincronización ocurrió más de dos días hábiles (lunes a viernes, sin feriados) después de la venta. El resultado se guarda en una columna nueva `fiscal_documents.late_submission`, mediante una migración Flyway aditiva. Se expone en el detalle del comprobante y en el listado de ventas.
+- **XML:** la fecha de emisión ya sale de `issued_at`. Se verifica que la clave y el XML coincidan en fecha y situación.
+- **Frontend:**
+  - se quita el aviso «Emisión fiscal de contingencia pendiente» en Ventas;
+  - el comprobante muestra «Sin internet» y, si corresponde, «Enviado fuera de plazo».
+- **Pruebas:** situación y fecha en la clave y el XML; emisión al sincronizar, no en revisión ni al cerrar; cálculo de días hábiles, incluido el fin de semana; y aviso de fuera de plazo. Se agregan a `SaleLocalIntegrationTest` o `FiscalLocalIntegrationTest` y a Playwright de Ventas.
+- **Coordinación:** toca `SaleService`, compartido con STK-014 (Gabo). Se le avisa por la tarjeta de STK-014 al publicar.

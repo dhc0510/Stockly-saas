@@ -152,7 +152,16 @@ class SaleLocalIntegrationTest {
             assertThat(offlineSale.sale().total()).isEqualByComparingTo("187.50");
             assertThat(offlineSale.sale().offlineSoldAt()).isEqualTo(soldAt);
             assertThat(offlineSale.sale().offlineReference()).isEqualTo(synced.reference());
-            assertThat(offlineSale.fiscal()).isEmpty();
+            // STK-013 §13: al sincronizar se emite el tiquete con situación 3 («sin internet») y la hora real de la venta.
+            assertThat(offlineSale.fiscal()).hasSize(1);
+            var offlineDoc = offlineSale.fiscal().getFirst();
+            assertThat(offlineDoc.docType()).isEqualTo("04");
+            assertThat(offlineDoc.situation()).isEqualTo("3");
+            assertThat(offlineDoc.issuedAt()).isEqualTo(soldAt);
+            assertThat(offlineDoc.key().substring(3, 9))
+                .isEqualTo(java.time.format.DateTimeFormatter.ofPattern("ddMMyy").format(soldAt.atZone(java.time.ZoneId.of("America/Costa_Rica"))));
+            assertThat(offlineDoc.lateSubmission()).isFalse();
+            assertThat(offlineDoc.status()).isEqualTo("PENDING");
             assertThat(offlineSales.sync(actor, pending).folio()).isEqualTo(synced.folio());
             assertThat(balance(company, branch, item)).isEqualByComparingTo("0.125");
 
@@ -166,6 +175,10 @@ class SaleLocalIntegrationTest {
             var closed = offlineSales.close(actor, conflict.id(), new OfflineSaleService.Closure("Sin existencias", "Efectivo"));
             assertThat(closed.state()).isEqualTo("CLOSED");
             assertThat(closed.refundDetail()).isEqualTo("Efectivo");
+            // En revisión o cerrada, la venta sin internet no emite: solo las dos sincronizadas tienen comprobante.
+            assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM fiscal_documents f JOIN sales s ON s.company_id=f.company_id AND s.id=f.sale_id
+                WHERE f.company_id=? AND s.offline_reference IS NOT NULL""", Integer.class, company)).isEqualTo(2);
             assertThat(balance(company, branch, item)).isEqualByComparingTo("0");
             jdbc.update("DELETE FROM inventory_branch_items WHERE company_id=? AND branch_id=?", company, branch);
             assertThatThrownBy(() -> inventory.deleteBranch(actor, branch))

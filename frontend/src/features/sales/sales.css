@@ -389,6 +389,10 @@
 .sales-fiscal-error { background: #fef2f2; color: #991b1b; }
 .sales-fiscal-muted { background: #f4f4f5; color: #3f3f46; }
 .sales-fiscal-test { background: #eef2ff; color: #3730a3; }
+/* STK-013 §13: comprobante de una venta sin internet y aviso de envío fuera de plazo. */
+.sales-fiscal-offline { background: #f0f9ff; color: #075985; }
+.sales-fiscal-late { background: #fef2f2; color: #991b1b; }
+.sales-fiscal-situation { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: #f0f9ff; color: #0c4a6e; font-size: 13px; line-height: 1.5; }
 .sales-row-fiscal { display: grid; gap: 4px; justify-items: start; min-width: 0; }
 .sales-row-fiscal .sales-status { white-space: normal; }
 .sales-fiscal-title { margin: 0 0 12px; font-size: 16px; }

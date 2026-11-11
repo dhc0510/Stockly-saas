@@ -60,11 +60,11 @@ Capturas: [Facturación 1440](screenshots/facturacion-1440.png) · [Facturación
 
 ## Pendiente
 
-- **AC-05 con Hacienda real:** que el ambiente de pruebas de Hacienda acepte factura, tiquete y nota de crédito. Requiere las credenciales de pruebas de una empresa real, que el propietario cargará en Facturación, y los datos de esa empresa. Las URL de pruebas y del IdP ya están confirmadas con la guía oficial. El XSD oficial del tiquete sigue respondiendo 404, así que los tiquetes se firman sin validarlos contra su esquema.
+- **AC-05 con Hacienda real:** que el ambiente de pruebas de Hacienda acepte factura, tiquete y nota de crédito. Requiere las credenciales de pruebas de una empresa real, que el propietario cargará en Facturación, y los datos de esa empresa. Las URL de pruebas y del IdP ya están confirmadas con la guía oficial. El XSD oficial del tiquete sigue sin publicarse: el 2026-11-11 el enlace responde con la página de error 404 de Hacienda. Los tiquetes se firman sin validarlos contra su esquema.
 - **Ubicación:** resuelto el 2026-11-08 con la codificación oficial v4.4. Provincia, cantón y distrito se eligen en listas.
 - **Conservación:** resuelto con [ADR-008](../../05-Decisions/ADR-008.md). Al borrar una empresa, sus comprobantes aceptados y rechazados se archivan 5 años (migración V14). La prueba de integración verifica qué se archiva, la fecha límite y la purga diaria. Falta definir cómo consultará ese archivo el administrador de Stockly.
-- **Contrato con Gabo:** entregado el 2026-11-08 en la tarjeta de STK-014. Falta acordar el campo que indica que una venta se hizo sin internet (situación 3).
-- **Celular físico:** probar en un teléfono real.
+- **Contrato con Gabo:** entregado el 2026-11-08 en la tarjeta de STK-014. Venta sin internet (situación 3) resuelta el 2026-11-11 (ver abajo).
+- **Celular físico:** el propietario aceptó el 2026-11-11 la verificación móvil emulada a 375 px.
 
 ## Ajustes durante la revisión del propietario
 
@@ -74,3 +74,41 @@ Capturas: [Facturación 1440](screenshots/facturacion-1440.png) · [Facturación
 - La ubicación del emisor usa la codificación oficial v4.4 en listas. Las URL de pruebas y del IdP se confirmaron con la guía oficial.
 - Conservación de 5 años al borrar empresas ([ADR-008](../../05-Decisions/ADR-008.md)).
 - La caja del logotipo en vector, aprobada por el propietario, aparece junto a la marca.
+
+## Venta sin internet (ajuste del 2026-11-11, AC-13)
+
+El propietario aprobó el ajuste de SPEC §13, PLAN §9 y AC-13, basado en el Reglamento de Comprobantes Electrónicos, Decreto 44739-H, art. 23.
+
+Ahora, al sincronizarse, la venta sin internet emite su factura o tiquete:
+- con la situación 3 y la hora real de la venta;
+- con la marca «Enviado fuera de plazo» si llega después de dos días hábiles;
+- sin emitir mientras está en revisión ni si se cierra.
+
+### Recorrido real
+
+Pasaron 18 de 18 comprobaciones, con React, Spring Boot, MySQL y Hacienda simulada, sobre la empresa local de prueba (ambiente de pruebas).
+
+- **A tiempo:**
+  - se sincroniza y emite el tiquete con situación 3 en la clave;
+  - la fecha de emisión y la de la clave son la hora real de la venta;
+  - sin marca de plazo;
+  - queda aceptado por Hacienda simulada;
+  - el XML firmado lleva esa `FechaEmision` y la misma clave;
+  - reintentar la sincronización con la misma clave no crea otro comprobante.
+- **Fuera de plazo:** se simuló un equipo que preparó y vendió hace 5 días y recién sincroniza, retrocediendo 5 días su preparación en MySQL.
+  - con identificación emite factura, con situación 3 y su fecha real;
+  - queda marcada «Enviado fuera de plazo», también en el listado.
+- **Anulación:** anular la venta aceptada emite la nota de crédito en situación 1.
+- **Pantallas (1440 y 375 px):** el comprobante muestra «Sin internet», «Enviado fuera de plazo» y la explicación, sin desbordamiento. El listado muestra «Fuera de plazo». Ya no aparece «Emisión fiscal de contingencia pendiente».
+  - Capturas: [escritorio](screenshots/13-sin-internet-fuera-de-plazo-desktop.png) · [móvil](screenshots/13-sin-internet-fuera-de-plazo-mobile.png).
+
+### Pruebas automáticas
+
+- **`FiscalDocumentXmlTest` (5):** nueva prueba de situación en la clave y del plazo de dos días hábiles: viernes a martes, fin de semana y límite de medianoche en Costa Rica.
+- **`SaleLocalIntegrationTest`:** ahora verifica que la venta sin internet sincronizada emite el tiquete con situación 3, su fecha real y sin marca. También verifica que la venta en revisión y la cerrada no emiten.
+- **Demás suites en MySQL aislado:** pasan las de cobros, catálogo, entradas, reposición, salidas y ajustes, `FiscalLocalIntegrationTest` y las de validación. `CompanyIntegrationTest` requiere Docker.
+- **Navegador:** Playwright 40 de 40 en Edge, Vitest 28 de 28 y build correcto. No se agregó una prueba Playwright propia para este caso; la interfaz se verificó con el recorrido real.
+
+### Aprobación
+
+El propietario revisó en local y aprobó el 2026-11-11: «aprobado pushhh». AC-05 (Hacienda real) y el XSD del tiquete siguen pendientes, así que STK-013 queda en espera, no finalizada.

@@ -43,9 +43,14 @@ export function FiscalPanel({ api, folio, documents, voided, canWrite, hasEmail,
     <div className="sales-document-heading">
       <h2 className="sales-fiscal-title">Comprobante electrónico</h2>
       <span className="sales-fiscal-badges">{doc.environment === "TEST" && <span className="sales-status sales-fiscal-test">Pruebas</span>}
+        {doc.situation === "3" && <span className="sales-status sales-fiscal-offline">Sin internet</span>}
+        {doc.lateSubmission && <span className="sales-status sales-fiscal-late">Enviado fuera de plazo</span>}
         <FiscalBadge status={doc.status} /></span>
     </div>
     {message && <p className={"notice " + (message.error ? "error" : "success")} role={message.error ? "alert" : "status"}>{message.text}</p>}
+    {doc.situation === "3" && <p className="sales-fiscal-situation" role="note">{doc.lateSubmission
+      ? "Venta hecha sin internet. Se sincronizó después de los dos días hábiles que da Hacienda para enviar el comprobante; revísalo con tu contador."
+      : "Venta hecha sin internet. El comprobante lleva la fecha real de la venta y se envió al sincronizar."}</p>}
     <dl className="sales-details">
       <div><dt>Tipo</dt><dd>{fiscalTypeLabels[doc.docType]}</dd></div>
       <div><dt>Consecutivo</dt><dd className="sales-mono">{doc.consecutive}</dd></div>

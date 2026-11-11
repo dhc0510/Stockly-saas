@@ -34,6 +34,22 @@ public final class FiscalNumbers {
 
     static String securityCode() { return String.format("%08d", RANDOM.nextInt(100_000_000)); }
 
+    /** Situación de la clave (posición 42): 1 normal, 2 contingencia, 3 sin internet. */
+    public static char situation(String key) { return key.charAt(41); }
+
+    /**
+     * Reglamento 44739-H, art. 23: el comprobante «sin internet» se envía a más tardar dos días hábiles después de generarse.
+     * Cuenta lunes a viernes en hora de Costa Rica, sin feriados (SPEC §13): true si el envío ocurre después del segundo día hábil.
+     */
+    public static boolean lateOfflineSubmission(Instant generatedAt, Instant submittedAt) {
+        var deadline = generatedAt.atZone(COSTA_RICA).toLocalDate();
+        for (int business = 0; business < 2; ) {
+            deadline = deadline.plusDays(1);
+            if (deadline.getDayOfWeek().getValue() <= 5) business++;
+        }
+        return submittedAt.atZone(COSTA_RICA).toLocalDate().isAfter(deadline);
+    }
+
     /** Tipo de identificación de Hacienda (nota 4) para el tipo guardado en la empresa (STK-004). */
     static String issuerType(String companyType) {
         return switch (companyType) {

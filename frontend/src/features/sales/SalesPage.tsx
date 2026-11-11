@@ -36,7 +36,8 @@ type Draft = {
   offlineRequestKey?: string;
 };
 type Row = { id: string; folio: string; date: string; branchName: string; customer: string | null; total: number; voided: boolean; payment: PaymentState;
-  fiscalType: "01" | "04" | null; fiscalStatus: FiscalStatus | "NONE"; creditStatus: FiscalStatus | null; returnStatus?: "partial" | "complete" | null };
+  fiscalType: "01" | "04" | null; fiscalStatus: FiscalStatus | "NONE"; creditStatus: FiscalStatus | null; returnStatus?: "partial" | "complete" | null;
+  fiscalLate?: boolean };
 type Sale = {
   sale: { branchName: string; customer: string | null; customerPhone: string | null; customerEmail: string | null; total: number;
     customerIdType: string | null; customerIdNumber: string | null; offlineReference?: string; offlineSoldAt?: string };
@@ -226,7 +227,8 @@ function List({ storage, canWrite, canVoid, canReturn, offline, owner, canReview
               <SaleStatus voided={sale.voided} returnStatus={sale.returnStatus} />
               <PaymentBadge state={sale.payment} />
               <span className="sales-row-fiscal"><FiscalBadge status={sale.fiscalStatus ?? "NONE"} prefix={sale.fiscalType ? fiscalShortLabels[sale.fiscalType] : undefined} />
-                {sale.creditStatus && <FiscalBadge status={sale.creditStatus} prefix="Nota de crédito" />}</span>
+                {sale.creditStatus && <FiscalBadge status={sale.creditStatus} prefix="Nota de crédito" />}
+                {sale.fiscalLate && <span className="sales-status sales-fiscal-late">Fuera de plazo</span>}</span>
               <span className="sales-row-action">{canReturn && sale.returnStatus === "partial" ? <Link className="button secondary sales-void-link"
                   to={path + "/" + sale.folio + "/returns/new?restante=1"}>Devolver lo restante</Link>
                 : canVoid && !sale.voided && !sale.returnStatus
@@ -625,10 +627,9 @@ function Document({ canVoid, canWrite, canReturn }: { canVoid: boolean; canWrite
       <PaymentSummary sale={sale} />
       {returnState.error && <p className="notice error" role="alert">{returnState.error}</p>}
       {returnContext?.returns && <SaleReturnsSection context={returnContext} canReturn={canReturn} />}
-      {sale.sale.offlineReference ? <p className="sales-offline-notice">Venta sincronizada. Emisión fiscal de contingencia pendiente.</p> :
       <FiscalPanel api={api} folio={sale.movement.folio} documents={sale.fiscal ?? []} voided={!!sale.movement.voidId} canWrite={canWrite}
         hasEmail={!!sale.sale.customerEmail} onChange={next => setSale(next as Sale)}
-        customer={{ name: sale.sale.customer, idType: sale.sale.customerIdType, idNumber: sale.sale.customerIdNumber }} />}
+        customer={{ name: sale.sale.customer, idType: sale.sale.customerIdType, idNumber: sale.sale.customerIdNumber }} />
       {!sale.movement.voidId && canVoid && returnContext && !returnStatus && (voiding
         ? <VoidForm sale={sale} url={url} onCancel={() => setVoiding(false)} onVoided={next => { setSale(next); setVoiding(false); returnState.reload(); }} />
         : <div className="sales-actions"><button type="button" className="button danger" onClick={() => setVoiding(true)}>Anular venta</button></div>)}

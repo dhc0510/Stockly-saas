@@ -43,3 +43,10 @@ Documentación aprobada por el propietario el 2026-11-08. [SPEC](../../01-Specs/
 
 ## Validación final
 - [x] Aplicación en local aprobada por el propietario el 2026-11-08, con Hacienda simulada. AC-05 queda pendiente de una prueba con el ambiente real de Hacienda.
+
+## Ajuste del 2026-11-11: venta sin internet (aprobado por el propietario el 2026-11-11)
+- [x] Aprobar el ajuste de SPEC §13, PLAN §9 y AC-13, y recibir la indicación de desarrollar. — «Aprobado, desarrolla», 2026-11-11.
+- [x] Backend: situación 3 y fecha real al sincronizar, sin emitir en revisión ni al cerrar, y marca de envío fuera de plazo con su migración (V20). AC-13. — 2026-11-11.
+- [x] Frontend: comprobante de la venta sincronizada, etiqueta «Sin internet» y aviso «Enviado fuera de plazo»; quitar el aviso de contingencia pendiente. AC-13. — 2026-11-11.
+- [x] Pruebas de backend y recorrido real en navegador, con evidencia en `docs/04-Testing/STK-013/`. AC-13. — 18/18, 2026-11-11.
+- [ ] Avisar a Gabo en la tarjeta de STK-014.

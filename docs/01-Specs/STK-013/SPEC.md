@@ -118,6 +118,15 @@ Otros comprobantes (exportación, compra, nota de débito y recibo de pago) qued
 - Las ventas confirmadas sin conexión envían sus datos de cliente con la venta. El comprobante se crea en el servidor al sincronizar, con la situación oficial que corresponda a comprobantes generados sin internet, sin asumir aceptación inmediata.
 - Gabo recibe los estados de esta SPEC y la regla de no reenviar sin consultar la clave antes de integrar STK-014.
 
+**Ajuste del 2026-11-11, aprobado por el propietario el 2026-11-11.** Se basa en el Reglamento de Comprobantes Electrónicos, Decreto 44739-H, art. 23.
+
+- **Cuándo se emite:** cuando el servidor confirma la venta sincronizada, crea su factura o tiquete con las mismas reglas de §7, en la misma transacción. Una venta en «Requiere revisión» (STK-014) no emite hasta que se confirma. Si se cierra sin confirmar, no emite nunca.
+- **Situación y fecha:** la clave lleva la situación 3, «sin internet». La fecha de emisión y la fecha de la clave son la hora real de la venta en el equipo. El consecutivo se asigna al sincronizar, en el orden de llegada.
+- **Plazo:** el Reglamento pide enviarlo a Hacienda a más tardar dos días hábiles después de generarlo. Stockly lo envía en cuanto se sincroniza. Si la venta llega después de ese plazo, Stockly igual lo emite y lo envía, y marca el comprobante como «Enviado fuera de plazo», visible para el administrador en la venta y en el listado.
+  - Los días hábiles se cuentan de lunes a viernes, sin feriados. El aviso es informativo y no reemplaza la revisión del contador.
+- **Después:** el envío, los reintentos, el rechazo, la corrección, la anulación y el correo siguen §8 a §11. Una corrección o una nota de crédito posteriores se emiten en situación normal, porque se generan con conexión.
+- **Ventas:** la venta sincronizada muestra su comprobante como cualquier otra, ya sin el aviso «Emisión fiscal de contingencia pendiente».
+
 ## 14. Errores y casos especiales
 
 - **Configuración incompleta o falta CABYS:** el comprobante queda Pendiente con el motivo, y se emite al completarse.
@@ -142,6 +151,7 @@ Otros comprobantes (exportación, compra, nota de débito y recibo de pago) qued
 - [ ] AC-10 Producción solo se activa con los requisitos cumplidos. En pruebas se indica que los comprobantes no tienen validez.
 - [ ] AC-11 Permisos, aislamiento entre empresas y sucursales, y ausencia de credenciales en respuestas y registros.
 - [ ] AC-12 Verificar venta, comprobante, rechazo, anulación, catálogo y configuración en móvil y escritorio.
+- [ ] AC-13 (ajuste aprobado el 2026-11-11) Una venta sin internet sincronizada emite su factura o tiquete con situación 3 y la fecha real de la venta. No emite mientras está en revisión ni si se cierra. Si llega después de dos días hábiles se emite igual y se marca «Enviado fuera de plazo».
 
 ## 16. Fuera de alcance
 

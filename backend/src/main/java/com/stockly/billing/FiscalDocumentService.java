@@ -16,15 +16,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class FiscalDocumentService {
     public static final String INVOICE = "01", CREDIT_NOTE = "03", TICKET = "04";
+    private static final char NORMAL = '1', OFFLINE = '3';
     private final JdbcTemplate jdbc;
 
     FiscalDocumentService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** Al confirmar la venta: factura si el cliente está identificado, tiquete si no. Debe correr en la transacción de la venta. */
+    /**
+     * Al confirmar la venta: factura si el cliente está identificado, tiquete si no. Debe correr en la transacción de la venta.
+     * Una venta sin internet sincronizada (SPEC §13) usa la situación 3 y la hora real de la venta, y se marca si llega fuera de plazo.
+     */
     @Transactional(propagation = Propagation.MANDATORY)
     public void issueForSale(String company, String saleId) {
         var sale = sale(company, saleId);
-        create(company, sale, sale.customerIdNumber() == null ? TICKET : INVOICE, null, null);
+        String docType = sale.customerIdNumber() == null ? TICKET : INVOICE;
+        if (sale.offlineSoldAt() == null) { create(company, sale, docType, null, null); return; }
+        create(company, sale, docType, null, null, null, null, OFFLINE, sale.offlineSoldAt(),
+            FiscalNumbers.lateOfflineSubmission(sale.offlineSoldAt(), Instant.now()));
     }
 
     /** Al anular la venta (SPEC §10): nota de crédito si el comprobante fue aceptado; cancela lo que nunca llegó a Hacienda. */
@@ -127,19 +134,21 @@ public class FiscalDocumentService {
 
     public record Document(String id, String docType, String environment, String consecutive, String key, Instant issuedAt,
                            String status, String reason, int attempts, Instant sentAt, Instant resolvedAt, String referenceId,
-                           String replacesId, String mailStatus, String branchCode, String saleReturnId) {}
+                           String replacesId, String mailStatus, String branchCode, String saleReturnId,
+                           String situation, boolean lateSubmission) {}
 
     /** Todos los comprobantes de la venta, del más antiguo al más reciente. */
     @Transactional(readOnly = true)
     public List<Document> documents(String company, String saleId) {
         return jdbc.query("""
             SELECT d.id,d.doc_type,d.environment,d.consecutive,d.numeric_key,d.issued_at,d.status,d.status_reason,d.attempts,
-              d.sent_at,d.resolved_at,d.reference_id,d.replaces_id,d.mail_status,b.fiscal_code,d.sale_return_id
+              d.sent_at,d.resolved_at,d.reference_id,d.replaces_id,d.mail_status,b.fiscal_code,d.sale_return_id,d.late_submission
             FROM fiscal_documents d JOIN inventory_branches b ON b.company_id=d.company_id AND b.id=d.branch_id
             WHERE d.company_id=? AND d.sale_id=? ORDER BY d.created_at,d.id
             """, (rs, n) -> new Document(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
             rs.getTimestamp(6).toInstant(), rs.getString(7), rs.getString(8), rs.getInt(9), instant(rs.getTimestamp(10)),
-            instant(rs.getTimestamp(11)), rs.getString(12), rs.getString(13), rs.getString(14), rs.getString(15), rs.getString(16)), company, saleId);
+            instant(rs.getTimestamp(11)), rs.getString(12), rs.getString(13), rs.getString(14), rs.getString(15), rs.getString(16),
+            String.valueOf(FiscalNumbers.situation(rs.getString(5))), rs.getBoolean(17)), company, saleId);
     }
 
     /** Comprobante vigente de la venta: el último que no es nota de crédito. */
@@ -149,12 +158,12 @@ public class FiscalDocumentService {
 
     // ---------- Creación ----------
 
-    record Sale(String id, String branchId, String customerIdType, String customerIdNumber) {}
+    record Sale(String id, String branchId, String customerIdType, String customerIdNumber, Instant offlineSoldAt) {}
     public record Customer(String type, String number, String name) {}
 
     private Sale sale(String company, String saleId) {
-        return jdbc.queryForObject("SELECT id,branch_id,customer_id_type,customer_id_number FROM sales WHERE company_id=? AND id=?",
-            (rs, n) -> new Sale(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)), company, saleId);
+        return jdbc.queryForObject("SELECT id,branch_id,customer_id_type,customer_id_number,offline_sold_at FROM sales WHERE company_id=? AND id=?",
+            (rs, n) -> new Sale(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), instant(rs.getTimestamp(5))), company, saleId);
     }
 
     private void creditNote(String company, String saleId, Document original) {
@@ -167,6 +176,12 @@ public class FiscalDocumentService {
 
     private void create(String company, Sale sale, String docType, String referenceId, String replacesId,
                         String returnId, String originalEnvironment) {
+        create(company, sale, docType, referenceId, replacesId, returnId, originalEnvironment, NORMAL, Instant.now(), false);
+    }
+
+    /** Correcciones y notas de crédito se generan con conexión: situación normal y hora actual. */
+    private void create(String company, Sale sale, String docType, String referenceId, String replacesId,
+                        String returnId, String originalEnvironment, char situation, Instant issuedAt, boolean lateSubmission) {
         String environment = originalEnvironment != null ? originalEnvironment : jdbc.query("SELECT environment FROM billing_settings WHERE company_id=?",
             (rs, n) -> rs.getString(1), company).stream().findFirst().orElse("TEST");
         String branchCode = branchCode(company, sale.branchId());
@@ -180,15 +195,15 @@ public class FiscalDocumentService {
         jdbc.update("UPDATE fiscal_sequences SET last_number=? WHERE company_id=? AND branch_id=? AND environment=? AND doc_type=?",
             number, company, sale.branchId(), environment, docType);
         String issuerNumber = jdbc.queryForObject("SELECT identification_normalized FROM companies WHERE id=?", String.class, company);
-        Instant issuedAt = Instant.now();
         String consecutive = FiscalNumbers.consecutive(branchCode, docType, number);
-        String key = FiscalNumbers.key(issuedAt, issuerNumber, consecutive, '1', FiscalNumbers.securityCode());
+        String key = FiscalNumbers.key(issuedAt, issuerNumber, consecutive, situation, FiscalNumbers.securityCode());
+        Timestamp now = now();
         jdbc.update("""
             INSERT INTO fiscal_documents(company_id,id,sale_id,doc_type,environment,branch_id,consecutive,numeric_key,issued_at,
-              reference_id,replaces_id,sale_return_id,status,next_attempt_at,created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'PENDING',?,?)
+              reference_id,replaces_id,sale_return_id,status,next_attempt_at,created_at,late_submission)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'PENDING',?,?,?)
             """, company, UUID.randomUUID().toString(), sale.id(), docType, environment, sale.branchId(), consecutive, key,
-            Timestamp.from(issuedAt), referenceId, replacesId, returnId, Timestamp.from(issuedAt), Timestamp.from(issuedAt));
+            Timestamp.from(issuedAt), referenceId, replacesId, returnId, now, now, lateSubmission);
     }
 
     /** Asigna el siguiente código de establecimiento (001, 002…) si la sucursal aún no tiene, bajo bloqueo de la empresa. */
