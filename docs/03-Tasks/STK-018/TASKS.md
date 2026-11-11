@@ -28,3 +28,9 @@ Aprobado por el propietario el 2026-11-09. Desarrollo autorizado el 2026-11-09; 
 
 ## Validación final
 - [x] Aprobación final del propietario e integración en GitHub y Trello autorizadas. Aprobación final el 2026-11-09.
+
+## Reverificación del 2026-11-11
+- [x] Corregir el envío de avisos (columna `email_normalized`) con prueba de integración que falla con el código anterior. AC-06.
+- [x] Recorrido real 62/62 y Playwright propio `subscriptions.spec.ts` 6/6 a 375 y 1440 px. AC-01 a AC-08.
+- [x] Requisitos previos a producción registrados en ADR-014.
+- [x] Aprobación final del propietario el 2026-11-11 («Aprobadas, publicar»).

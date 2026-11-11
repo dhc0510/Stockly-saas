@@ -65,6 +65,10 @@ public class SubscriptionScheduler {
             else if (state == State.GRACE) kind = "EXPIRED";
             else if (state == State.SUSPENDED) kind = "SUSPENDED";
             if (kind == null) continue;
+            // Se buscan los destinatarios antes de registrar el aviso: si la consulta falla, el aviso no queda marcado como enviado.
+            List<String[]> admins = jdbc.query("SELECT email_normalized,full_name FROM users WHERE company_id=? AND role='COMPANY_ADMIN' AND active=TRUE",
+                (rs, n) -> new String[]{rs.getString(1), rs.getString(2)}, d.company());
+            if (admins.isEmpty()) continue;
             if (jdbc.update("INSERT IGNORE INTO subscription_notices(company_id,kind,due_on,sent_at) VALUES (?,?,?,?)",
                 d.company(), kind, Date.valueOf(expires), Timestamp.from(Instant.now())) == 0) continue;
             boolean trial = d.snap().paidUntil() == null;
@@ -88,8 +92,6 @@ public class SubscriptionScheduler {
                 }
             }
             String instructions = settings.paymentInstructions() == null ? "" : "\n\nCómo pagar:\n" + settings.paymentInstructions();
-            List<String[]> admins = jdbc.query("SELECT email,full_name FROM users WHERE company_id=? AND role='COMPANY_ADMIN' AND active=TRUE",
-                (rs, n) -> new String[]{rs.getString(1), rs.getString(2)}, d.company());
             try {
                 for (String[] admin : admins)
                     email.send(admin[0], subject, "Hola, " + admin[1] + ":\n\n" + body + instructions
