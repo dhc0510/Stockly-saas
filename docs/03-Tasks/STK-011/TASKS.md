@@ -10,3 +10,4 @@ Documentación aprobada por el propietario el 2026-11-07. Inicio de desarrollo a
 - [x] El propietario aprobó el [contrato de sincronización y vínculos](../../02-Plans/STK-011/CONTRATO-INTEGRACIONES.md) con STK-012, STK-013 y STK-014.
 - [x] Pruebas automatizadas registradas en [validación local](../../04-Testing/STK-011/VALIDACION-LOCAL.md). Aplicación en local aprobada por el propietario el 2026-11-07. AC-01 a AC-07.
 - [x] Teléfono y correo opcionales verificados en Nueva venta, borrador y comprobante. Ajustes finales aprobados por el propietario.
+- [x] Reverificación sobre el código actual del 2026-11-10 (recorrido real 42/42, Playwright 40/40 y pruebas de backend), ajuste del formulario de anulación y aprobación final del propietario el 2026-11-10 («Aprobado, publicar»).

@@ -716,14 +716,14 @@ function VoidForm({ sale, url, onCancel, onVoided }: { sale: Sale; url: string; 
       <p>Indica cómo le devolviste el dinero al cliente. Stockly no mueve dinero: solo deja constancia. Viene sugerido con los mismos medios del cobro.</p>
       <p className="sales-refund-charged">Cobrado: {sale.payments.map(payment => methodLabels[payment.method] + " " + money(payment.amount)).join(" · ")}</p>
       {methods.error && <p className="notice error" role="alert">{methods.error}</p>}
-      {refunds.map((refund, index) => <div className="sales-refund-row" key={index}>
+      {refunds.map((refund, index) => <div className={"sales-refund-row" + (refund.method === "CASH" ? " sales-refund-cash" : "")} key={index}>
         <label>Medio<select value={refund.method} onChange={event => change(index, { method: event.target.value as Method })}>
           {(options.length ? options : [{ method: refund.method, label: methodLabels[refund.method], active: true }])
             .map(option => <option key={option.method} value={option.method}>{option.label}</option>)}
         </select></label>
         <label>Monto<input inputMode="decimal" autoComplete="off" maxLength={20} value={refund.amount}
           aria-invalid={values[index] === null} onChange={event => { setProblem(""); change(index, { amount: event.target.value }); }} /></label>
-        {refund.method === "CASH" ? <span /> : <label>Referencia opcional<input maxLength={60} autoComplete="off" value={refund.reference}
+        {refund.method === "CASH" ? null : <label>Referencia opcional<input maxLength={60} autoComplete="off" value={refund.reference}
           placeholder="N.º de transacción" onChange={event => change(index, { reference: event.target.value })} /></label>}
         <button type="button" className="button secondary" disabled={refunds.length === 1}
           aria-label={"Quitar devolución " + (index + 1)} onClick={() => setRefunds(refunds.filter((_, other) => other !== index))}>Quitar</button>

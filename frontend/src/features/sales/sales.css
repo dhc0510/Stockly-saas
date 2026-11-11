@@ -233,7 +233,8 @@
 }
 .sales-void-form h3, .sales-void-summary h3 { margin: 0; font-size: 16px; }
 .sales-void-form p { margin: 4px 0 0; color: var(--sales-muted); font-size: 13px; line-height: 1.5; }
-.sales-void-form textarea { display: block; min-height: 88px; resize: vertical; }
+.sales-void-form label { display: grid; gap: 8px; font-size: 13px; font-weight: 650; }
+.sales-page .sales-void-form textarea { display: block; min-height: 88px; field-sizing: content; overflow: hidden; resize: none; }
 .sales-void-form textarea[aria-invalid=true] { border-color: #b42318; }
 .sales-void-form small { color: #b42318; }
 .sales-void-summary { gap: 8px; scroll-margin-top: 16px; }
@@ -306,13 +307,18 @@
 .sales-refund-note { margin-bottom: 8px; padding: 10px 12px; border-radius: 8px; background: #fff7ed; color: #7c2d12; font-size: 14px; }
 .sales-refund-note ul { margin: 4px 0 0; padding-left: 18px; }
 .sales-refunds { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--sales-border); border-radius: 10px; background: #fff; }
-.sales-refunds legend { padding: 0 6px; font-weight: 700; }
+/* El título va dentro del recuadro, no montado sobre el borde. */
+.sales-refunds legend { float: left; width: 100%; margin: 0; padding: 0; font-size: 15px; font-weight: 700; }
+.sales-refunds legend + * { clear: both; }
 .sales-refunds > p { margin: 0; color: var(--sales-muted); font-size: 13px; }
 .sales-refund-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 10px; align-items: end; padding-top: 10px; border-top: 1px solid var(--sales-border); }
+/* Efectivo no lleva referencia: el monto ocupa ese espacio y las columnas siguen alineadas con las demás filas. */
+.sales-refund-cash > label:nth-child(2) { grid-column: span 2; }
 .sales-refund-add { justify-self: start; }
 @container catalog (max-width: 540px) {
   .sales-pay-form, .sales-pay-form.sales-pay-cash, .sales-refund-row { grid-template-columns: minmax(0, 1fr); }
   .sales-refund-row > span:empty { display: none; }
+  .sales-refund-cash > label:nth-child(2) { grid-column: auto; }
   .sales-pay-buttons > * { flex: 1; }
   .sales-hint { text-align: left; }
 }
