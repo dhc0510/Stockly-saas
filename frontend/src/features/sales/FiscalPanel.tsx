@@ -3,7 +3,7 @@ import { Download, FileCheck2, RefreshCw, Send } from "lucide-react";
 import { failureMessage, receiptDate } from "../receipts/receiptApi";
 import { request } from "../../lib/http";
 import {
-  ID_TYPES, currentDocument, fiscalStatusLabels, fiscalTone, fiscalTypeLabels, idProblem,
+  ID_TYPES, currentDocument, fiscalStatusLabels, fiscalTone, fiscalTypeLabels, idProblem, invoiceNameProblem,
   type FiscalDocument, type FiscalStatus,
 } from "./fiscal";
 
@@ -74,7 +74,7 @@ export function FiscalPanel({ api, folio, documents, voided, canWrite, hasEmail,
     </>}
     {doc.status === "CANCELLED" && <p className="notice info">{doc.reason ?? "Comprobante cancelado."}</p>}
     {doc.status === "REJECTED" && <>
-      <p className="notice error"><span><strong>Motivo de Hacienda:</strong> {doc.reason ?? "Rechazado."}</span></p>
+      <p className="notice error"><span><strong>{doc.reason?.startsWith("No se envió a Hacienda") ? "Motivo:" : "Motivo de Hacienda:"}</strong> {doc.reason ?? "Rechazado."}</span></p>
       {canWrite && !voided && <Correction customer={customer} busy={busy}
         onSubmit={body => act(async () => { onChange(await request(base + "/correct", { method: "POST", body: JSON.stringify(body) })); },
           "Comprobante nuevo enviado a Hacienda. El rechazado queda en el historial.")} />}
@@ -107,7 +107,7 @@ function Correction({ customer, busy, onSubmit }: {
   const [problem, setProblem] = useState("");
   return <form className="sales-fiscal-fix" noValidate onSubmit={event => {
     event.preventDefault();
-    const issue = idType ? idProblem(idType, idNumber) || (name.trim() ? "" : "La factura necesita el nombre del cliente.") : "";
+    const issue = idType ? idProblem(idType, idNumber) || invoiceNameProblem(name) : "";
     if (issue) { setProblem(issue); return; }
     onSubmit({ idType: idType || null, idNumber: idType ? idNumber.replace(/\D/g, "") : null, name: name.trim() });
   }}>

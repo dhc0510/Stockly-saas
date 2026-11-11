@@ -112,3 +112,35 @@ Pasaron 18 de 18 comprobaciones, con React, Spring Boot, MySQL y Hacienda simula
 ### Aprobación
 
 El propietario revisó en local y aprobó el 2026-11-11: «aprobado pushhh». AC-05 (Hacienda real) y el XSD del tiquete siguen pendientes, así que STK-013 queda en espera, no finalizada.
+
+## Nombre del cliente y comprobantes que no cumplen el esquema (ajuste del 2026-11-11)
+
+**Problema encontrado:** al reverificar STK-018 se vio que las facturas VTA-0014 y VTA-0015 de la empresa local estaban atascadas en «Pendiente» con «Error inesperado al procesar».
+- **Causa:** se confirmaron con cliente «a». El esquema v4.4 exige que el nombre del receptor tenga de 3 a 100 caracteres, pero Stockly solo validaba el máximo. El XML no pasaba la validación y el despachador lo reintentaba sin fin, cada vez más espaciado.
+
+**Ajuste aprobado por el propietario** (SPEC §6 y §9):
+- **Servidor:** `FiscalDocumentService.customer()` exige de 3 a 100 caracteres en el nombre de la factura, con error en el campo `customer`. Aplica a la venta en línea, a la sincronización sin internet y a la corrección.
+- **Formulario:** la venta y la corrección usan la misma regla, `invoiceNameProblem()` en `fiscal.ts`.
+- **Despachador:** si el XML firmado no cumple el esquema, no se envía ni se reintenta. Queda **Rechazado** con un motivo legible, «No se envió a Hacienda: el nombre del cliente debe tener de 3 a 100 caracteres. Corrige los datos del cliente.», y se corrige con el flujo existente. En ese caso el comprobante muestra «Motivo:» en vez de «Motivo de Hacienda:».
+
+### Verificación
+
+- **En vivo (10 de 10)**, con React, Spring Boot, MySQL y Hacienda simulada:
+  - con «Reintentar ahora», VTA-0014 y VTA-0015 pasaron a Rechazado con el motivo del nombre y no se volvieron a intentar;
+  - corregir con «a» se rechaza (400);
+  - corregir VTA-0014 con «Ana Pérez» emitió un comprobante nuevo con otro consecutivo, que quedó aceptado, y el rechazado se conserva;
+  - una venta nueva con factura y nombre de 2 letras no se confirma y no descuenta existencias;
+  - en pantalla, a 1440 y 375 px, se ve el motivo sin desbordamiento.
+
+  **VTA-0015 quedó rechazada a propósito**, para que el propietario la corrija desde la pantalla.
+- **Backend:**
+  - `FiscalDocumentXmlTest` 6 de 6, con la prueba nueva: nombre de 1 letra, 101 caracteres y nombre válido; tiquete sin restricción; XML con nombre «a» que no cumple el esquema y su motivo legible;
+  - `FiscalLocalIntegrationTest`, `SaleLocalIntegrationTest`, `SalePaymentLocalIntegrationTest` y las suites de suscripciones pasan.
+- **Frontend:** Vitest 29 de 29, con el caso nuevo; Playwright de ventas, facturación, cobros y devoluciones 8 de 8; build correcto.
+- **Capturas:** [escritorio](screenshots/14-nombre-corto-rechazado-desktop.png) · [móvil](screenshots/14-nombre-corto-rechazado-mobile.png).
+
+**Fuera de este ajuste:** el despachador de las facturas **de Stockly** (STK-018) conserva el reintento genérico. Allí el receptor es la razón social de la empresa registrada en STK-004.
+
+### Aprobación final
+
+El propietario revisó en local y aprobó el 2026-11-11: «Aprobadas, publicar».

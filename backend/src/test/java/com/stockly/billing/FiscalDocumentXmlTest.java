@@ -78,6 +78,27 @@ class FiscalDocumentXmlTest {
         assertThat(SigningKey.open(key, "123456".toCharArray()).subject()).contains("PRUEBA");
     }
 
+    @Test void receiverNameMustHaveThreeToHundredCharactersAndTheSchemaFailureIsExplained() throws Exception {
+        // Servidor (SPEC §6): la venta con factura exige un nombre de 3 a 100 caracteres.
+        assertThatThrownBy(() -> FiscalDocumentService.customer("01", "109870654", "a"))
+            .isInstanceOf(com.stockly.identity.IdentityFailure.class).hasMessageContaining("de 3 a 100");
+        assertThatThrownBy(() -> FiscalDocumentService.customer("01", "109870654", "x".repeat(101)))
+            .isInstanceOf(com.stockly.identity.IdentityFailure.class);
+        assertThat(FiscalDocumentService.customer("01", "1-0987-0654", "  Ana  ").name()).isEqualTo("Ana");
+        assertThat(FiscalDocumentService.customer(null, null, "a").name()).isEqualTo("a"); // tiquete: el nombre es libre
+
+        // Un XML armado con nombre «a» no cumple el esquema (por eso quedaba reintentándose); el despachador lo explica.
+        byte[] key = getClass().getResourceAsStream("/billing/llave-prueba.p12").readAllBytes();
+        var base = draft("01", "00100001010000000002", null);
+        var shortName = new FiscalDraft(base.docType(), base.key(), base.consecutive(), base.issuedAt(), base.providerId(), base.activityCode(),
+            base.issuer(), new FiscalDraft.Party("a", "01", "109870654", null, null, null, null, null), base.lines(), base.payments(), null);
+        byte[] signed = signer.sign(builder.build(shortName), key, "123456".toCharArray());
+        assertThatThrownBy(() -> schemas.validate("01", signed)).isInstanceOf(IllegalArgumentException.class)
+            .satisfies(e -> assertThat(FiscalDispatcher.schemaReason(e.getMessage())).contains("nombre del cliente debe tener de 3 a 100"));
+        assertThat(FiscalDispatcher.schemaReason("El XML no cumple el esquema v4.4: cvc-x: algo")).startsWith("No se envió a Hacienda")
+            .contains("cvc-x: algo").endsWith("Corrige los datos del cliente.");
+    }
+
     private static FiscalDraft draft(String type, String consecutive, FiscalDraft.Reference reference) {
         var payments = new LinkedHashMap<String, BigDecimal>();
         payments.put("CASH", new BigDecimal("8251.75"));

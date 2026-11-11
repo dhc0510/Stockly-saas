@@ -37,6 +37,13 @@ export function idProblem(type: string, number: string) {
   return definition.digits.includes(digits.length) ? "" : definition.label + ": el número lleva " + definition.digits.join(" u ") + " dígitos.";
 }
 
+/** Nombre del cliente para la factura: de 3 a 100 caracteres, como exige el esquema v4.4 de Hacienda (SPEC §6). */
+export function invoiceNameProblem(name: string) {
+  const clean = name.trim();
+  if (!clean) return "La factura necesita el nombre del cliente.";
+  return clean.length < 3 || clean.length > 100 ? "El nombre para la factura lleva de 3 a 100 caracteres." : "";
+}
+
 /** Comprobante vigente: el último que no es nota de crédito. */
 export const currentDocument = (documents: FiscalDocument[]) => [...documents].reverse().find(doc => doc.docType !== "03");
 export const creditNoteOf = (documents: FiscalDocument[], original?: FiscalDocument) =>

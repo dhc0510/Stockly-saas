@@ -9,7 +9,7 @@ import {
   applied, balance, cents, methodHints, methodLabels, paymentProblem, paymentStateLabels, toAmount, toInput,
   type Method, type MethodState, type Payment, type PaymentDraft, type PaymentState, type Refund,
 } from "./payments";
-import { ID_TYPES, fiscalShortLabels, idProblem, idTypeLabel, type FiscalDocument, type FiscalStatus } from "./fiscal";
+import { ID_TYPES, fiscalShortLabels, idProblem, idTypeLabel, invoiceNameProblem, type FiscalDocument, type FiscalStatus } from "./fiscal";
 import { FiscalBadge, FiscalPanel } from "./FiscalPanel";
 import { SaleReturnEditor, SaleReturnReceipt, SaleReturnsSection, useSaleReturns } from "./SaleReturnsPage";
 import "../receipts/receipts.css";
@@ -318,7 +318,8 @@ function Editor({ storage, offline, owner }: { storage: string; offline: Offline
     if (draft.customerIdType) {
       const problem = idProblem(draft.customerIdType, draft.customerIdNumber ?? "");
       if (problem) { setIdError(problem); idInput.current?.focus(); return; }
-      if (!draft.customer.trim()) { setIdError("La factura necesita el nombre del cliente."); return; }
+      const nameProblem = invoiceNameProblem(draft.customer);
+      if (nameProblem) { setIdError(nameProblem); return; }
     }
     const email = draft.customerEmail?.trim();
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

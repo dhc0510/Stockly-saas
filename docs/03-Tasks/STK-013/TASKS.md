@@ -50,3 +50,10 @@ Documentación aprobada por el propietario el 2026-11-08. [SPEC](../../01-Specs/
 - [x] Frontend: comprobante de la venta sincronizada, etiqueta «Sin internet» y aviso «Enviado fuera de plazo»; quitar el aviso de contingencia pendiente. AC-13. — 2026-11-11.
 - [x] Pruebas de backend y recorrido real en navegador, con evidencia en `docs/04-Testing/STK-013/`. AC-13. — 18/18, 2026-11-11.
 - [ ] Avisar a Gabo en la tarjeta de STK-014.
+
+## Ajuste del 2026-11-11: nombre del cliente y comprobantes que no cumplen el esquema (aprobado por el propietario el 2026-11-11)
+- [x] Aprobar el ajuste de SPEC §6 y §9 y recibir la indicación de desarrollar. — «Sí, aprobado y desarrolla», 2026-11-11.
+- [x] Validar el nombre de la factura (3 a 100 caracteres) en el servidor y en el formulario de venta y de corrección. — 2026-11-11.
+- [x] Marcar como Rechazado, con motivo y sin reintentar, el comprobante cuyo XML no cumple el esquema. — 2026-11-11.
+- [x] Pruebas y evidencia (en vivo 10/10, Java, Vitest y Playwright); VTA-0014 corregida y aceptada; VTA-0015 queda para la revisión del propietario. — 2026-11-11.
+- [x] Aprobación del propietario en local el 2026-11-11 («Aprobadas, publicar»).

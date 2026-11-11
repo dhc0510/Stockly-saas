@@ -126,7 +126,10 @@ public class FiscalDocumentService {
             Map.of("customerIdNumber", "El número no corresponde al tipo de identificación."));
         if (cleanName == null) throw new IdentityFailure(400, "SALE_INVALID", "La factura necesita el nombre del cliente.",
             Map.of("customer", "Escribe el nombre del cliente."));
-        if (cleanName.length() > 100) throw new IdentityFailure(400, "SALE_INVALID", "El nombre para la factura admite hasta 100 caracteres.");
+        // Esquema v4.4 (ReceptorType/Nombre): de 3 a 100 caracteres; fuera de ese rango Hacienda no recibe la factura.
+        if (cleanName.length() < 3 || cleanName.length() > 100)
+            throw new IdentityFailure(400, "SALE_INVALID", "El nombre para la factura lleva de 3 a 100 caracteres.",
+                Map.of("customer", "Escribe el nombre completo del cliente (de 3 a 100 caracteres)."));
         return new Customer(type, digits, cleanName);
     }
 

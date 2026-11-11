@@ -56,6 +56,7 @@ Otros comprobantes (exportación, compra, nota de débito y recibo de pago) qued
 
 - Se agregan el **tipo** (cédula física, cédula jurídica, DIMEX o NITE) y el **número de identificación** a los datos opcionales de STK-011. Se valida la cantidad de dígitos según el tipo.
 - Con tipo y número, el nombre es obligatorio y se emite factura. Sin identificación, se emite tiquete.
+- El nombre para la factura lleva de 3 a 100 caracteres, como exige el esquema de Hacienda. Se valida en el formulario y en el servidor, también en la venta sin internet y en la corrección. Ajuste aprobado por el propietario el 2026-11-11.
 - La venta muestra antes de confirmar qué comprobante se emitirá.
 - El correo sigue siendo opcional. Si existe, se usa para entregar el comprobante.
 
@@ -89,6 +90,7 @@ Otros comprobantes (exportación, compra, nota de débito y recibo de pago) qued
 - La persona con permiso para confirmar ventas corrige los datos del cliente (tipo, número y nombre), o los quita para emitir tiquete. Stockly emite un **comprobante nuevo** con otro consecutivo.
 - Si la causa es de configuración o del catálogo, se indica qué completar. El nuevo comprobante sale cuando se corrige.
 - El comprobante rechazado se conserva como historial de la venta y no se reutiliza su consecutivo.
+- **Datos que no cumplen el esquema:** si el XML armado no cumple el esquema v4.4, Stockly no lo envía ni lo reintenta. Lo marca **Rechazado** con el motivo «No se envió a Hacienda…» y se corrige con este mismo flujo. Ajuste aprobado por el propietario el 2026-11-11.
 
 ## 10. Anulación y nota de crédito
 

@@ -132,7 +132,14 @@ public class FiscalDispatcher {
                 (rs, n) -> new byte[][]{rs.getBytes(1), rs.getBytes(2)}, doc.company());
             signed = signer.sign(builder.build(assembly.draft()), crypto.decrypt(doc.company(), key[0]),
                 new String(crypto.decrypt(doc.company(), key[1]), java.nio.charset.StandardCharsets.UTF_8).toCharArray());
-            if (schemas.available(doc.docType())) schemas.validate(doc.docType(), signed);
+            if (schemas.available(doc.docType())) {
+                try { schemas.validate(doc.docType(), signed); }
+                catch (IllegalArgumentException invalid) {
+                    // SPEC §9: lo que no cumple el esquema no se envía ni se reintenta; queda rechazado y se corrige con un comprobante nuevo.
+                    reject(claimed, schemaReason(invalid.getMessage()), null);
+                    return;
+                }
+            }
             // La representación gráfica se genera junto con la firma, con los mismos datos del XML.
             byte[] toStore = signed, graphic = pdf.render(assembly.draft(), doc.environment());
             tx.executeWithoutResult(s -> jdbc.update("UPDATE fiscal_documents SET signed_xml=?,pdf=? WHERE company_id=? AND id=? AND signed_xml IS NULL",
@@ -171,6 +178,15 @@ public class FiscalDispatcher {
                 """, response, now(), hasEmail ? "PENDING" : "NONE", doc.company(), doc.id());
             if (!FiscalDocumentService.CREDIT_NOTE.equals(doc.docType())) documents.creditNoteIfVoided(doc.company(), doc.saleId(), doc.id());
         });
+    }
+
+    /** Motivo legible para un XML que no cumple el esquema; el detalle técnico no incluye datos del XML firmado ni credenciales. */
+    static String schemaReason(String detail) {
+        String text = detail == null ? "" : detail;
+        if (text.contains("Nombre")) return "No se envió a Hacienda: el nombre del cliente debe tener de 3 a 100 caracteres. Corrige los datos del cliente.";
+        String clean = text.replaceFirst("^El XML no cumple el esquema v4\\.4: ", "").replaceAll("\\s+", " ").strip();
+        if (clean.length() > 160) clean = clean.substring(0, 160) + "…";
+        return "No se envió a Hacienda: los datos no cumplen el formato v4.4" + (clean.isEmpty() ? "." : " (" + clean + ").") + " Corrige los datos del cliente.";
     }
 
     private void reject(Claimed claimed, String reason, byte[] response) {
